@@ -8,7 +8,7 @@ route_pattern: /settings/workflows
 min_permission: system.workflows.manage.workspace
 audience: internal
 sort_order: 414
-version: 1
+version: 2
 is_published: true
 ---
 
@@ -78,3 +78,5 @@ Uma nova mensagem recebida e comprovada pode iniciar a versão publicada e ativa
 - [Usar a central de notificações](/ajuda/core/usar-central-de-notificacoes)
 - [Administrar canais de atendimento](/ajuda/core/administrar-canais-de-atendimento)
 - [Configurar avisos oficiais por WhatsApp](/ajuda/core/configurar-notificacoes-no-whatsapp)
+
+Para configurar recebimentos dos outros canais sem alterar esta regra, consulte [Automatizar atendimentos por e-mail, chat e LinkedIn](/ajuda/crm/automatizar-atendimentos-inbox).

@@ -2843,6 +2843,335 @@
       "when": 1795258202000,
       "tag": "0405_workflow_whatsapp_received",
       "breakpoints": true
+    },
+    {
+      "idx": 406,
+      "version": "7",
+      "when": 1795304042194,
+      "tag": "0406_workflow_inbox_channel_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 407,
+      "version": "7",
+      "when": 1795304337066,
+      "tag": "0407_workflow_inbox_occurrence_producers",
+      "breakpoints": true
+    },
+    {
+      "idx": 408,
+      "version": "7",
+      "when": 1795304403189,
+      "tag": "0408_workflow_inbox_proof_execution",
+      "breakpoints": true
+    },
+    {
+      "idx": 409,
+      "version": "7",
+      "when": 1795304634208,
+      "tag": "0409_workflow_inbox_release_lock",
+      "breakpoints": true
+    },
+    {
+      "idx": 410,
+      "version": "7",
+      "when": 1795304811994,
+      "tag": "0410_gmail_durable_sync_queue",
+      "breakpoints": true
+    },
+    {
+      "idx": 411,
+      "version": "7",
+      "when": 1795306081136,
+      "tag": "0411_inbox_visibility_oid_repair",
+      "breakpoints": true
+    },
+    {
+      "idx": 412,
+      "version": "7",
+      "when": 1795306203243,
+      "tag": "0412_inbox_catalog_and_receipt_journals",
+      "breakpoints": true
+    },
+    {
+      "idx": 413,
+      "version": "7",
+      "when": 1795306379755,
+      "tag": "0413_inbox_widget_atomic_producer",
+      "breakpoints": true
+    },
+    {
+      "idx": 414,
+      "version": "7",
+      "when": 1795306562968,
+      "tag": "0414_inbox_unipile_atomic_producer",
+      "breakpoints": true
+    },
+    {
+      "idx": 415,
+      "version": "7",
+      "when": 1795307804345,
+      "tag": "0415_inbox_recipient_guards",
+      "breakpoints": true
+    },
+    {
+      "idx": 416,
+      "version": "7",
+      "when": 1795307934750,
+      "tag": "0416_inbox_static_notification_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 417,
+      "version": "7",
+      "when": 1795307998668,
+      "tag": "0417_inbox_inapp_current_dispatch",
+      "breakpoints": true
+    },
+    {
+      "idx": 418,
+      "version": "7",
+      "when": 1795308062953,
+      "tag": "0418_inbox_external_current_dispatch",
+      "breakpoints": true
+    },
+    {
+      "idx": 419,
+      "version": "7",
+      "when": 1795308093988,
+      "tag": "0419_inbox_scheduled_current_recipients",
+      "breakpoints": true
+    },
+    {
+      "idx": 420,
+      "version": "7",
+      "when": 1795308143735,
+      "tag": "0420_inbox_unipile_history_effects",
+      "breakpoints": true
+    },
+    {
+      "idx": 421,
+      "version": "7",
+      "when": 1795308196018,
+      "tag": "0421_inbox_history_channel_safe_trigger",
+      "breakpoints": true
+    },
+    {
+      "idx": 422,
+      "version": "7",
+      "when": 1795308977703,
+      "tag": "0422_inbox_central_gmail_conversation",
+      "breakpoints": true
+    },
+    {
+      "idx": 423,
+      "version": "7",
+      "when": 1795309237936,
+      "tag": "0423_inbox_central_proof_worker",
+      "breakpoints": true
+    },
+    {
+      "idx": 424,
+      "version": "7",
+      "when": 1795309276925,
+      "tag": "0424_inbox_central_chain_reference",
+      "breakpoints": true
+    },
+    {
+      "idx": 425,
+      "version": "7",
+      "when": 1795309337974,
+      "tag": "0425_inbox_central_dispatch_seams",
+      "breakpoints": true
+    },
+    {
+      "idx": 426,
+      "version": "7",
+      "when": 1795309489540,
+      "tag": "0426_inbox_central_thread_rls_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 427,
+      "version": "7",
+      "when": 1795309552830,
+      "tag": "0427_inbox_central_notification_context",
+      "breakpoints": true
+    },
+    {
+      "idx": 428,
+      "version": "7",
+      "when": 1795309632984,
+      "tag": "0428_inbox_central_recipient_subject_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 429,
+      "version": "7",
+      "when": 1795309650233,
+      "tag": "0429_inbox_central_subject_restore",
+      "breakpoints": true
+    },
+    {
+      "idx": 430,
+      "version": "7",
+      "when": 1795309681044,
+      "tag": "0430_inbox_central_subject_auth_context",
+      "breakpoints": true
+    },
+    {
+      "idx": 431,
+      "version": "7",
+      "when": 1795309746229,
+      "tag": "0431_inbox_central_center_caller_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 432,
+      "version": "7",
+      "when": 1795312286447,
+      "tag": "0432_inbox_scheduled_proof_and_legacy_reuse",
+      "breakpoints": true
+    },
+    {
+      "idx": 433,
+      "version": "7",
+      "when": 1795312340720,
+      "tag": "0433_inbox_legacy_subject_bridge_name",
+      "breakpoints": true
+    },
+    {
+      "idx": 434,
+      "version": "7",
+      "when": 1795312934584,
+      "tag": "0434_inbox_message_parent_lock_order",
+      "breakpoints": true
+    },
+    {
+      "idx": 435,
+      "version": "7",
+      "when": 1795313356724,
+      "tag": "0435_inbox_workflow_guard_draft_and_channel",
+      "breakpoints": true
+    },
+    {
+      "idx": 436,
+      "version": "7",
+      "when": 1795313807786,
+      "tag": "0436_inbox_attested_human_transitions",
+      "breakpoints": true
+    },
+    {
+      "idx": 437,
+      "version": "7",
+      "when": 1795314183638,
+      "tag": "0437_inbox_confirmed_response_journal",
+      "breakpoints": true
+    },
+    {
+      "idx": 438,
+      "version": "7",
+      "when": 1795314358669,
+      "tag": "0438_inbox_transition_response_proof_current",
+      "breakpoints": true
+    },
+    {
+      "idx": 439,
+      "version": "7",
+      "when": 1795315201598,
+      "tag": "0439_inbox_gmail_created_and_current_transitions",
+      "breakpoints": true
+    },
+    {
+      "idx": 440,
+      "version": "7",
+      "when": 1795315418149,
+      "tag": "0440_inbox_canonical_transport_receipts",
+      "breakpoints": true
+    },
+    {
+      "idx": 441,
+      "version": "7",
+      "when": 1795315872397,
+      "tag": "0441_inbox_all_thirteen_current_proofs",
+      "breakpoints": true
+    },
+    {
+      "idx": 442,
+      "version": "7",
+      "when": 1795316577120,
+      "tag": "0442_inbox_chat_rls_and_first_response_eligibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 443,
+      "version": "7",
+      "when": 1795316909804,
+      "tag": "0443_inbox_preserve_historical_response_barriers",
+      "breakpoints": true
+    },
+    {
+      "idx": 444,
+      "version": "7",
+      "when": 1795317045590,
+      "tag": "0444_inbox_preserve_service_chat_response_source",
+      "breakpoints": true
+    },
+    {
+      "idx": 445,
+      "version": "7",
+      "when": 1795317414509,
+      "tag": "0445_inbox_gmail_durable_acceptance_lineage",
+      "breakpoints": true
+    },
+    {
+      "idx": 446,
+      "version": "7",
+      "when": 1795317526131,
+      "tag": "0446_inbox_gmail_acceptance_provider_slot",
+      "breakpoints": true
+    },
+    {
+      "idx": 447,
+      "version": "7",
+      "when": 1795318663192,
+      "tag": "0447_inbox_resume_chain_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 448,
+      "version": "7",
+      "when": 1795318688120,
+      "tag": "0448_inbox_resume_original_time_restore_chat_0122",
+      "breakpoints": true
+    },
+    {
+      "idx": 449,
+      "version": "7",
+      "when": 1795319918680,
+      "tag": "0449_inbox_gmail_automatic_acceptance_recovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 450,
+      "version": "7",
+      "when": 1795320113410,
+      "tag": "0450_inbox_gmail_recovery_lookup_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 451,
+      "version": "7",
+      "when": 1795320417744,
+      "tag": "0451_inbox_gmail_recovery_message_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 452,
+      "version": "7",
+      "when": 1795343255136,
+      "tag": "0452_inbox_channel_runtime_release",
+      "breakpoints": true
     }
   ]
 }

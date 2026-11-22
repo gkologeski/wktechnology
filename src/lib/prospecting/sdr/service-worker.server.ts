@@ -522,9 +522,8 @@ export async function tickServiceAgents(admin: any, limit = 3, deps: ServiceWork
   const uncertain = must(
     await admin
       .from("service_agent_jobs")
-      .select("id,send_token,provider_message_id,draft_payload,session_id")
+      .select("id,workspace_id,send_token,provider_message_id,draft_payload,draft_text,session_id")
       .eq("status", "uncertain")
-      .not("provider_message_id", "is", null)
       .limit(limit),
   ) as any[];
   let reconciled = 0;
@@ -532,18 +531,47 @@ export async function tickServiceAgents(admin: any, limit = 3, deps: ServiceWork
     if (!item.send_token) continue;
     const session = await admin
       .from("service_agent_sessions")
-      .select("channel")
+      .select("channel,source_id,workspace_id")
+      .eq("workspace_id", item.workspace_id)
       .eq("id", item.session_id)
       .maybeSingle();
     if (session.error || !session.data) continue;
     const linkedin = session.data.channel === "linkedin";
+    let providerId = item.provider_message_id;
+    if (!providerId) {
+      if (linkedin) {
+        try {
+          const { readServiceLinkedinAcceptance } = await import("@/lib/inbox-transport.server");
+          providerId = await readServiceLinkedinAcceptance(admin, {
+            workspace: item.workspace_id,
+            conversation: session.data.source_id,
+            job: item.id,
+            body: item.draft_text,
+          });
+        } catch {
+          continue;
+        }
+      } else {
+        const accepted = await admin
+          .from("inbox_response_receipts")
+          .select("provider_id")
+          .eq("origin", "service_job")
+          .eq("workspace_id", item.workspace_id)
+          .eq("source_id", item.id)
+          .eq("transport_state", "accepted")
+          .maybeSingle();
+        if (accepted.error) continue;
+        providerId = accepted.data?.provider_id;
+      }
+    }
+    if (!providerId) continue;
     if (!linkedin && !item.draft_payload?.delivery_header) continue;
     const result = await admin.rpc(
       linkedin ? "service_agent_complete_linkedin" : "service_agent_complete_email",
       {
         p_job: item.id,
         p_send_token: item.send_token,
-        p_provider_id: item.provider_message_id,
+        p_provider_id: providerId,
         ...(!linkedin ? { p_header: item.draft_payload.delivery_header } : {}),
       },
     );

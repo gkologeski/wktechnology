@@ -1,3 +1,4 @@
+import { useEmailSendAttempt } from "@/hooks/use-message-send-attempt";
 // Janela "Enviar ao cliente aprovar por e-mail": envia pela conta Gmail do
 // usuário logado e, só depois do e-mail sair, sela a proposta (status Enviada).
 import { useEffect, useState } from "react";
@@ -48,6 +49,7 @@ type Props = {
 export function SendProposalEmailDialog(props: Props) {
   const listAccounts = useServerFn(listEmailAccounts);
   const sendMail = useServerFn(sendGmailEmail);
+  const emailAttempt = useEmailSendAttempt();
   const share = useServerFn(getSalesPublicToken);
   const seal = useServerFn(sendProposal);
   const userId = useCurrentUserId();
@@ -102,7 +104,7 @@ export function SendProposalEmailDialog(props: Props) {
         message,
       });
       await sendMail({
-        data: {
+        data: emailAttempt.prepare({
           account_id: accountId || undefined,
           to: toList,
           cc: ccList.length ? ccList : undefined,
@@ -110,8 +112,9 @@ export function SendProposalEmailDialog(props: Props) {
           body_html: body.html,
           body_text: body.text,
           deal_id: props.dealId ?? undefined,
-        },
+        }),
       });
+      emailAttempt.complete();
       try {
         await seal({ data: { id: props.proposalId } });
       } catch (e) {
@@ -221,7 +224,14 @@ export function SendProposalEmailDialog(props: Props) {
           >
             <Button
               onClick={() => void submit()}
-              disabled={busy || noAccount || !accounts.length || !subject.trim() || !to.trim()}
+              disabled={
+                !emailAttempt.canSend ||
+                busy ||
+                noAccount ||
+                !accounts.length ||
+                !subject.trim() ||
+                !to.trim()
+              }
             >
               {busy ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />

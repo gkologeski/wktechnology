@@ -1,3 +1,4 @@
+import { useChatSendAttempt } from "@/hooks/use-message-send-attempt";
 import { ServiceAgentPanel } from "@/components/inbox/service-agent-panel";
 import { usePersonPhotos } from "@/hooks/use-person-photos";
 import { formatDateTime } from "@/lib/crm";
@@ -83,6 +84,7 @@ function LiveChatInbox() {
   const navigate = useNavigate();
   const msgsFn = useServerFn(listConversationMessages);
   const sendFn = useServerFn(sendChatMessage);
+  const chatAttempt = useChatSendAttempt();
   const closeFn = useServerFn(closeChatSession);
   const convertFn = useServerFn(convertChatSessionToTicket);
   const membersFn = useServerFn(listWorkspaceMembers);
@@ -129,8 +131,10 @@ function LiveChatInbox() {
   const membersQ = useQuery({ queryKey: ["inbox", "members"], queryFn: () => membersFn() });
 
   const send = useMutation({
-    mutationFn: () => sendFn({ data: { session_id: selected!, body: draft.trim() } }),
+    mutationFn: () =>
+      sendFn({ data: chatAttempt.prepare({ session_id: selected!, body: draft.trim() }) }),
     onSuccess: () => {
+      chatAttempt.complete();
       setDraft("");
       void history.syncNewer();
     },
@@ -382,14 +386,14 @@ function LiveChatInbox() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
-                          if (draft.trim()) send.mutate();
+                          if (draft.trim() && chatAttempt.canSend && !send.isPending) send.mutate();
                         }
                       }}
                       className="min-h-12 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
                     />
                     <Button
                       onClick={() => send.mutate()}
-                      disabled={!draft.trim() || send.isPending}
+                      disabled={!chatAttempt.canSend || !draft.trim() || send.isPending}
                       aria-label="Enviar mensagem"
                     >
                       <Send className="h-4 w-4" />

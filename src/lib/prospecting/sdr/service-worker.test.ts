@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createHash } from "node:crypto";
 const spies = vi.hoisted(() => ({ turn: vi.fn(), context: vi.fn(), store: vi.fn() }));
 vi.mock("./turn", () => ({ decideTurn: spies.turn }));
 vi.mock("./worker.server", () => ({
@@ -21,6 +22,12 @@ vi.mock("@/lib/gmail.server", () => ({
   buildRawMime: vi.fn(),
   ensureAccessToken: vi.fn(),
   gmailSendRaw: vi.fn(),
+}));
+vi.mock("@/lib/unipile/client.server", () => ({
+  normalizeSendMessageResult: (response: { message_id?: string; chat_id?: string }) => ({
+    messageId: response.message_id ?? null,
+    chatId: response.chat_id ?? null,
+  }),
 }));
 import { FakeDb } from "./test-fake-db";
 import { PRICE_WARNING } from "./policy";
@@ -304,6 +311,101 @@ describe("email/chat service orchestration", () => {
 });
 
 describe("service queue customer wait", () => {
+  it("recovers LinkedIn acceptance when the post-send job update failed, without another send", async () => {
+    Object.assign(db.t("service_agent_sessions")[0], {
+      channel: "linkedin",
+      source_id: "conversation",
+    });
+    Object.assign(job, {
+      status: "uncertain",
+      send_token: "send-token",
+      draft_text: "Accepted reply",
+    });
+    db.t("linkedin_conversations").push({
+      id: "conversation",
+      workspace_id: ws,
+      account_id: account,
+      owner_id: "actor",
+      provider_chat_id: "provider-chat",
+    });
+    db.t("unipile_accounts").push({ id: account, workspace_id: ws, owner_id: "actor" });
+    const attempt = "sdr:j1";
+    db.t("unipile_delivery_receipts").push({
+      id: "durable",
+      account_id: account,
+      request_key: createHash("sha256")
+        .update(JSON.stringify({ endpoint: "message.send", attempt }))
+        .digest("hex"),
+      status: "sent",
+      inbox_request: {
+        endpoint: "message.send",
+        attempt_key: attempt,
+        body: "Accepted reply",
+        chat_id: "provider-chat",
+      },
+      response: { message_id: "provider-message", chat_id: "provider-chat" },
+    });
+    const original = db.rpc.bind(db);
+    db.rpc = vi.fn(async (name, args) =>
+      name === "service_agent_claim"
+        ? { data: [], error: null }
+        : name === "service_agent_complete_linkedin"
+          ? { data: true, error: null }
+          : original(name, args),
+    );
+    const result = await tickServiceAgents(db, 3, deps);
+    expect(result.reconciled).toBe(1);
+    expect(db.rpc).toHaveBeenCalledWith("service_agent_complete_linkedin", {
+      p_job: "j1",
+      p_send_token: "send-token",
+      p_provider_id: "provider-message",
+    });
+    expect(deps.deliver).not.toHaveBeenCalled();
+  });
+  it.each([
+    "uncertain",
+    "foreign-account",
+    "foreign-workspace",
+    "wrong-chat",
+    "different-body",
+    "wrong-attempt",
+  ])("does not recover an unproven LinkedIn receipt: %s", async (problem) => {
+    Object.assign(db.t("service_agent_sessions")[0], {
+      channel: "linkedin",
+      source_id: "conversation",
+    });
+    Object.assign(job, { status: "uncertain", send_token: "token", draft_text: "Reply" });
+    db.t("linkedin_conversations").push({
+      id: "conversation",
+      workspace_id: problem === "foreign-workspace" ? "foreign" : ws,
+      account_id: account,
+      owner_id: "actor",
+      provider_chat_id: "chat",
+    });
+    db.t("unipile_accounts").push({ id: account, workspace_id: ws, owner_id: "actor" });
+    const attempt = "sdr:j1";
+    db.t("unipile_delivery_receipts").push({
+      account_id: problem === "foreign-account" ? "foreign" : account,
+      request_key: createHash("sha256")
+        .update(JSON.stringify({ endpoint: "message.send", attempt }))
+        .digest("hex"),
+      status: problem === "uncertain" ? "uncertain" : "sent",
+      inbox_request: {
+        endpoint: "message.send",
+        attempt_key: problem === "wrong-attempt" ? "sdr:other" : attempt,
+        body: problem === "different-body" ? "Other" : "Reply",
+        chat_id: problem === "wrong-chat" ? "other" : "chat",
+      },
+      response: { message_id: "provider", chat_id: "chat" },
+    });
+    const original = db.rpc.bind(db);
+    db.rpc = vi.fn(async (name, args) =>
+      name === "service_agent_claim" ? { data: [], error: null } : original(name, args),
+    );
+    expect((await tickServiceAgents(db, 3, deps)).reconciled).toBe(0);
+    expect(db.rpc).not.toHaveBeenCalledWith("service_agent_complete_linkedin", expect.anything());
+    expect(deps.deliver).not.toHaveBeenCalled();
+  });
   it("rechecks a postponed burst deadline instead of waiting for the next cron", async () => {
     vi.useFakeTimers();
     try {

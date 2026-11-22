@@ -128,6 +128,110 @@ describe("mandatory permission impact gate", () => {
     );
     expect(f.run().findings.some((x) => x.code === "control_definition")).toBe(true);
   });
+  it("accepts an explicitly typed existing function ACL surface without pretending it declares a control", () => {
+    const f = fixture();
+    const file = "drizzle/migrations/0001_acl.sql";
+    const source =
+      "REVOKE ALL ON FUNCTION public.guard_row() FROM PUBLIC; GRANT EXECUTE ON FUNCTION public.guard_row() TO service_role;";
+    f.write(file, source);
+    f.c.files[file] = hash(source);
+    f.c.database.push({ file, symbol: "public.guard_row", sql_surface: "function_acl" });
+    expect(f.run().findings).toEqual([]);
+  });
+  it("inventories an exact top-level trigger retirement as a database surface, never a runtime guard", () => {
+    const f = fixture();
+    const file = "drizzle/migrations/0001_release.sql";
+    const source = "DROP TRIGGER runtime_lock ON public.workflows;";
+    f.write(file, source);
+    f.c.files[file] = hash(source);
+    const ref = {
+      file,
+      symbol: "public.workflows.runtime_lock",
+      sql_surface: "trigger_drop" as const,
+    };
+    f.c.database.push(ref);
+    expect(f.run().findings).toEqual([]);
+    f.c.controls.push(ref);
+    expect(f.run().findings.some((x) => x.code === "control_definition")).toBe(true);
+    f.c.tests = {};
+    expect(
+      f
+        .run()
+        .findings.filter(
+          (x) =>
+            x.code === "denial_evidence" &&
+            x.message.includes("executable mandatory-CI test missing:"),
+        ),
+    ).toHaveLength(5);
+  });
+  it.each([
+    "public.other.runtime_lock",
+    "other.workflows.runtime_lock",
+    "public.workflows.other",
+    "runtime_lock",
+  ])("rejects a trigger retirement with a different target: %s", (symbol) => {
+    const f = fixture(),
+      file = "drizzle/migrations/0001_release.sql",
+      source = "DROP TRIGGER runtime_lock ON public.workflows;";
+    f.write(file, source);
+    f.c.files[file] = hash(source);
+    f.c.database.push({ file, symbol, sql_surface: "trigger_drop" });
+    expect(f.run().findings.some((x) => x.code === "control_definition")).toBe(true);
+  });
+  it("rejects trigger retirement text hidden in comments, literals or dynamic bodies", () => {
+    const f = fixture(),
+      file = "drizzle/migrations/0001_release.sql";
+    const source =
+      "-- DROP TRIGGER runtime_lock ON public.workflows;\nSELECT 'DROP TRIGGER runtime_lock ON public.workflows;'; DO $$ BEGIN EXECUTE 'DROP TRIGGER runtime_lock ON public.workflows;'; END $$;";
+    f.write(file, source);
+    f.c.files[file] = hash(source);
+    f.c.database.push({
+      file,
+      symbol: "public.workflows.runtime_lock",
+      sql_surface: "trigger_drop",
+    });
+    expect(f.run().findings.some((x) => x.code === "control_definition")).toBe(true);
+  });
+  it("accepts a typed schema ACL only for its actual top-level target", () => {
+    const f = fixture();
+    const file = "drizzle/migrations/0001_acl.sql";
+    const source = "REVOKE USAGE ON SCHEMA auth FROM techerp_api_subject;";
+    f.write(file, source);
+    f.c.files[file] = hash(source);
+    f.c.database.push({ file, symbol: "auth", sql_surface: "schema_acl" });
+    expect(f.run().findings).toEqual([]);
+    f.c.database[f.c.database.length - 1]!.symbol = "private_data";
+    expect(f.run().findings.some((x) => x.code === "control_definition")).toBe(true);
+  });
+  it("rejects typed ACL claims hidden in comments, data and dynamic dollar bodies", () => {
+    const f = fixture();
+    const file = "drizzle/migrations/0001_acl.sql";
+    const source =
+      "-- GRANT EXECUTE ON FUNCTION public.guard_row() TO service_role;\nSELECT 'GRANT EXECUTE ON FUNCTION public.guard_row() TO service_role;'; DO $$ BEGIN EXECUTE 'GRANT EXECUTE ON FUNCTION public.guard_row() TO service_role;'; END $$;";
+    f.write(file, source);
+    f.c.files[file] = hash(source);
+    f.c.database.push({ file, symbol: "public.guard_row", sql_surface: "function_acl" });
+    expect(f.run().findings.some((x) => x.code === "control_definition")).toBe(true);
+  });
+  it("never accepts an ACL target as the runtime control or waives the denial evidence", () => {
+    const f = fixture();
+    f.c.controls.push({
+      file: "drizzle/migrations/0000_boundary.sql",
+      symbol: "guard_row",
+      sql_surface: "function_acl",
+    });
+    expect(f.run().findings.some((x) => x.code === "control_definition")).toBe(true);
+    f.c.tests = {};
+    expect(
+      f
+        .run()
+        .findings.filter(
+          (x) =>
+            x.code === "denial_evidence" &&
+            x.message.includes("executable mandatory-CI test missing:"),
+        ),
+    ).toHaveLength(5);
+  });
   it("requires the exact named denial test, not a comment", () => {
     const f = fixture();
     f.write(f.test, '// it("inactive",()=>{expect(false).toBe(false)})');

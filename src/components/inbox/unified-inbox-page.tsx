@@ -1,3 +1,4 @@
+import { useChatSendAttempt, useEmailSendAttempt } from "@/hooks/use-message-send-attempt";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { usePersonPhotos } from "@/hooks/use-person-photos";
 import { formatDateTime } from "@/lib/crm";
@@ -75,8 +76,10 @@ export function UnifiedInboxPage({
   const [draft, setDraft] = useState("");
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const sendEmail = useServerFn(sendGmailEmail);
+  const emailAttempt = useEmailSendAttempt();
   const sendWa = useServerFn(sendWhatsAppMessage);
   const sendChat = useServerFn(sendChatMessage);
+  const chatAttempt = useChatSendAttempt();
   const compose = useServerFn(smartCompose);
 
   const debouncedSearch = useDebounced(search, 300);
@@ -214,12 +217,13 @@ export function UnifiedInboxPage({
           ? current.subject
           : `Re: ${current.subject || "(sem assunto)"}`;
         await sendEmail({
-          data: {
+          data: emailAttempt.prepare({
+            conversation_id: current.conversationId,
             to: current.replyTo,
             subject,
             body_text: draft,
             contact_id: current.contactId ?? undefined,
-          } as never,
+          }) as never,
         });
       } else if (current.channel === "whatsapp") {
         if (
@@ -248,10 +252,14 @@ export function UnifiedInboxPage({
           throw new Error(res.error);
         }
       } else {
-        await sendChat({ data: { session_id: current.conversationId, body: draft } });
+        await sendChat({
+          data: chatAttempt.prepare({ session_id: current.conversationId, body: draft }),
+        });
       }
     },
     onSuccess: () => {
+      emailAttempt.complete();
+      chatAttempt.complete();
       setDraft("");
       messageDraft.clearAfterSend();
     },
@@ -551,7 +559,9 @@ export function UnifiedInboxPage({
                       !draft.trim() ||
                       reply.isPending ||
                       waBlocked ||
-                      (current.channel === "email" && !current.replyTo)
+                      (current.channel === "email" &&
+                        (!current.replyTo || !emailAttempt.canSend)) ||
+                      (current.channel === "chat" && !chatAttempt.canSend)
                     }
                   >
                     <Send className="h-4 w-4 mr-1" />

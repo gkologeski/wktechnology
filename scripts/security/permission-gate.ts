@@ -9,7 +9,11 @@ export const BASELINE_PATH = "docs/security/permission-baseline.json";
 export const CONTRACTS_PATH = "docs/security/permission-contracts.json";
 export const CATALOG_PATH = "docs/security/permission-key-catalog.json";
 export type Snapshot = { schema_version: 1; source_commit: string; files: Record<string, string> };
-type Ref = { file: string; symbol: string };
+type Ref = {
+  file: string;
+  symbol: string;
+  sql_surface?: "function_acl" | "schema_acl" | "trigger_drop";
+};
 type Evidence = { file: string; name: string };
 export type Contract = {
   id: string;
@@ -330,9 +334,38 @@ function hasDefinition(root: string, ref: Ref): boolean {
   if (!ref || typeof ref.file !== "string" || typeof ref.symbol !== "string" || !ref.symbol.trim())
     return false;
   const source = readSource(root, ref.file);
+  if (ref.sql_surface !== undefined && !ref.file.endsWith(".sql")) return false;
   if (ref.file.endsWith(".sql")) {
     const clean = sqlDeclarations(source);
     const escaped = ref.symbol.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // ACL-only migrations change an existing security surface without declaring
+    // it again. They require an explicit database-reference subtype; comments,
+    // values and dollar bodies have already been masked. This never substitutes
+    // for a runtime control definition or the five mandatory denial scenarios.
+    if (ref.sql_surface === "function_acl") {
+      return new RegExp(
+        `(?:^|;)\\s*(?:(?:GRANT|REVOKE)\\s+[^;]+?\\s+ON\\s+FUNCTION\\s+${escaped}\\s*\\([^;]*?\\)\\s+(?:TO|FROM)\\s+[^;]+|ALTER\\s+FUNCTION\\s+${escaped}\\s*\\([^;]*?\\)\\s+OWNER\\s+TO\\s+[^;]+)\\s*(?:;|$)`,
+        "i",
+      ).test(clean);
+    }
+    if (ref.sql_surface === "schema_acl") {
+      return new RegExp(
+        `(?:^|;)\\s*(?:GRANT|REVOKE)\\s+(?:USAGE|CREATE|ALL(?:\\s+PRIVILEGES)?)(?:\\s*,\\s*(?:USAGE|CREATE))*\\s+ON\\s+SCHEMA\\s+${escaped}\\s+(?:TO|FROM)\\s+[^;]+\\s*(?:;|$)`,
+        "i",
+      ).test(clean);
+    }
+    if (ref.sql_surface === "trigger_drop") {
+      const target = /^([a-z_][a-z0-9_]*)\.([a-z_][a-z0-9_]*)\.([a-z_][a-z0-9_]*)$/i.exec(
+        ref.symbol,
+      );
+      if (!target) return false;
+      const [, schema, table, trigger] = target;
+      return new RegExp(
+        `(?:^|;)\\s*DROP\\s+TRIGGER\\s+(?:IF\\s+EXISTS\\s+)?${trigger}\\s+ON\\s+${schema}\\.${table}\\s*(?:;|$)`,
+        "i",
+      ).test(clean);
+    }
+    if (ref.sql_surface !== undefined) return false;
     return new RegExp(
       `\\b(?:FUNCTION|POLICY|VIEW|TABLE|TYPE)\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(?:public\\.)?${escaped}(?:\\s|\\(|$)`,
       "i",
@@ -491,6 +524,13 @@ export function checkCoverage(
         );
     }
     if (!c.controls?.length) add("controls", `${c.id}: no runtime control`);
+    for (const ref of c.controls ?? [])
+      if (ref.sql_surface !== undefined)
+        add(
+          "control_definition",
+          `${c.id}: ACL targets are database surfaces, not runtime control definitions`,
+          ref.file,
+        );
     for (const ref of [...(c.controls ?? []), ...(c.database ?? [])]) {
       try {
         if (!hasDefinition(root, ref))

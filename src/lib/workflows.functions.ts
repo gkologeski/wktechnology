@@ -16,6 +16,7 @@ import {
   assertWorkflowsDelete,
 } from "@/lib/access-control/admin-gates.server";
 import { SaveSchema } from "@/lib/workflows/schemas";
+import { workflowDraftFields, workflowDraftInsert } from "@/lib/workflows/draft-payload";
 import type { WorkflowFilter, WorkflowAction, WorkflowTrigger } from "@/lib/workflows/types";
 
 const EntityTableEnum = z.enum([
@@ -130,14 +131,7 @@ export const saveWorkflow = createServerFn({ method: "POST" })
     await assertWorkflowsManage(supabase, userId);
     // Fase 4: escritas do builder vão SEMPRE para o rascunho. A versão viva (actions/trigger/goal_filters)
     // só muda via publishWorkflow. Toggle de enabled/name/entity é aplicado direto, sem mexer em status.
-    const updatePayload = {
-      name: data.name,
-      entity: data.entity,
-      enabled: data.enabled,
-      draft_trigger: data.trigger,
-      draft_actions: data.actions,
-      draft_goal_filters: (data.trigger as unknown as WorkflowTrigger).goal_filters ?? [],
-    } as never;
+    const updatePayload = workflowDraftFields(data);
     if (data.id) {
       const { data: prior, error: priorError } = await supabase
         .from("workflows")
@@ -156,20 +150,14 @@ export const saveWorkflow = createServerFn({ method: "POST" })
       return { id: data.id };
     }
     // Novo workflow: começa como 'draft' até primeira publicação.
-    const insertPayload = {
-      ...(updatePayload as Record<string, unknown>),
-      owner_id: userId,
-      status: "draft",
-      trigger: {},
-      actions: [],
-      goal_filters: [],
-    } as never;
+    const insertPayload = workflowDraftInsert(
+      data,
+      userId,
+      await resolveActiveWorkspace(context.userId),
+    );
     const { data: row, error } = await supabase
       .from("workflows")
-      .insert({
-        ...(insertPayload as Record<string, unknown>),
-        workspace_id: await resolveActiveWorkspace(context.userId),
-      } as never)
+      .insert(insertPayload as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);

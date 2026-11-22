@@ -220,12 +220,48 @@ async function call(ctx: ThrottleCtx, opts: CallOptions) {
   const budget = BUDGETS[opts.endpoint];
   const outbound = opts.endpoint === "message.send" || opts.endpoint === "invite.send";
   let receipt: { id: string; token: string } | null = null;
+  let deliveryKey: string | null = null;
   if (outbound) {
-    const key = hashPayload({
+    const legacyKey = hashPayload({
       path: opts.path,
       body: opts.body,
       requestKey: opts.requestKey ?? null,
     });
+    const fingerprint = hashPayload({
+      endpoint: opts.endpoint,
+      method: opts.method,
+      path: opts.path,
+      body: opts.body,
+      owner: ctx.ownerId ?? null,
+    });
+    let key = opts.requestKey
+      ? hashPayload({ endpoint: opts.endpoint, attempt: opts.requestKey })
+      : legacyKey;
+    // Explicit attempt identity does not change when content changes. Legacy
+    // content-bound receipts remain readable and never acquire a second send.
+    if (opts.requestKey) {
+      const read = async (requestKey: string) => {
+        const result = await supabaseAdmin
+          .from("unipile_delivery_receipts")
+          .select("id,inbox_request")
+          .eq("account_id", ctx.accountId)
+          .eq("request_key", requestKey)
+          .maybeSingle();
+        if (result.error)
+          throw new UnipileError("Recibo indisponível; envio bloqueado.", "delivery_uncertain");
+        return result.data;
+      };
+      const current = await read(key);
+      const metadata = current?.inbox_request;
+      const currentFingerprint =
+        metadata && typeof metadata === "object" && !Array.isArray(metadata)
+          ? metadata["request_fingerprint"]
+          : null;
+      if (current && currentFingerprint !== fingerprint)
+        throw new UnipileError("Tentativa divergente; envio bloqueado.", "invalid_parameters");
+      if (!current && (await read(legacyKey))) key = legacyKey;
+    }
+    deliveryKey = key;
     const begin = await supabaseAdmin.rpc(
       "unipile_delivery_begin" as never,
       {
@@ -255,8 +291,41 @@ async function call(ctx: ThrottleCtx, opts: CallOptions) {
         undefined,
         r?.retryAt ? Math.max(1000, Date.parse(r.retryAt) - Date.now()) : 3600000,
       );
-    if (r.cached) return r.response;
+    if (r.cached) {
+      if (opts.endpoint === "message.send" && deliveryKey) {
+        try {
+          const { reconcileUnipileInboxReceipt } = await import("../inbox-transport.server");
+          await reconcileUnipileInboxReceipt(supabaseAdmin, ctx.accountId, key);
+        } catch {
+          /* Acceptance is durable; projection failure must not resend. */
+        }
+      }
+      return r.response;
+    }
     receipt = { id: r.id, token: r.token };
+    if (key !== legacyKey || opts.endpoint === "message.send") {
+      const body = opts.body as { text?: string };
+      const chat = opts.path.match(/\/chats\/([^/]+)\/messages\/send$/)?.[1];
+      const metadata = await supabaseAdmin
+        .from("unipile_delivery_receipts")
+        .update({
+          inbox_request: {
+            endpoint: opts.endpoint,
+            body: body.text ?? "",
+            chat_id: chat ? decodeURIComponent(chat) : null,
+            ...(key !== legacyKey
+              ? { request_fingerprint: fingerprint, attempt_key: opts.requestKey }
+              : {}),
+          },
+        })
+        .eq("id", r.id)
+        .eq("lease_token", r.token)
+        .eq("status", "started")
+        .select("id")
+        .maybeSingle();
+      if (metadata.error || !metadata.data)
+        throw new UnipileError("Pedido não registrado; envio bloqueado.", "delivery_uncertain");
+    }
   } else await enforceBudget(ctx, opts.endpoint, budget);
 
   const method = opts.method;
@@ -323,6 +392,14 @@ async function call(ctx: ThrottleCtx, opts: CallOptions) {
           "delivery_uncertain",
         );
       receipt = null;
+      if (opts.endpoint === "message.send" && deliveryKey) {
+        try {
+          const { reconcileUnipileInboxReceipt } = await import("../inbox-transport.server");
+          await reconcileUnipileInboxReceipt(supabaseAdmin, ctx.accountId, deliveryKey);
+        } catch {
+          /* Never convert accepted transport into a retryable send error. */
+        }
+      }
     }
     return data;
   } catch (err) {

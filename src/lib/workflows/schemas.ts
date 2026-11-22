@@ -40,6 +40,7 @@ export const EntityEnum = z.enum([
   "hiring_preparation_requests",
   "hiring_fiscal_documents",
   "whatsapp_messages",
+  "inbox_channel_occurrences",
 ]);
 
 const WritableTableEnum = z.enum([

@@ -11190,6 +11190,7 @@ export type Database = {
           deal_id: string | null
           id: string
           identity_status: string
+          inbox_creation_receipt: string | null
           last_message_at: string | null
           lead_id: string | null
           message_count: number
@@ -11209,6 +11210,7 @@ export type Database = {
           deal_id?: string | null
           id?: string
           identity_status?: string
+          inbox_creation_receipt?: string | null
           last_message_at?: string | null
           lead_id?: string | null
           message_count?: number
@@ -11228,6 +11230,7 @@ export type Database = {
           deal_id?: string | null
           id?: string
           identity_status?: string
+          inbox_creation_receipt?: string | null
           last_message_at?: string | null
           lead_id?: string | null
           message_count?: number
@@ -12890,6 +12893,120 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmail_sync_queue: {
+        Row: {
+          account_id: string
+          attempts: number
+          completed_at: string | null
+          discovered_at: string
+          history_from: string | null
+          history_to: string
+          id: string
+          lease_token: string | null
+          lease_until: string | null
+          message_id: string | null
+          outcome: string | null
+          preexisting: boolean
+          provenance: string
+          provider_message_id: string
+          state: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id: string
+          attempts?: number
+          completed_at?: string | null
+          discovered_at?: string
+          history_from?: string | null
+          history_to: string
+          id?: string
+          lease_token?: string | null
+          lease_until?: string | null
+          message_id?: string | null
+          outcome?: string | null
+          preexisting?: boolean
+          provenance: string
+          provider_message_id: string
+          state?: string
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string
+          attempts?: number
+          completed_at?: string | null
+          discovered_at?: string
+          history_from?: string | null
+          history_to?: string
+          id?: string
+          lease_token?: string | null
+          lease_until?: string | null
+          message_id?: string | null
+          outcome?: string | null
+          preexisting?: boolean
+          provenance?: string
+          provider_message_id?: string
+          state?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmail_sync_queue_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmail_sync_queue_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "email_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmail_sync_queue_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmail_workflow_pending: {
+        Row: {
+          account_id: string
+          done_at: string | null
+          observed_at: string
+          provenance: string
+          provider_id: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id: string
+          done_at?: string | null
+          observed_at?: string
+          provenance: string
+          provider_id: string
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string
+          done_at?: string | null
+          observed_at?: string
+          provenance?: string
+          provider_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmail_workflow_pending_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -16499,6 +16616,322 @@ export type Database = {
           },
         ]
       }
+      inbox_channel_evidence: {
+        Row: {
+          account_id: string
+          actor_id: string | null
+          body_hash: string | null
+          channel: string
+          conversation_id: string
+          envelope_hash: string
+          id: string
+          message_id: string | null
+          occurred_at: string
+          provenance: string
+          provider_id: string
+          received_at: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id: string
+          actor_id?: string | null
+          body_hash?: string | null
+          channel: string
+          conversation_id: string
+          envelope_hash: string
+          id?: string
+          message_id?: string | null
+          occurred_at: string
+          provenance: string
+          provider_id: string
+          received_at?: string
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string
+          actor_id?: string | null
+          body_hash?: string | null
+          channel?: string
+          conversation_id?: string
+          envelope_hash?: string
+          id?: string
+          message_id?: string | null
+          occurred_at?: string
+          provenance?: string
+          provider_id?: string
+          received_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      inbox_channel_occurrences: {
+        Row: {
+          account_id: string
+          actor_id: string | null
+          assigned_to: string | null
+          channel: string
+          conversation_id: string
+          envelope_id: string
+          event_key: string
+          id: string
+          inbound_id: string | null
+          message_id: string | null
+          occurred_at: string
+          occurrence_key: string
+          previous_status: string | null
+          received_at: string
+          status: string | null
+          workspace_id: string
+        }
+        Insert: {
+          account_id: string
+          actor_id?: string | null
+          assigned_to?: string | null
+          channel: string
+          conversation_id: string
+          envelope_id: string
+          event_key: string
+          id?: string
+          inbound_id?: string | null
+          message_id?: string | null
+          occurred_at: string
+          occurrence_key: string
+          previous_status?: string | null
+          received_at?: string
+          status?: string | null
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string
+          actor_id?: string | null
+          assigned_to?: string | null
+          channel?: string
+          conversation_id?: string
+          envelope_id?: string
+          event_key?: string
+          id?: string
+          inbound_id?: string | null
+          message_id?: string | null
+          occurred_at?: string
+          occurrence_key?: string
+          previous_status?: string | null
+          received_at?: string
+          status?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      inbox_response_receipts: {
+        Row: {
+          account_id: string
+          actor_id: string | null
+          body_hash: string
+          channel: string
+          confirmed_at: string
+          conversation_id: string
+          id: string
+          inbound_id: string | null
+          message_id: string
+          origin: string
+          provider_id: string
+          source_id: string
+          transport_payload: Json | null
+          transport_state: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id: string
+          actor_id?: string | null
+          body_hash: string
+          channel: string
+          confirmed_at?: string
+          conversation_id: string
+          id?: string
+          inbound_id?: string | null
+          message_id: string
+          origin: string
+          provider_id: string
+          source_id: string
+          transport_payload?: Json | null
+          transport_state?: string
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string
+          actor_id?: string | null
+          body_hash?: string
+          channel?: string
+          confirmed_at?: string
+          conversation_id?: string
+          id?: string
+          inbound_id?: string | null
+          message_id?: string
+          origin?: string
+          provider_id?: string
+          source_id?: string
+          transport_payload?: Json | null
+          transport_state?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      inbox_transition_receipts: {
+        Row: {
+          account_id: string
+          actor_id: string
+          channel: string
+          conversation_id: string
+          id: string
+          kind: string
+          next_value: string | null
+          occurred_at: string
+          previous_value: string | null
+          workspace_id: string
+        }
+        Insert: {
+          account_id: string
+          actor_id: string
+          channel: string
+          conversation_id: string
+          id?: string
+          kind: string
+          next_value?: string | null
+          occurred_at?: string
+          previous_value?: string | null
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string
+          actor_id?: string
+          channel?: string
+          conversation_id?: string
+          id?: string
+          kind?: string
+          next_value?: string | null
+          occurred_at?: string
+          previous_value?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      inbox_unipile_envelopes: {
+        Row: {
+          account_id: string
+          body_hash: string
+          chat_id: string
+          envelope_hash: string
+          occurred_at: string | null
+          provenance: string
+          provider_id: string
+          received_at: string
+          self_sent: boolean
+          sender_id: string
+        }
+        Insert: {
+          account_id: string
+          body_hash: string
+          chat_id: string
+          envelope_hash: string
+          occurred_at?: string | null
+          provenance: string
+          provider_id: string
+          received_at?: string
+          self_sent: boolean
+          sender_id: string
+        }
+        Update: {
+          account_id?: string
+          body_hash?: string
+          chat_id?: string
+          envelope_hash?: string
+          occurred_at?: string | null
+          provenance?: string
+          provider_id?: string
+          received_at?: string
+          self_sent?: boolean
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbox_unipile_envelopes_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "unipile_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inbox_widget_receipts: {
+        Row: {
+          body_hash: string
+          message_id: string
+          received_at: string
+          request_id: string
+          session_id: string
+          visitor_hash: string
+        }
+        Insert: {
+          body_hash: string
+          message_id: string
+          received_at?: string
+          request_id: string
+          session_id: string
+          visitor_hash: string
+        }
+        Update: {
+          body_hash?: string
+          message_id?: string
+          received_at?: string
+          request_id?: string
+          session_id?: string
+          visitor_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbox_widget_receipts_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: true
+            referencedRelation: "live_chat_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbox_widget_receipts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inbox_workflow_activations: {
+        Row: {
+          activated_at: string
+          workflow_id: string
+          workflow_version: number
+          workspace_id: string
+        }
+        Insert: {
+          activated_at: string
+          workflow_id: string
+          workflow_version: number
+          workspace_id: string
+        }
+        Update: {
+          activated_at?: string
+          workflow_id?: string
+          workflow_version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbox_workflow_activations_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: true
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integrations: {
         Row: {
           config: Json
@@ -17649,6 +18082,7 @@ export type Database = {
           created_at: string
           direction: string
           id: string
+          inbox_chat_request: string | null
           owner_id: string
           session_id: string
           workspace_id: string
@@ -17661,6 +18095,7 @@ export type Database = {
           created_at?: string
           direction: string
           id?: string
+          inbox_chat_request?: string | null
           owner_id: string
           session_id: string
           workspace_id: string
@@ -17673,6 +18108,7 @@ export type Database = {
           created_at?: string
           direction?: string
           id?: string
+          inbox_chat_request?: string | null
           owner_id?: string
           session_id?: string
           workspace_id?: string
@@ -32817,6 +33253,7 @@ export type Database = {
           account_id: string
           created_at: string
           id: string
+          inbox_request: Json | null
           lease_token: string
           request_key: string
           response: Json | null
@@ -32827,6 +33264,7 @@ export type Database = {
           account_id: string
           created_at?: string
           id?: string
+          inbox_request?: Json | null
           lease_token?: string
           request_key: string
           response?: Json | null
@@ -32837,6 +33275,7 @@ export type Database = {
           account_id?: string
           created_at?: string
           id?: string
+          inbox_request?: Json | null
           lease_token?: string
           request_key?: string
           response?: Json | null
@@ -37998,6 +38437,67 @@ export type Database = {
         Args: { _entity: string; _limit?: number; _q: string }
         Returns: string[]
       }
+      gmail_sync_claim: {
+        Args: { p_account: string; p_token: string; p_workspace: string }
+        Returns: {
+          account_id: string
+          attempts: number
+          completed_at: string | null
+          discovered_at: string
+          history_from: string | null
+          history_to: string
+          id: string
+          lease_token: string | null
+          lease_until: string | null
+          message_id: string | null
+          outcome: string | null
+          preexisting: boolean
+          provenance: string
+          provider_message_id: string
+          state: string
+          workspace_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "gmail_sync_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      gmail_sync_enqueue: {
+        Args: {
+          p_account: string
+          p_expected_history: string
+          p_ids: Json
+          p_next_history: string
+          p_provenance: string
+          p_workspace: string
+        }
+        Returns: number
+      }
+      gmail_sync_finish: {
+        Args: {
+          p_account: string
+          p_id: string
+          p_outcome: string
+          p_token: string
+          p_workspace: string
+        }
+        Returns: boolean
+      }
+      gmail_sync_queue_authorize: {
+        Args: { p_account: string; p_workspace: string }
+        Returns: undefined
+      }
+      gmail_sync_retry: {
+        Args: {
+          p_account: string
+          p_id: string
+          p_token: string
+          p_workspace: string
+        }
+        Returns: boolean
+      }
       has_entitlement: {
         Args: { _key: string; _workspace: string }
         Returns: boolean
@@ -39234,6 +39734,44 @@ export type Database = {
         Args: { p_assignee: string; p_channel: string; p_id: string }
         Returns: boolean
       }
+      inbox_chat_outbound_commit: {
+        Args: {
+          p_actor: string
+          p_body: string
+          p_request: string
+          p_session: string
+          p_workspace: string
+        }
+        Returns: string
+      }
+      inbox_gmail_recovery_claim: {
+        Args: {
+          p_account: string
+          p_limit?: number
+          p_token: string
+          p_workspace: string
+        }
+        Returns: {
+          receipt_id: string
+        }[]
+      }
+      inbox_gmail_recovery_known: {
+        Args: { p_account: string; p_provider: string; p_workspace: string }
+        Returns: boolean
+      }
+      inbox_gmail_recovery_project: {
+        Args: {
+          p_account: string
+          p_receipt: string
+          p_token: string
+          p_workspace: string
+        }
+        Returns: boolean
+      }
+      inbox_gmail_recovery_status: {
+        Args: { p_account: string; p_receipt: string; p_workspace: string }
+        Returns: Json
+      }
       inbox_phone_digits: { Args: { _value: string }; Returns: string }
       increment_snippet_usage: { Args: { _id: string }; Returns: undefined }
       increment_wat_usage: { Args: { _id: string }; Returns: undefined }
@@ -39340,6 +39878,10 @@ export type Database = {
         Returns: Json
       }
       notification_business_event_check: {
+        Args: { p_event: string; p_version: number; p_workflow: string }
+        Returns: boolean
+      }
+      notification_business_event_check_before_inbox_channels: {
         Args: { p_event: string; p_version: number; p_workflow: string }
         Returns: boolean
       }
@@ -42275,6 +42817,20 @@ export type Database = {
         }
         Returns: Json
       }
+      unipile_signed_inbound_commit: {
+        Args: {
+          p_account: string
+          p_body: string
+          p_chat: string
+          p_envelope_hash: string
+          p_live: boolean
+          p_message: string
+          p_occurred: string
+          p_self: boolean
+          p_sender: string
+        }
+        Returns: Json
+      }
       unipile_usage_snapshot: { Args: { p_account: string }; Returns: Json }
       user_can_act: {
         Args: {
@@ -42402,6 +42958,15 @@ export type Database = {
           p_workspace: string
         }
         Returns: string[]
+      }
+      widget_inbound_commit: {
+        Args: {
+          p_body: string
+          p_request: string
+          p_session: string
+          p_visitor: string
+        }
+        Returns: string
       }
       wk_head_rh_permission: {
         Args: { _key: string; _workspace: string }
@@ -42579,6 +43144,27 @@ export type Database = {
           p_status: string
         }
         Returns: undefined
+      }
+      workflow_inbox_account_visible: {
+        Args: { p_account: string; p_channel: string; p_workspace: string }
+        Returns: boolean
+      }
+      workflow_inbox_conversation_visible: {
+        Args: {
+          p_account: string
+          p_channel: string
+          p_conversation: string
+          p_workspace: string
+        }
+        Returns: boolean
+      }
+      workflow_inbox_email_connection_visible: {
+        Args: { p_account: string; p_conversation: string; p_workspace: string }
+        Returns: boolean
+      }
+      workflow_inbox_sources: {
+        Args: { p_channel: string; p_workspace: string }
+        Returns: Json
       }
       workspace_for_user: { Args: { _user: string }; Returns: string }
       workspace_member_by_email: {

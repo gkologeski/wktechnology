@@ -33,7 +33,7 @@ describe("workspace notification preference overlays", () => {
     expect(effectiveChannels(base(), loaded, "mention")).toEqual(base().mention);
     expect(diffCenterSettings(loaded, structuredClone(loaded))).toEqual({});
   });
-  it("preserves the legacy aliases and order and exposes twenty-four operational choices including WhatsApp", () => {
+  it("preserves the legacy aliases and existing operational order while adding thirteen explicit Inbox choices", () => {
     const legacyKeys = [
       "legacy.mention",
       "legacy.assignment",
@@ -84,10 +84,25 @@ describe("workspace notification preference overlays", () => {
       "projects.milestone.due",
       "shared.message.received",
     ];
+    const inboxKeys = [
+      "shared.email.message_received",
+      "shared.email.conversation_created",
+      "shared.email.conversation_assigned",
+      "shared.email.first_response",
+      "shared.chat.message_received",
+      "shared.chat.conversation_created",
+      "shared.chat.conversation_assigned",
+      "shared.chat.conversation_status_changed",
+      "shared.chat.first_response",
+      "shared.linkedin.message_received",
+      "shared.linkedin.conversation_created",
+      "shared.linkedin.conversation_status_changed",
+      "shared.linkedin.first_response",
+    ];
     expect(LEGACY_NOTIFICATION_EVENTS.map((event) => event.eventKey)).toEqual(legacyKeys);
     const availableKeys = AVAILABLE_NOTIFICATION_EVENTS.map((event) => event.eventKey);
-    expect(availableKeys).toEqual([...legacyKeys, ...operationalKeys]);
-    expect(availableKeys).toHaveLength(46);
+    expect(availableKeys).toEqual([...legacyKeys, ...operationalKeys, ...inboxKeys]);
+    expect(availableKeys).toHaveLength(59);
     expect(
       AVAILABLE_NOTIFICATION_EVENTS.find((event) => event.eventKey === "shared.message.received"),
     ).toMatchObject({

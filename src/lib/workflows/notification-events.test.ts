@@ -28,11 +28,11 @@ const workflow = {
 };
 
 describe("explicit business notification selectors", () => {
-  it("preserves the twenty-three existing events and adds the WhatsApp reception event", () => {
+  it("preserves all twenty-four events in order and appends the thirteen supported Inbox events", () => {
     expect(WORKFLOW_NOTIFICATION_EVENTS.map(({ key }) => key)).toEqual([
       ...WORKFLOW_NOTIFICATION_EVENT_KEYS,
     ]);
-    expect(WORKFLOW_NOTIFICATION_EVENTS).toHaveLength(24);
+    expect(WORKFLOW_NOTIFICATION_EVENTS).toHaveLength(37);
     expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(0, 8)).toEqual([
       "crm.deal.won",
       "crm.deal.lost",
@@ -57,6 +57,29 @@ describe("explicit business notification selectors", () => {
       "people.document.expiring",
       "people.approval.pending",
     ]);
+    expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(18, 24)).toEqual([
+      "finance.payable.due",
+      "finance.receivable.due",
+      "finance.payable.overdue",
+      "finance.receivable.overdue",
+      "finance.invoice.received",
+      "shared.message.received",
+    ]);
+    expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(24)).toEqual([
+      "shared.email.message_received",
+      "shared.email.conversation_created",
+      "shared.email.conversation_assigned",
+      "shared.email.first_response",
+      "shared.chat.message_received",
+      "shared.chat.conversation_created",
+      "shared.chat.conversation_assigned",
+      "shared.chat.conversation_status_changed",
+      "shared.chat.first_response",
+      "shared.linkedin.message_received",
+      "shared.linkedin.conversation_created",
+      "shared.linkedin.conversation_status_changed",
+      "shared.linkedin.first_response",
+    ]);
     expect(getWorkflowNotificationEvent("crm.quote.accepted")).toBeNull();
     expect(getWorkflowNotificationEvent("constructor")).toBeNull();
     expect(getWorkflowNotificationEvent("shared.approval.pending")).toBeNull();
@@ -73,7 +96,7 @@ describe("explicit business notification selectors", () => {
     expect(active.map(({ eventKey }) => eventKey).sort()).toEqual(
       [...WORKFLOW_NOTIFICATION_EVENT_KEYS].sort(),
     );
-    const expectedSources = {
+    const expectedSources: Record<string, string> = {
       "crm.deal.won": "deals",
       "crm.deal.lost": "deals",
       "crm.deal.stage_changed": "deals",
@@ -98,6 +121,19 @@ describe("explicit business notification selectors", () => {
       "finance.receivable.overdue": "financial_entries",
       "finance.invoice.received": "hiring_fiscal_documents",
       "shared.message.received": "whatsapp_messages",
+      "shared.email.message_received": "inbox_channel_occurrences",
+      "shared.email.conversation_created": "inbox_channel_occurrences",
+      "shared.email.conversation_assigned": "inbox_channel_occurrences",
+      "shared.email.first_response": "inbox_channel_occurrences",
+      "shared.chat.message_received": "inbox_channel_occurrences",
+      "shared.chat.conversation_created": "inbox_channel_occurrences",
+      "shared.chat.conversation_assigned": "inbox_channel_occurrences",
+      "shared.chat.conversation_status_changed": "inbox_channel_occurrences",
+      "shared.chat.first_response": "inbox_channel_occurrences",
+      "shared.linkedin.message_received": "inbox_channel_occurrences",
+      "shared.linkedin.conversation_created": "inbox_channel_occurrences",
+      "shared.linkedin.conversation_status_changed": "inbox_channel_occurrences",
+      "shared.linkedin.first_response": "inbox_channel_occurrences",
     };
     for (const definition of WORKFLOW_NOTIFICATION_EVENTS) {
       expect(active.find(({ eventKey }) => eventKey === definition.key)).toMatchObject({
@@ -107,7 +143,7 @@ describe("explicit business notification selectors", () => {
       });
       expect(definition.entity).toBe(expectedSources[definition.key]);
       expect(definition.moduleKey).toBe(
-        definition.key === "shared.message.received" ? "crm" : definition.key.split(".")[0],
+        definition.key.startsWith("shared.") ? "crm" : definition.key.split(".")[0],
       );
       expect(definition.deadline).toBe(definition.scheduling === "before_due");
     }
@@ -136,7 +172,15 @@ describe("explicit business notification selectors", () => {
                   phone_number_id: "123456",
                 },
               }
-            : {}),
+            : event.entity === "inbox_channel_occurrences"
+              ? {
+                  after: {
+                    channel: event.key.split(".")[1],
+                    account_id: "bbbbbbbb-1111-4111-8111-111111111111",
+                    event_key: event.key,
+                  },
+                }
+              : {}),
         }),
       ).toBe(true);
     },

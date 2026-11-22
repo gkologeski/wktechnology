@@ -492,11 +492,13 @@ function WorkflowsPage() {
                     >
                       <TestTube2 className="h-3.5 w-3.5 mr-1" /> Testar
                     </Button>
-                    {canManage && row.published_version > 0 && (
-                      <Button size="sm" variant="ghost" onClick={() => handleBulk(row)}>
-                        <Users className="h-3.5 w-3.5 mr-1" /> Aplicar existentes
-                      </Button>
-                    )}
+                    {canManage &&
+                      row.published_version > 0 &&
+                      row.entity !== "inbox_channel_occurrences" && (
+                        <Button size="sm" variant="ghost" onClick={() => handleBulk(row)}>
+                          <Users className="h-3.5 w-3.5 mr-1" /> Aplicar existentes
+                        </Button>
+                      )}
                     <Button
                       variant="ghost"
                       size="icon"

@@ -8,7 +8,7 @@ route_pattern: /settings/workflows
 min_permission: system.workflows.manage.workspace
 audience: internal
 sort_order: 413
-version: 13
+version: 14
 is_published: true
 ---
 
@@ -136,7 +136,6 @@ O seletor **Evento da nova regra** também agrupa as cinco opções de **TechFin
 
 As condições e variáveis dos cinco eventos oferecem somente identificadores, estados e datas públicos dessa ocorrência. Valores, saldo, notas, CNPJ, dados bancários, arquivos e associações privadas não são oferecidos. A biblioteca omite as mutações genéricas de origem/tabelas financeiras; um rascunho incompatível é preservado e exige revisão antes de salvar. Workflows genéricos antigos mantêm suas opções anteriores. Nada é publicado ou ativado pela seleção e nenhuma baixa, emissão ou conciliação decorre da leitura do aviso.
 
-
 ## Resumo e acompanhamento de um passo de notificação
 
 Em **Enviar notificação → Canais de aviso**, a **Prioridade da comunicação** sem escolha explícita continua **Normal**; abrir o editor não reescreve passos antigos. **Baixa** permite que somente o envio externo inicial de um evento canônico elegível entre no resumo, quando o próprio destinatário tiver aderido ao canal neste workspace e a política permitir. A central continua imediata. A aprovação de solicitação profissional não é agrupada. O resumo não tem fallback automático e não exporta contagens ou conteúdo das origens.
@@ -149,9 +148,14 @@ Cada acompanhamento exige que o aviso original exista e permaneça não lido, e 
 
 A conferência da regra explica a configuração sem procurar destinatários nem executar mensagens. O histórico protegido diferencia **Aviso inicial**, **Resumo pessoal**, **Lembrete** e **Escalonamento**, quando essa prova estiver disponível.
 
-
 ## Conferir a configuração publicada para um piloto
 
 Na central, **Modelos e canais → Conferir preparo publicado** usa somente a versão publicada. **Rascunhos fora da conferência; compare no editor.** Ela é diferente de **Conferir configuração sem enviar**, que pode examinar o rascunho. Nenhuma das duas executa o Workflow, comprova destinatários ou registra aceite de produção.
 
 Inventarie todas as regras e entregas pendentes antes de habilitar uma política compartilhada; a tela não cria isolamento ou allowlist de piloto. Revise os outros passos do Workflow e planeje a pausa com suas alçadas. Desligar WhatsApp pode manter um fallback de e-mail explícito, e as políticas da central não pausam todas as outras ações. Efeitos já executados e mensagens aceitas não são recolhidos. O roteiro está em [Conferir preparo e planejar um piloto](/ajuda/core/conferir-preparo-de-notificacoes).
+
+## Eventos de atendimento da Inbox
+
+Em **Atendimento**, os eventos de e-mail Gmail, chat do site e LinkedIn identificam o canal no nome. Use **Contas de recebimento** para limitar as origens. Uma seleção indisponível permanece para revisão e só é removida por escolha explícita. A conta de recebimento não define o remetente de um aviso externo.
+
+As regras WhatsApp existentes continuam específicas de WhatsApp. Carga inicial, histórico recuperado, mensagens enviadas e recibos não viram novos recebimentos. A origem de atendimento é somente leitura; responsável e demais destinatários exigem acesso atual à conversa. Veja os eventos suportados e o passo a passo em [Automatizar atendimentos por e-mail, chat e LinkedIn](/ajuda/crm/automatizar-atendimentos-inbox).

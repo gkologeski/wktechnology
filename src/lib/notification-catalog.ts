@@ -1,3 +1,5 @@
+import { INBOX_CHANNEL_EVENT_DEFINITIONS } from "./workflows/inbox-channel-events";
+
 // Shared metadata only. Registration never emits an event, grants access or enables a channel.
 export const NOTIFICATION_CATEGORIES = [
   {
@@ -153,6 +155,9 @@ export const NOTIFICATION_EVENT_CATALOG = [
   planned("shared.approval.pending", "Aprovação pendente", "approval", null),
   planned("shared.sla.breached", "SLA excedido", "sla", null),
   active("shared.message.received", "Mensagem de WhatsApp recebida", "message", "crm"),
+  ...INBOX_CHANNEL_EVENT_DEFINITIONS.map(({ key, label, moduleKey }) =>
+    active(key, label, "message", moduleKey),
+  ),
   planned("shared.mention.created", "Menção recebida", "mention", null),
 ] as const satisfies readonly EventDefinition[];
 
