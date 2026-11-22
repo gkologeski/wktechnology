@@ -19,6 +19,7 @@ export const originLabels = {
 export function preparationOriginProblems(form: PreparationData, origins: PreparationOrigin[]) {
   const issues: string[] = [];
   if (form.purpose !== "client") return issues;
+  const dealSet = form.deal_id ? [form.deal_id, ...form.additional_deal_ids] : [];
   for (const origin of origins) {
     const label = `${originLabels[origin.source]} “${origin.title}”`;
     if (origin.legal_entity_id && origin.active !== true)
@@ -29,13 +30,17 @@ export function preparationOriginProblems(form: PreparationData, origins: Prepar
       issues.push(
         `${label} usa ${origin.legal_entity_name ?? "uma entidade legal indisponível"}${origin.cnpj ? ` (CNPJ ${origin.cnpj})` : " (CNPJ não informado)"}. A solicitação deve usar a mesma entidade legal ativa.`,
       );
-    if (origin.source === "commercial_contract" && form.deal_id && origin.deal_id !== form.deal_id)
+    if (
+      origin.source === "commercial_contract" &&
+      form.deal_id &&
+      !dealSet.includes(origin.deal_id ?? "")
+    )
       issues.push(
-        "O contrato comercial não está vinculado ao negócio escolhido. Use uma única origem comercial ou confira os vínculos nos cadastros.",
+        "O contrato comercial não está vinculado a nenhum dos negócios escolhidos. Use uma única origem comercial ou confira os vínculos nos cadastros.",
       );
-    if (origin.source === "project" && form.deal_id && origin.deal_id !== form.deal_id)
+    if (origin.source === "project" && form.deal_id && !dealSet.includes(origin.deal_id ?? ""))
       issues.push(
-        "O projeto não está vinculado ao negócio escolhido. Confira o cadastro do projeto ou remova esse vínculo da solicitação.",
+        "O projeto não está vinculado a nenhum dos negócios escolhidos. Confira o cadastro do projeto ou remova esse vínculo da solicitação.",
       );
     if (
       origin.source === "project" &&

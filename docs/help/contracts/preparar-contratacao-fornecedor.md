@@ -8,7 +8,7 @@ route_pattern: /contracts/supplier-requests
 min_permission: techcontracts.supplier_requests.view.workspace
 audience: internal
 sort_order: 36
-version: 16
+version: 17
 is_published: true
 ---
 
@@ -49,6 +49,17 @@ Se não existir e você tiver permissão, use **Criar** no próprio campo. O for
 ## Conferir a origem antes de salvar
 
 **Atendimento a cliente** descreve o destino do serviço contratado, não quem fornece. Escolha um negócio **ou** contrato comercial de origem; não é necessário selecionar ambos. Projeto é complementar e precisa ter vínculos canônicos compatíveis.
+
+### Vários negócios atendidos pelo mesmo fornecedor
+
+Quando o mesmo fornecedor atende mais de um negócio do cliente (por exemplo, complementos de horas de um mesmo projeto), escolha primeiro o **Negócio principal** e use **Adicionar outro negócio atendido** para incluir os demais (até 20). Para retirar um negócio, limpe o campo correspondente. Regras conferidas no servidor:
+
+- só com a finalidade **Atendimento a cliente**;
+- todos precisam estar no mesmo workspace, ativos, visíveis ao seu usuário e com a mesma entidade WK da solicitação;
+- sem repetição; retirar o negócio principal remove também os adicionais;
+- o projeto e o contrato comercial precisam pertencer a **algum** dos negócios escolhidos.
+
+Os negócios adicionais seguem as mesmas permissões da solicitação (`techcontracts.supplier_requests.update.workspace` para alterar) e qualquer alteração salva gera nova revisão, invalidando aprovações anteriores. Não há rateio de valor entre negócios.
 
 O resumo mostra **Conferência da origem** com nome, entidade WK e CNPJ dos registros acessíveis. Divergências bloqueiam o salvamento e indicam o cadastro a conferir. **Usar entidade desta origem** só preenche a solicitação local; não altera negócio, projeto ou contrato. Entidade inativa não pode ser reaproveitada. Não mude para Uso interno apenas para contornar uma divergência real.
 

@@ -3200,6 +3200,20 @@
       "when": 1795373242882,
       "tag": "0456_proposal_template_contract_model",
       "breakpoints": true
+    },
+    {
+      "idx": 457,
+      "version": "7",
+      "when": 1795388262703,
+      "tag": "0457_hiring_request_additional_deals",
+      "breakpoints": true
+    },
+    {
+      "idx": 458,
+      "version": "7",
+      "when": 1795388522078,
+      "tag": "0458_hiring_request_additional_deals_apply",
+      "breakpoints": true
     }
   ]
 }

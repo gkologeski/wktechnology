@@ -14,6 +14,10 @@ export const preparationData = z
     company_id: optionalId,
     contact_id: optionalId,
     deal_id: optionalId,
+    additional_deal_ids: z
+      .array(z.string().uuid())
+      .max(20, "Até 20 negócios adicionais.")
+      .default([]),
     project_id: optionalId,
     commercial_contract_id: optionalId,
     status: z.enum(["draft", "ready", "cancelled"]),
@@ -60,6 +64,7 @@ export const emptyPreparation = (kind: RequestKind): PreparationData => ({
   company_id: null,
   contact_id: null,
   deal_id: null,
+  additional_deal_ids: [],
   project_id: null,
   commercial_contract_id: null,
   status: "draft",

@@ -10907,7 +10907,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion.",
       "files": {
-        "src/integrations/supabase/types.ts": "3c6cca8d0bfdce54093dd5825d6eb6d09c148f2e2aa5fa66d0a612f5d107cba4",
+        "src/integrations/supabase/types.ts": "65d1e6557ba4089316482c1d8e4c28f2a4d0d3abbe5f36ce92f69956f082e8ec",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -14658,7 +14658,7 @@
       "id": "preparation-static-types",
       "kind": "presentation",
       "files": {
-        "src/lib/hiring/requests/types.ts": "7adaae5dc3bea27b86e839f3da547ffd25c3dd6b8f479fad5fe86d32bd420820"
+        "src/lib/hiring/requests/types.ts": "d8a9bd0674ee93b23b64077b070ce00b69285635bc1747aceed23d0430db53db"
       },
       "resources": [],
       "permission_keys": [],
@@ -14670,7 +14670,7 @@
       "files": {
         "src/lib/hiring/requests/boundary.server.ts": "01651465f3a5a8f1247503a339be71165711bbf524c8a1b27367add434efed9a",
         "src/lib/hiring/requests/requests.functions.ts": "87dadcaed69095a517d68180cb853f8f12e9dc207599483cb22b863494627be1",
-        "src/lib/hiring/requests/preparation-screen.tsx": "749d7b1e38dff63c45a6fec4bfd4daeaf4e960de13d9acd676dc2f80a5c79e89",
+        "src/lib/hiring/requests/preparation-screen.tsx": "c122cf2042bdd5b6e459b8117bac7c9ec4c22f6554c6eed883c6770b14bd5dcc",
         "src/routes/_authenticated/people.hiring-requests.tsx": "e91b9a960b28ff92bdf00ec6189ff73691e54798d085a5824e660bc83b6c29f4",
         "src/routes/_authenticated/contracts.supplier-requests.tsx": "b90b06e48278d50c17259ffe2909e32ae360d7f80ff103c2ec62bbf73f91bb62",
         "drizzle/migrations/0373_hiring_requests.sql": "3f053b577dd7b4047fc5f596a0248026def9d60d112b040d93c5a8587014b267",
@@ -15237,7 +15237,7 @@
         "review_by": "2027-02-18"
       },
       "files": {
-        "src/components/hiring-requests/preparation-form.tsx": "bfc324f06a97daa1c428c4dd25dd407e562b68d7214ff3bca2d7d9aaf0d687e4",
+        "src/components/hiring-requests/preparation-form.tsx": "b22765ccd83052ff3c7336d78d1d397888213e665fb121bbb315d68f68380894",
         "src/components/ui/search-create-field.tsx": "005c7d9d180cab8d3a90115e0d4a37ac8e1174bc5c9f1ac0cd037cacad6d83bf"
       }
     },
@@ -16853,7 +16853,16 @@
       "kind": "presentation",
       "rationale": "Pure labels and immutable local form projection; no queries, mutations, permissions or origin validation decisions. Switching purpose clears commercial IDs and incompatible final-client acceptance only in the unsaved form. Existing save RPC remains authoritative for grants and CNPJ/origin validation.",
       "files": {
-        "src/lib/hiring/requests/purpose-presentation.ts": "a541fa0e7a4e77eba25540c05f17207e29ed5fd0555b2ea8ad02831911bc32bb"
+        "src/lib/hiring/requests/purpose-presentation.ts": "2f378632049763e33b6af764413ddab5cbec97caa973ac574c0372148e4487c2"
+      }
+    },
+    {
+      "id": "preparation-additional-deals-local-projection",
+      "kind": "presentation",
+      "rationale": "Pure callback-based picker list and immutable local form projection for additional deals; no queries, mutations, permissions or origin decisions. The bounded picker comes from PreparationScreen; the existing save RPC and validation trigger remain authoritative for workspace, visibility, legal entity, duplicates and limits.",
+      "files": {
+        "src/components/hiring-requests/preparation-additional-deals.tsx": "a9712fb21333c5fb9e4f2babf538d98f339206eb4cc8bd32f3d1e63142fcc00a",
+        "src/lib/hiring/requests/additional-deals.ts": "f3d35e53896137c0df8b805a6aa010dd9238abbb7589d4dad025c3c1a6dcca36"
       }
     },
     {
@@ -16968,8 +16977,10 @@
       "kind": "business",
       "files": {
         "drizzle/migrations/0390_hiring_origin_context.sql": "cdcb1ba0cabf2c4727768bc5a171e890767c2fe4564b3d9bb11c445cca8db515",
-        "src/lib/hiring/requests/origin.functions.ts": "2bb0e5203e79947582c1477543ed198d3dd25ed86fe608a1d3294198ab1ff1c0",
-        "src/components/hiring-requests/preparation-origin-notice.tsx": "9deee19f9cc09a303e687468dbf975b81a8b703c0b16fc626c8f73cb0a3b8eb6"
+        "src/lib/hiring/requests/origin.functions.ts": "e35aea752c373c48e562c0b142d1843288cce208db4e514e088e6cef9aaebfce",
+        "src/components/hiring-requests/preparation-origin-notice.tsx": "33efd1277792e17fd346c4872afcfa90822294015b7e4ff16fe575800b8b792e",
+        "drizzle/migrations/0457_hiring_request_additional_deals.sql": "7ff82860572efc561529f5cecc6a5d400383f9afa55d51c0eceafefee2e45592",
+        "drizzle/migrations/0458_hiring_request_additional_deals_apply.sql": "d8e31992be5bd440d328ef0de24173fe5b1f3ff0a387d96f098747f8164854ba"
       },
       "resources": [
         "techpeople.hiring_requests",
@@ -17003,7 +17014,7 @@
         "techcontracts.supplier_requests.approval_request.create.workspace",
         "techcontracts.supplier_requests.approval.approve.workspace"
       ],
-      "rationale": "Bounded authenticated origin preview; dedicated non-BYPASSRLS owner checks active workspace and preparation view before canonical user RLS. No private financial data, mutation or automatic legal entity repair. UI blocks inconsistent draft and offers explicit local selection; authoritative save validation remains unchanged.",
+      "rationale": "Bounded authenticated origin preview; dedicated non-BYPASSRLS owner checks active workspace and preparation view before canonical user RLS. No private financial data, mutation or automatic legal entity repair. UI blocks inconsistent draft and offers explicit local selection; authoritative save validation remains unchanged. Additional deals served by one request reuse the same preparation save RPC and validation trigger: same workspace, caller-visible, active, same WK entity, client purpose only.",
       "controls": [
         {
           "file": "src/lib/hiring/requests/boundary.server.ts",
@@ -17070,6 +17081,14 @@
         {
           "file": "drizzle/migrations/0390_hiring_origin_context.sql",
           "symbol": "hiring_preparation_origin_context"
+        },
+        {
+          "file": "drizzle/migrations/0458_hiring_request_additional_deals_apply.sql",
+          "symbol": "hiring_preparation_save"
+        },
+        {
+          "file": "drizzle/migrations/0458_hiring_request_additional_deals_apply.sql",
+          "symbol": "hiring_preparation_validate"
         }
       ],
       "tests": {
@@ -17102,7 +17121,7 @@
       "permission_keys": [],
       "rationale": "Pure DTO and local validation messages; no data access.",
       "files": {
-        "src/lib/hiring/requests/origin-presentation.ts": "28d1cf24b3a582ce30d671c38e2be7d20c47af98a7e3475a7bd7e9d0e1782fc7"
+        "src/lib/hiring/requests/origin-presentation.ts": "6176eb754979429ec9199a235b4ce8b7dab2b4002c74e57b7afe5067cf1d447f"
       }
     },
     {

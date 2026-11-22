@@ -65,3 +65,18 @@ it("internal purpose does not inherit client-only comparison rules", () => {
     ),
   ).toEqual([]);
 });
+
+it("project linked to an additional deal is accepted; unrelated project is flagged", () => {
+  const base = {
+    ...emptyPreparation("supplier"),
+    purpose: "client" as const,
+    legal_entity_id: "entity",
+    deal_id: "main",
+    project_id: "project",
+  };
+  const project = source({ source: "project", id: "project", deal_id: "extra", contract_id: null });
+  expect(preparationOriginProblems({ ...base, additional_deal_ids: ["extra"] }, [project])).toEqual(
+    [],
+  );
+  expect(preparationOriginProblems(base, [project]).join(" ")).toContain("nenhum dos negócios");
+});

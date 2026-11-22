@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       ab_test_events: {
@@ -16129,6 +16124,7 @@ export type Database = {
       }
       hiring_preparation_requests: {
         Row: {
+          additional_deal_ids: string[]
           area_id: string | null
           commercial_contract_id: string | null
           company_id: string | null
@@ -16154,6 +16150,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          additional_deal_ids?: string[]
           area_id?: string | null
           commercial_contract_id?: string | null
           company_id?: string | null
@@ -16179,6 +16176,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          additional_deal_ids?: string[]
           area_id?: string | null
           commercial_contract_id?: string | null
           company_id?: string | null
@@ -38911,6 +38909,7 @@ export type Database = {
       hiring_econ_actor: {
         Args: { act: string; i: string; w: string; write: boolean }
         Returns: {
+          additional_deal_ids: string[]
           area_id: string | null
           commercial_contract_id: string | null
           company_id: string | null
@@ -39375,6 +39374,7 @@ export type Database = {
       hiring_ops_actor: {
         Args: { act: string; i: string; w: string; write: boolean }
         Returns: {
+          additional_deal_ids: string[]
           area_id: string | null
           commercial_contract_id: string | null
           company_id: string | null
@@ -39419,6 +39419,7 @@ export type Database = {
       hiring_pay_actor: {
         Args: { act: string; i: string; w: string; write: boolean }
         Returns: {
+          additional_deal_ids: string[]
           area_id: string | null
           commercial_contract_id: string | null
           company_id: string | null
@@ -43767,3 +43768,4 @@ export const Constants = {
     },
   },
 } as const
+

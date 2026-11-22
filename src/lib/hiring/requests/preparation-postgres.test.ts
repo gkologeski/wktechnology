@@ -216,6 +216,9 @@ beforeAll(async () => {
   );
   await db.unsafe("ALTER TABLE legal_entities ADD COLUMN cnpj text");
   await db.unsafe(readFileSync("drizzle/migrations/0390_hiring_origin_context.sql", "utf8"));
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0458_hiring_request_additional_deals_apply.sql", "utf8"),
+  );
   // Open both sessions before deadlines; concurrency cases still run real overlapping RPCs.
   const connections = await Promise.all([db.reserve(), db.reserve()]);
   try {
@@ -462,6 +465,44 @@ it("preparation requires a commercial origin before ready for a client", async (
     expect(ready.status).toBe("ready");
   }
 });
+it("preparation accepts additional deals and the project may belong to any of them", async () => {
+  await reset();
+  const main = randomUUID(),
+    extra = randomUUID(),
+    foreign = randomUUID(),
+    project = randomUUID();
+  await db`insert into deals(id,workspace_id,name,legal_entity_id) values(${main},${W},'Principal',${L}),(${extra},${W},'Adicional',${L}),(${foreign},${B},'Outro workspace',${L})`;
+  await db`insert into projects(id,workspace_id,name,legal_entity_id,deal_id) values(${project},${W},'Projeto',${L},${extra})`;
+  const base = { ...form("supplier"), purpose: "client", deal_id: main, project_id: project };
+  await expect(user((tx) => save(tx, "supplier", base))).rejects.toThrow("Projeto não pertence");
+  const r = await user((tx) => save(tx, "supplier", { ...base, additional_deal_ids: [extra] }));
+  expect(r.additional_deal_ids).toEqual([extra]);
+  await expect(
+    user((tx) => save(tx, "supplier", { ...base, additional_deal_ids: [foreign] })),
+  ).rejects.toThrow("adicional indisponível");
+  await expect(
+    user((tx) => save(tx, "supplier", { ...base, additional_deal_ids: [main] })),
+  ).rejects.toThrow("repetido");
+  await expect(
+    user((tx) =>
+      save(tx, "supplier", {
+        ...form("supplier"),
+        purpose: "internal",
+        additional_deal_ids: [extra],
+      }),
+    ),
+  ).rejects.toThrow("finalidade cliente");
+  const cancelled = await user((tx) =>
+    save(
+      tx,
+      "supplier",
+      { ...base, additional_deal_ids: [extra], status: "cancelled" },
+      r.id,
+      r.revision,
+    ),
+  );
+  expect(cancelled.additional_deal_ids).toEqual([extra]);
+});
 it("preparation registers canonical permission modules and revokes writer schema creation", async () => {
   expect(
     (
@@ -598,7 +639,7 @@ it("preparation keeps exceptional supplier release conditions as draft", async (
   expect(r.status).toBe("draft");
   await expect(
     user((tx) => save(tx, "supplier", { ...data, status: "ready" }, r.id, r.revision)),
-  ).rejects.toThrow("Condição especial");
+  ).rejects.toThrow(/Condição especial|Aceite do cliente final exige/);
 });
 
 it("preparation revokes inherited default table grants from anonymous and authenticated roles", async () => {

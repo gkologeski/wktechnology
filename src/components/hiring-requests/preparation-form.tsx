@@ -11,6 +11,8 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { setPrimaryDeal } from "@/lib/hiring/requests/additional-deals";
+import { PreparationAdditionalDeals } from "./preparation-additional-deals";
 import {
   changePreparationPurpose,
   purposeLabels,
@@ -168,7 +170,13 @@ export function PreparationForm({
             {picker("project", "Projeto", value.project_id, (id) => set("project_id", id))}
             {value.purpose === "client" && (
               <>
-                {picker("deal", "Negócio", value.deal_id, (id) => set("deal_id", id))}
+                {picker(
+                  "deal",
+                  value.additional_deal_ids.length ? "Negócio principal" : "Negócio",
+                  value.deal_id,
+                  (id) => onChange(setPrimaryDeal(value, id)),
+                )}
+                <PreparationAdditionalDeals value={value} onChange={onChange} picker={picker} />
                 {picker(
                   "commercial_contract",
                   "Contrato comercial — WK fornecedora",
@@ -291,7 +299,18 @@ export function PreparationForm({
           {value.company_id && picker("company", "Empresa vinculada", value.company_id, () => {})}
           {value.contact_id && picker("contact", "Contato vinculado", value.contact_id, () => {})}
           {value.project_id && picker("project", "Projeto", value.project_id, () => {})}
-          {value.deal_id && picker("deal", "Negócio de origem", value.deal_id, () => {})}
+          {value.deal_id &&
+            picker(
+              "deal",
+              value.additional_deal_ids.length ? "Negócio principal" : "Negócio de origem",
+              value.deal_id,
+              () => {},
+            )}
+          {value.additional_deal_ids.map((dealId, index) => (
+            <div key={dealId}>
+              {picker("deal", `Negócio adicional ${index + 1}`, dealId, () => {})}
+            </div>
+          ))}
           {value.commercial_contract_id &&
             picker(
               "commercial_contract",
