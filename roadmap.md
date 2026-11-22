@@ -1,3 +1,11 @@
+# VINCULA-NEGOCIOS (M, 2–3 h)
+
+- [x] Banco: negócios adicionais na solicitação, validação e gravação (draft)
+- [x] Tela Vínculos/Revisão e conferência da origem
+- [x] Ajuda v17, contratos de permissão, testes
+- [ ] Teste visual na prévia (draft sem dados de exemplo)
+- [ ] Aceitar draft / publicar (depende de revisão do usuário)
+
 # DESCARTA-LEGADO (M, previsão 1–2 h)
 
 - [x] Auditar estados e vínculos; preservar contratos e evidências, com descarte append-only.

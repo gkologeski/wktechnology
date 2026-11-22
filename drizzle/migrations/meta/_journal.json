@@ -3204,8 +3204,22 @@
     {
       "idx": 457,
       "version": "7",
-      "when": 1795387239326,
-      "tag": "0457_inbox_occurrence_default_privileges",
+      "when": 1795388262703,
+      "tag": "0457_hiring_request_additional_deals",
+      "breakpoints": true
+    },
+    {
+      "idx": 458,
+      "version": "7",
+      "when": 1795388522078,
+      "tag": "0458_hiring_request_additional_deals_apply",
+      "breakpoints": true
+    },
+    {
+      "idx": 459,
+      "version": "7",
+      "when": 1795390118080,
+      "tag": "0459_inbox_occurrence_default_privileges",
       "breakpoints": true
     }
   ]

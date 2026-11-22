@@ -16129,6 +16129,7 @@ export type Database = {
       }
       hiring_preparation_requests: {
         Row: {
+          additional_deal_ids: string[]
           area_id: string | null
           commercial_contract_id: string | null
           company_id: string | null
@@ -16154,6 +16155,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          additional_deal_ids?: string[]
           area_id?: string | null
           commercial_contract_id?: string | null
           company_id?: string | null
@@ -16179,6 +16181,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          additional_deal_ids?: string[]
           area_id?: string | null
           commercial_contract_id?: string | null
           company_id?: string | null
@@ -38911,6 +38914,7 @@ export type Database = {
       hiring_econ_actor: {
         Args: { act: string; i: string; w: string; write: boolean }
         Returns: {
+          additional_deal_ids: string[]
           area_id: string | null
           commercial_contract_id: string | null
           company_id: string | null
@@ -39375,6 +39379,7 @@ export type Database = {
       hiring_ops_actor: {
         Args: { act: string; i: string; w: string; write: boolean }
         Returns: {
+          additional_deal_ids: string[]
           area_id: string | null
           commercial_contract_id: string | null
           company_id: string | null
@@ -39419,6 +39424,7 @@ export type Database = {
       hiring_pay_actor: {
         Args: { act: string; i: string; w: string; write: boolean }
         Returns: {
+          additional_deal_ids: string[]
           area_id: string | null
           commercial_contract_id: string | null
           company_id: string | null

@@ -12,6 +12,7 @@ export const getPreparationOrigins = createServerFn({ method: "POST" })
       kind: requestKind,
       projectId: z.string().uuid().nullable(),
       dealId: z.string().uuid().nullable(),
+      additionalDealIds: z.array(z.string().uuid()).max(20).default([]),
       contractId: z.string().uuid().nullable(),
     }),
   )
@@ -20,6 +21,7 @@ export const getPreparationOrigins = createServerFn({ method: "POST" })
     const refs: Array<[PreparationOrigin["source"], string | null]> = [
       ["project", data.projectId],
       ["deal", data.dealId],
+      ...data.additionalDealIds.map((id): [PreparationOrigin["source"], string] => ["deal", id]),
       ["commercial_contract", data.contractId],
     ];
     return Promise.all(
