@@ -3193,6 +3193,13 @@
       "when": 1795358493100,
       "tag": "0455_contract_legacy_discard_list_batch",
       "breakpoints": true
+    },
+    {
+      "idx": 456,
+      "version": "7",
+      "when": 1795373242882,
+      "tag": "0456_proposal_template_contract_model",
+      "breakpoints": true
     }
   ]
 }

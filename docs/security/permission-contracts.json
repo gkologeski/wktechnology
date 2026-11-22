@@ -24794,6 +24794,87 @@
           "name": "proposal model SQL rejects inactive membership"
         }
       }
+    },
+    {
+      "id": "contract-list-and-bulk-permission-completion",
+      "kind": "business",
+      "rationale": "Completes three previously unreviewed current-main sources before releasing reusable model configuration. All sixteen server handlers now use the canonical exact-action work permission middleware before any query; existing per-record, field, transition, linking and RLS gates remain intact. The middleware delegates to work_area_authorize, whose context validates active membership, active workspace and effective keys with deny precedence. Bulk and inline UI default to denied until useWorkCapabilities confirms each selected row; assign additionally requires can_assign, export additionally requires the export key, and discarded legacy rows cannot mutate. No grants, members, roles or business records are changed. Unit tests execute the real middleware and server handler against allowed/denied RPC responses and assert no data access on denial; existing PostgreSQL RBAC/RLS suites remain mandatory in full verify.",
+      "files": {
+        "src/lib/contracts.functions.ts": "8f6ee809fec7488d3bc3fb15be106fc2815e027aceec6d7f47e80074051ac181",
+        "src/components/contracts/contracts-bulk-bar.tsx": "f733ab87754b4a9432a06450da1f5cd8d57a495c9eebebda9f31b1bb7c56fe20",
+        "src/components/contracts/contracts-grouped-list.tsx": "32e88c99298ff76506805e4dc7f6791c7938f6f3792df9de7925ed8aff034ec6"
+      },
+      "resources": ["techcontracts.contracts", "techcontracts.links"],
+      "actions": ["view", "create", "update", "delete", "export", "assign"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techcontracts.contracts.view.own",
+        "techcontracts.contracts.view.team",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.create.own",
+        "techcontracts.contracts.create.workspace",
+        "techcontracts.contracts.update.own",
+        "techcontracts.contracts.update.team",
+        "techcontracts.contracts.update.workspace",
+        "techcontracts.contracts.delete.own",
+        "techcontracts.contracts.delete.workspace",
+        "techcontracts.contracts.export.workspace",
+        "techcontracts.contracts.assign.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "public.work_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "public.work_record_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/contract-list-authorization.test.ts",
+          "name": "contract list allows authorized active member through the real middleware"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/contract-list-authorization.test.ts",
+          "name": "contract list rejects missing permission before data access"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/contract-list-authorization.test.ts",
+          "name": "contract list rejects explicit deny before data access"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/contract-list-authorization.test.ts",
+          "name": "contract list rejects foreign workspace before data access"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/contract-list-authorization.test.ts",
+          "name": "contract list rejects inactive membership before data access"
+        }
+      }
     }
   ],
   "retired": {

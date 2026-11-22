@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 28
-version: 2
+version: 3
 is_published: true
 ---
 # Excluir contratos em massa
@@ -37,3 +37,7 @@ Falhas por contrato: revise mensagem e dependências antes de repetir.
 
 ## Relacionados
 - [Excluir pela ficha](/ajuda/contracts/excluir-contrato)
+
+## Disponibilidade das ações
+
+A exclusão exige a capacidade de excluir cada registro selecionado; ausência de permissão, falha de verificação ou um legado descartado mantém o controle indisponível. A confirmação não substitui as validações do servidor e do banco.
