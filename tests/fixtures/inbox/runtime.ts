@@ -69,7 +69,10 @@ export async function withInboxAvailabilityLock(
 
 /** Authorized CI copy only: the caller owns a Docker database from the existing
  * notification fixture. Never call this against PG*, Supabase or a draft URL. */
-export async function setupInboxExecutionCopy(db: postgres.Sql) {
+export async function setupInboxExecutionCopy(
+  db: postgres.Sql,
+  options: { supabaseTableDefaults?: boolean } = {},
+) {
   // Identity, not a configurable URL: only the connection created by the
   // dedicated Docker fixture may ever reach the lock-free preparation.
   await assertOwnedCopy(db);
@@ -322,6 +325,10 @@ export async function setupInboxExecutionCopy(db: postgres.Sql) {
     })
     .sort();
   const legacyBefore = await prepareLegacyAccessVector(db);
+  if (options.supabaseTableDefaults)
+    await db.unsafe(
+      "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO anon,authenticated",
+    );
   for (const file of migrations) {
     await db.unsafe(readFileSync(`drizzle/migrations/${file}`, "utf8"));
   }
@@ -337,6 +344,16 @@ export async function setupInboxExecutionCopy(db: postgres.Sql) {
   if (typeof guard?.["definition"] !== "string") throw new Error("Canonical release lock missing");
   releaseGuardDefinition = guard["definition"];
   const before = await authorizationSnapshot(db);
-  await db.unsafe("DROP TRIGGER inbox_runtime_release_guard ON public.workflows");
+  if (options.supabaseTableDefaults)
+    await db.unsafe(
+      readFileSync("drizzle/migrations/0452_inbox_channel_runtime_release.sql", "utf8"),
+    );
+  else await db.unsafe("DROP TRIGGER inbox_runtime_release_guard ON public.workflows");
   assert.deepEqual(await authorizationSnapshot(db), before);
+  // The regression fixture first measures the real pre-0453 exposure. Every
+  // normal runtime fixture uses the final reviewed ACL before its tests run.
+  if (!options.supabaseTableDefaults)
+    await db.unsafe(
+      readFileSync("drizzle/migrations/0453_inbox_occurrence_default_privileges.sql", "utf8"),
+    );
 }

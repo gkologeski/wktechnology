@@ -3172,6 +3172,13 @@
       "when": 1795343255136,
       "tag": "0452_inbox_channel_runtime_release",
       "breakpoints": true
+    },
+    {
+      "idx": 453,
+      "version": "7",
+      "when": 1795352224791,
+      "tag": "0453_inbox_occurrence_default_privileges",
+      "breakpoints": true
     }
   ]
 }
