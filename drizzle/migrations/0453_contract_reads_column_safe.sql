@@ -1,7 +1,3 @@
--- CORRIGE-IMPORTA-LEGADO: preparado para revisão, NÃO aplicado.
--- Causa: SELECT * em função invoker lia 4 colunas sem GRANT para authenticated
--- (public_token, hiring_person_id, legal_entity_id, hiring_request_origin).
--- Mudança única: leitura por colunas explícitas em jsonb; regras, grants e RLS inalterados.
 CREATE OR REPLACE FUNCTION public.contract_legacy_import_create(w uuid, p_contract jsonb, p_reason text, p_operation uuid)
  RETURNS jsonb LANGUAGE plpgsql SET search_path TO 'public' AS $function$
 DECLARE u uuid:=auth.uid();c jsonb;j jsonb:=p_contract;path text;cols text;vals text;r jsonb;
@@ -30,7 +26,6 @@ BEGIN
   RAISE EXCEPTION 'Entidade legal WK indisponível neste workspace.' USING ERRCODE='42501';END IF;
  PERFORM work_area_authorize('techcontracts.contracts','create');
  PERFORM pg_advisory_xact_lock(hashtextextended('legacy-import:'||w::text||':'||path,0));
- -- Somente colunas concedidas ao usuário (public_token fica fora; já era ignorado no reenvio).
  SELECT to_jsonb(x) INTO c FROM (SELECT id,owner_id,workspace_id,role,title,counterparty_company_id,contracting_legal_entity_id,total_value,currency,starts_at,ends_at,auto_renew,notice_days,number,status,metadata,monthly_value,hours_per_month,payment_day,payment_method,late_fee_percent,late_interest_monthly_percent,expense_reimbursement_days,readjustment_index,readjustment_period,penalty_percent,cure_period_days,trial_period_days,unilateral_termination_notice_days,service_type,service_scope,service_location,governing_law,jurisdiction,confidentiality_term_months,source_file_path,imported_from,import_confidence,body_html,document_kind FROM contracts WHERE id=p_operation) x;
  IF c IS NOT NULL THEN
   IF c->>'workspace_id' IS DISTINCT FROM w::text OR c->>'owner_id' IS DISTINCT FROM u::text OR c->>'source_file_path' IS DISTINCT FROM path THEN
@@ -48,4 +43,23 @@ BEGIN
  EXECUTE format('INSERT INTO contracts(%s) SELECT %s FROM jsonb_populate_record(NULL::contracts,$1)p',cols,vals) USING j;
  r:=contract_legacy_recognize(w,p_operation,NULL,p_reason,p_operation);
  RETURN jsonb_build_object('id',p_operation,'replayed',false,'legacy',r);
+END $function$;
+
+CREATE OR REPLACE FUNCTION public.finance_invoice_from_timesheet(_allocation uuid, _start date, _end date, _due date, _description text DEFAULT NULL::text)
+ RETURNS jsonb LANGUAGE plpgsql SET search_path TO 'public' AS $function$
+DECLARE w uuid:=finance_business_authorize('invoices','create');a people_allocations;co_id uuid;co_label text;co_company uuid;ids uuid[];hours numeric;amount numeric;i customer_invoices;n integer;BEGIN
+ IF _due IS NULL OR (_start IS NOT NULL AND _end IS NOT NULL AND _start>_end) THEN RAISE EXCEPTION 'Datas inválidas.' USING ERRCODE='22023';END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended('timesheet-invoice:'||_allocation,0));
+ SELECT * INTO a FROM people_allocations WHERE id=_allocation AND workspace_id=w FOR UPDATE;
+ IF a.id IS NULL THEN RAISE EXCEPTION 'Alocação indisponível.' USING ERRCODE='42501';END IF;
+ IF a.contract_id IS NOT NULL THEN SELECT id,coalesce(number,title),counterparty_company_id INTO co_id,co_label,co_company FROM contracts WHERE id=a.contract_id AND workspace_id=w;IF co_id IS NULL THEN RAISE EXCEPTION 'Contrato indisponível.' USING ERRCODE='42501';END IF;END IF;
+ SELECT array_agg(x.id),sum(x.hours),round(sum(x.hours*x.hourly_rate),2) INTO ids,hours,amount FROM
+ (SELECT id,hours,hourly_rate FROM project_time_entries WHERE workspace_id=w AND allocation_id=a.id AND billable AND invoice_id IS NULL AND approved_at IS NOT NULL AND financial_entry_id IS NULL AND (_start IS NULL OR entry_date>=_start) AND (_end IS NULL OR entry_date<=_end) FOR UPDATE)x;
+ IF ids IS NULL OR amount IS NULL OR amount<=0 THEN RAISE EXCEPTION 'Nenhuma hora aprovada e disponível para faturamento.' USING ERRCODE='23514';END IF;
+ INSERT INTO customer_invoices(workspace_id,owner_id,invoice_number,description,amount,currency,due_date,status,gateway,payment_method,company_id)
+ VALUES(w,auth.uid(),'assigned-by-trigger',left(coalesce(_description,'Faturamento de horas — '||coalesce(co_label,'sem contrato')||' · '||hours||'h'),2000),amount,coalesce(a.currency,'BRL'),_due,'draft','manual','manual',co_company) RETURNING * INTO i;
+ UPDATE project_time_entries SET invoice_id=i.id,invoiced_at=now() WHERE id=ANY(ids) AND workspace_id=w AND invoice_id IS NULL;
+ GET DIAGNOSTICS n=ROW_COUNT;
+ IF n<>cardinality(ids) THEN RAISE EXCEPTION 'Nem todos os apontamentos foram autorizados; nenhuma fatura criada.' USING ERRCODE='42501';END IF;
+ RETURN jsonb_build_object('invoice',to_jsonb(i),'entries_linked',n,'total_hours',hours,'total_amount',amount);
 END $function$;
