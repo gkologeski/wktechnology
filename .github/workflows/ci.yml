@@ -65,8 +65,8 @@ jobs:
         id: verify
         # Bound both runtimes while native types and disposable SQL suites overlap.
         env:
-          GOMAXPROCS: "2"
-          VITEST_MAX_WORKERS: "5"
+          GOMAXPROCS: "1"
+          VITEST_MAX_WORKERS: "4"
       # Verified lint data remains useful when a later build/performance check fails.
       # Never cache release evidence, test outcomes or build outputs.
       - name: Save verified content-based lint results
