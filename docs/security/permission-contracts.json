@@ -23522,13 +23522,14 @@
     {
       "id": "security-batch3-public-capabilities",
       "kind": "public",
-      "rationale": "Public KB lists only categories that contain published articles; landing-page counters count once per anonymous browser id and conversions require a prior view; async interview uploads stop when the interview is closed; widget sessions never auto-link to CRM records by visitor-typed e-mail. Admin server functions in these files keep their existing authenticated middleware. Public revocation scenarios replace employee membership scenarios because these flows intentionally have no user account.",
+      "rationale": "Public KB lists only categories that contain published articles; landing-page counters count once per anonymous browser id and conversions require a prior view and a server-signed view ticket with minimum dwell; async interview uploads stop when the interview is closed; widget sessions never auto-link to CRM records by visitor-typed e-mail. Admin server functions in these files keep their existing authenticated middleware. Public revocation scenarios replace employee membership scenarios because these flows intentionally have no user account.",
       "files": {
         "src/lib/kb.functions.ts": "485d6e4de96ce9303d130cd8122cdc164cfbe1584e5dd6cad540ba0ec02924b3",
-        "src/lib/landing-pages.functions.ts": "1ce9300601f0a5254ebe267a11fcd73167dc4ee11aabcc66f55c8332344dc5ef",
+        "src/lib/security/lp-view-ticket.ts": "7121756e79a7127238ee35089b39da6495c81a6beaf83854a7a04bdaf2f201f4",
+        "src/lib/landing-pages.functions.ts": "03599b344d3773870d18d7829698bc24530e101a0f133da2a4e865606eed699e",
         "src/routes/api/public/interview/$token.ts": "516e83eab783b7da821572bfd877a64c86fac5237eed923bf2440ef106ac591f",
         "src/routes/api/public/widget/session.ts": "186a9e85cc82f9638fbab0bf322128f4bc8f756c5fbbb2a1404e8d3d381fd70c",
-        "src/routes/lp.$slug.tsx": "495688f20947d62f0449c8e2f4281dcb11e1f44c4f58e5cbd1e97b8549dcf38a"
+        "src/routes/lp.$slug.tsx": "da0999cc9357e14aec2142f4691b0e9e711f15c3b9fb1584c627c87eef233a76"
       },
       "resources": [
         "system.kb",
@@ -23567,6 +23568,10 @@
         {
           "file": "src/lib/security/public-capability-guards.ts",
           "symbol": "decideLpCount"
+        },
+        {
+          "file": "src/lib/security/lp-view-ticket.ts",
+          "symbol": "verifyLpViewTicket"
         },
         {
           "file": "src/lib/security/public-capability-guards.ts",

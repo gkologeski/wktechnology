@@ -136,6 +136,7 @@ export const trackLpEvent = createServerFn({ method: "POST" })
           .max(100)
           .regex(/^[A-Za-z0-9_-]+$/),
         variant_id: z.string().uuid().optional(),
+        view_ticket: z.string().max(200).optional(),
         utm: LpUtmSchema.optional(),
         metadata: LpMetadataSchema.optional(),
       })
@@ -149,6 +150,19 @@ export const trackLpEvent = createServerFn({ method: "POST" })
       .eq("status", publishedLandingStatus())
       .maybeSingle();
     if (!lp) return { ok: false };
+    const ticketMod = await import("@/lib/security/lp-view-ticket");
+    const secret = ticketMod.lpTicketSecret();
+    // Conversão exige bilhete de visita emitido por este servidor (assinado, com permanência mínima).
+    if (
+      data.event_type === "conversion" &&
+      !ticketMod.acceptLpConversion(data.view_ticket, data.landing_page_id, data.visitor_id)
+    ) {
+      return { ok: false };
+    }
+    const viewTicket =
+      data.event_type === "view"
+        ? ticketMod.issueLpViewTicket(secret, data.landing_page_id, data.visitor_id)
+        : undefined;
     // Contadores públicos: cada visitante conta uma vez por tipo, e conversão exige visita anterior.
     const { data: prior } = await (supabaseAdmin.from("landing_page_events") as any)
       .select("event_type")
@@ -159,7 +173,7 @@ export const trackLpEvent = createServerFn({ method: "POST" })
     const seen = new Set(((prior ?? []) as Array<{ event_type: string }>).map((r) => r.event_type));
     const decision = decideLpCount(seen, data.event_type);
     if (decision === "reject") return { ok: false };
-    if (decision === "skip") return { ok: true };
+    if (decision === "skip") return { ok: true, view_ticket: viewTicket };
     await (supabaseAdmin.from("landing_page_events") as any).insert({
       owner_id: lp.owner_id,
       workspace_id: lp.workspace_id,
@@ -186,5 +200,5 @@ export const trackLpEvent = createServerFn({ method: "POST" })
         .update({ [col]: v })
         .eq("id", data.landing_page_id);
     }
-    return { ok: true };
+    return { ok: true, view_ticket: viewTicket };
   });
