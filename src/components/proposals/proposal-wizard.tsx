@@ -94,6 +94,7 @@ type Template = {
   description: string | null;
   html: string;
   services: string[];
+  contract_template_id: string | null;
 };
 
 type Props = {
@@ -108,6 +109,9 @@ function suggest(templates: Template[], serviceIds: string[]): Template | null {
   let best: Template | null = null;
   let score = 0;
   for (const t of templates) {
+    // Models with an explicit legal association require deliberate selection;
+    // sharing a service alone must never apply a purchasing model to a sale.
+    if (t.contract_template_id) continue;
     const s = t.services.filter((id) => serviceIds.includes(id)).length;
     if (s > score) [best, score] = [t, s];
   }
@@ -139,7 +143,10 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
     enabled: open,
     queryFn: async (): Promise<Template[]> => {
       const [t, s] = await Promise.all([
-        supabase.from("proposal_templates").select("id, name, description, html").order("name"),
+        supabase
+          .from("proposal_templates")
+          .select("id, name, description, html, contract_template_id")
+          .order("name"),
         supabase.from("proposal_template_services").select("template_id, service_catalog_id"),
       ]);
       if (t.error) throw t.error;
@@ -281,6 +288,11 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
       deal: { name: draft.deal_name ?? "" },
       company_legal_name: draft.company_legal_name ?? draft.company_name ?? "",
       company_cnpj: draft.company_cnpj ?? "",
+      // The selected workspace legal entity is WK; the deal company is the supplier in purchase models.
+      contracting: {
+        name: draft.legal_entity_options?.find((e) => e.id === entityId)?.name ?? "",
+        cnpj: draft.legal_entity_options?.find((e) => e.id === entityId)?.cnpj ?? "",
+      },
       payment_method: paymentMethodLabel(terms),
       installments_count: installments ?? "",
       installments_due_day: dueDay ?? "",
@@ -316,7 +328,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   function goNext() {
     // Ao entrar em Conteúdo sem texto, aplica o modelo sugerido.
     if (step === 1 && !body.trim()) {
-      const t = suggested ?? templates[0];
+      const t = suggested ?? templates.find((t) => !t.contract_template_id);
       if (t) {
         setTemplateId(t.id);
         setBody(renderTemplate(t));

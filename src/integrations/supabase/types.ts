@@ -26313,6 +26313,7 @@ export type Database = {
       }
       proposal_templates: {
         Row: {
+          contract_template_id: string | null
           created_at: string
           description: string | null
           html: string
@@ -26323,6 +26324,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          contract_template_id?: string | null
           created_at?: string
           description?: string | null
           html?: string
@@ -26333,6 +26335,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          contract_template_id?: string | null
           created_at?: string
           description?: string | null
           html?: string
@@ -26343,6 +26346,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "proposal_templates_contract_template_fkey"
+            columns: ["workspace_id", "contract_template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["workspace_id", "id"]
+          },
           {
             foreignKeyName: "proposal_templates_workspace_id_fkey"
             columns: ["workspace_id"]
