@@ -15238,9 +15238,7 @@
       },
       "files": {
         "src/components/hiring-requests/preparation-form.tsx": "b22765ccd83052ff3c7336d78d1d397888213e665fb121bbb315d68f68380894",
-        "src/components/ui/search-create-field.tsx": "005c7d9d180cab8d3a90115e0d4a37ac8e1174bc5c9f1ac0cd037cacad6d83bf",
-        "src/components/hiring-requests/preparation-additional-deals.tsx": "a9712fb21333c5fb9e4f2babf538d98f339206eb4cc8bd32f3d1e63142fcc00a",
-        "src/lib/hiring/requests/additional-deals.ts": "f3d35e53896137c0df8b805a6aa010dd9238abbb7589d4dad025c3c1a6dcca36"
+        "src/components/ui/search-create-field.tsx": "005c7d9d180cab8d3a90115e0d4a37ac8e1174bc5c9f1ac0cd037cacad6d83bf"
       }
     },
     {
@@ -16856,6 +16854,15 @@
       "rationale": "Pure labels and immutable local form projection; no queries, mutations, permissions or origin validation decisions. Switching purpose clears commercial IDs and incompatible final-client acceptance only in the unsaved form. Existing save RPC remains authoritative for grants and CNPJ/origin validation.",
       "files": {
         "src/lib/hiring/requests/purpose-presentation.ts": "2f378632049763e33b6af764413ddab5cbec97caa973ac574c0372148e4487c2"
+      }
+    },
+    {
+      "id": "preparation-additional-deals-local-projection",
+      "kind": "presentation",
+      "rationale": "Pure callback-based picker list and immutable local form projection for additional deals; no queries, mutations, permissions or origin decisions. The bounded picker comes from PreparationScreen; the existing save RPC and validation trigger remain authoritative for workspace, visibility, legal entity, duplicates and limits.",
+      "files": {
+        "src/components/hiring-requests/preparation-additional-deals.tsx": "a9712fb21333c5fb9e4f2babf538d98f339206eb4cc8bd32f3d1e63142fcc00a",
+        "src/lib/hiring/requests/additional-deals.ts": "f3d35e53896137c0df8b805a6aa010dd9238abbb7589d4dad025c3c1a6dcca36"
       }
     },
     {
