@@ -16600,7 +16600,7 @@
         "techcontracts.contracts.create.workspace",
         "techcontracts.contracts.update.workspace"
       ],
-      "rationale": "Atomic legacy import remains under the authenticated user/RLS and existing create/view/update plus imports/manage and legacy/create, with active workspace/member and read-only/deny checks, canonical parties, privately owned original and stable UUID/replay/rollback. Ordinary contract readers obtain only classification without private evidence/history. Approval/signature inserts serialize with recognition; billing release ignores only the private regularization transaction marker and normal signing stays unchanged. No business records or user grants are seeded. The import signature projection omits protected columns only for legacy; five actual SQL authorization cases now consume this projection with extracted ForSign references and verify those remain metadata. Null protected keys remain rejected by SQL.",
+      "rationale": "Atomic legacy import remains under the authenticated user/RLS and existing create/view/update plus imports/manage and legacy/create, with active workspace/member and read-only/deny checks, canonical parties, privately owned original and stable UUID/replay/rollback. Ordinary contract readers obtain only classification without private evidence/history. Approval/signature inserts serialize with recognition; billing release ignores only the private regularization transaction marker and normal signing stays unchanged. No business records or user grants are seeded. The import signature projection omits protected columns only for legacy; five actual SQL authorization cases now consume this projection with extracted ForSign references and verify those remain metadata. Null protected keys remain rejected by SQL. | CORRIGE-IMPORTA-LEGADO 22/11/2026: 0453 recria contract_legacy_import_create e finance_invoice_from_timesheet lendo só colunas concedidas (sem SELECT * em contracts); mesmos gates, sem nova chave nem grant.",
       "controls": [
         {
           "file": "src/lib/access-control/work-core.server.ts",
@@ -16635,6 +16635,10 @@
         {
           "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
           "symbol": "contract_legacy_subject"
+        },
+        {
+          "file": "drizzle/migrations/0453_contract_reads_column_safe.sql",
+          "symbol": "contract_legacy_import_create"
         }
       ],
       "tests": {
@@ -16660,7 +16664,8 @@
         }
       },
       "files": {
-        "drizzle/migrations/0387_contract_legacy_import_atomic.sql": "aa3b6adb1e36d1e0a3fde53ffde7ef6425f93b2bdf1de57c1b97375dfa480d64"
+        "drizzle/migrations/0387_contract_legacy_import_atomic.sql": "aa3b6adb1e36d1e0a3fde53ffde7ef6425f93b2bdf1de57c1b97375dfa480d64",
+        "drizzle/migrations/0453_contract_reads_column_safe.sql": "312942c1fdc2bc5e7c48e44650555577dc63c984ccccac2675d5a529f06daa85"
       }
     },
     {
