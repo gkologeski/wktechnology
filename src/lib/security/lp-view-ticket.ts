@@ -30,7 +30,8 @@ export function verifyLpViewTicket(
   if (!m) return false;
   const issuedAt = Number(m[1]);
   const age = now - issuedAt;
-  if (!Number.isFinite(age) || age < LP_TICKET_MIN_AGE_MS || age > LP_TICKET_MAX_AGE_MS) return false;
+  if (!Number.isFinite(age) || age < LP_TICKET_MIN_AGE_MS || age > LP_TICKET_MAX_AGE_MS)
+    return false;
   const expected = Buffer.from(mac(secret, pageId, visitorId, issuedAt));
   const given = Buffer.from(m[2] ?? "");
   return expected.length === given.length && timingSafeEqual(expected, given);
