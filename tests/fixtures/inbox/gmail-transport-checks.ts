@@ -46,9 +46,11 @@ export async function checkGmailTransport(
   const claimed = must(await admin.rpc("gmail_sync_claim", { ...scope, p_token: lease })) as Array<{
     id: string;
     provider_message_id: string;
+    discovered_at: string;
   }>;
   const receipt = claimed.find((r) => r.provider_message_id === provider);
   assert.ok(receipt);
+  assert.equal(typeof receipt.discovered_at, "string", "Database discovery timestamp missing");
   must(
     await admin.from("email_threads").insert({
       id: conversation,
@@ -72,7 +74,7 @@ export async function checkGmailTransport(
       provider_message_id: provider,
       direction: "inbound",
       body_text: "Canonical incoming",
-      received_at: occurredAt ?? new Date(Date.now() - 1000).toISOString(),
+      received_at: occurredAt ?? receipt.discovered_at,
     }),
   );
   equal(
@@ -185,9 +187,10 @@ export async function checkGmailTransport(
     const lease = crypto.randomUUID();
     const claimed = must(
       await admin.rpc("gmail_sync_claim", { ...scope, p_token: lease }),
-    ) as Array<{ id: string; provider_message_id: string }>;
+    ) as Array<{ id: string; provider_message_id: string; discovered_at: string }>;
     const q = claimed.find((r) => r.provider_message_id === incomingProvider);
     assert.ok(q);
+    assert.equal(typeof q.discovered_at, "string", "Database discovery timestamp missing");
     must(
       await admin.from("email_messages").insert({
         id: crypto.randomUUID(),
@@ -198,7 +201,8 @@ export async function checkGmailTransport(
         provider_message_id: incomingProvider,
         direction: "inbound",
         body_text: "New attested input",
-        received_at: new Date().toISOString(),
+        // Use the server clock: host/VM skew must not turn a positive fixture into a future message.
+        received_at: q.discovered_at,
       }),
     );
     equal(
