@@ -1,26 +1,12 @@
-# NOTIFICA-CENTRAL — procedimento de publicação (auditoria somente leitura)
+# Consulta CANAIS-INBOX: capacidades (somente leitura, nada executado)
 
-Porte P, estimativa 30–60 min de janela operacional após merge do PR #49 com CI verde.
+1. PR codex/workflow-inbox-channels -> main
+   - A ferramenta nativa de PR so envia a branch de um draft. Ela nao abre PR de uma branch enviada de fora.
+   - Caminho possivel: o conector GitHub, chamando a API REST (abrir o PR e ler checks/status da CI). Exige uma conexao GitHub ligada e com acesso ao repo gkologeski/wktechnology. Ainda nao conferi se essa conexao existe. Escritas pedem aprovacao no chat. Nao ha bypass de protecao de branch.
+2. Acompanhar a CI: sim, pelo mesmo conector (somente leitura de checks/status).
+3. Depois do merge: o Git sync traz main para o projeto, mas nunca aplica migrations.
+   - A ferramenta de migration cria um arquivo novo e o aplica com ledger (journal Drizzle). Ainda nao confirmei que ela aplica arquivos pendentes ja versionados sem gerar um novo. A inspecao do historico de migrations (somente leitura) mostraria o que esta pendente antes de qualquer decisao.
+   - Se for preciso um arquivo novo, isso altera o repositorio. Nesse caso eu pararia e pediria sua autorizacao.
+4. Validacao visual: sim, com Playwright e uma sessao autorizada (a sessao injetada ou a sua propria conta). Nao preciso aceitar o draft drft_01m806skzqe65aq0vwzask9n12.
 
-## Estado verificado agora
-- Sandbox em `b133f8571` (merge PR #48). PR #49 e arquivos 0391–0401 ainda NÃO estão no sandbox.
-- Journal local termina em `0390_hiring_origin_context` (when `1795047517000`).
-- Chamadas `triggerTickNow`: `src/lib/workflows.functions.ts`, `settings.workflows.tsx`, `leads.$id.tsx`.
-
-## Restrições reais
-- Não existe na hospedagem modo manutenção/drain nem troca atômica banco+código. A publicação substitui o código sem janela controlada; prévia e publicação usam o mesmo banco.
-- A ferramenta de migração aplica TODOS os arquivos pendentes do journal em ordem, filtrando por `when` maior que o último `created_at` aplicado; não aplica subconjunto. Não reaplica 0001–0390 se o journal estiver íntegro.
-- Cron jobs são gerenciados por SQL (`cron.alter_job`/unschedule) ou UI Database → Jobs; pausar é ação de escrita fora desta auditoria.
-- Chamadas inline `triggerTickNow` no código antigo publicado continuam ativas até o novo deploy terminar; só param via flag no banco lida pelo motor ou pelo próprio deploy.
-
-## Procedimento disponível (quando autorizado)
-1. Merge PR #49 com CI verde; confirmar sandbox no novo HEAD e presença de 0391–0401 com `when` > `1795047517000`, estritamente crescentes (`drizzle-kit check` sem avisos de ordem).
-2. Conferir no banco `drizzle.__drizzle_migrations`: máximo `created_at` = `1795047517000`, 0391+ ausentes; registrar SHA-256 dos 11 arquivos.
-3. Contenção do motor velho: `cron.alter_job(313, active := false)` e `(314, ...)` (registrar estado anterior). Para callers inline, só há contenção se uma 0391+ ou flag existente fizer o tick recusar trabalho; caso contrário aceitar janela curta ou ordenar deploy antes.
-4. Aplicar 0391–0401 numa única chamada da ferramenta de migração (transação própria, journal atualizado); conferir 11 linhas novas e hashes.
-5. Tipos: regenerar só se o PR não os trouxer coerentes; se mudar, atualizar hash em `permission-contracts.json` e nova CI antes de publicar.
-6. Publicar; confirmar `build-info.json` com hash esperado nos domínios.
-7. Reativar jobs 313/314 (ou os sucessores do novo motor), validar ticks, `workflow_runs` e canais ainda desativados.
-
-## Pendências
-- Ler os SQL 0391–0401 após sincronização para confirmar ordem, compatibilidade com código antigo e se algum depende dos jobs pausados.
+Nada foi executado, editado ou aplicado nesta consulta.
