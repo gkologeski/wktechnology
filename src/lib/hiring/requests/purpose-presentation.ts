@@ -21,6 +21,7 @@ export function changePreparationPurpose(
     ...value,
     purpose,
     deal_id: null,
+    additional_deal_ids: [],
     commercial_contract_id: null,
     release_condition:
       purpose !== "client" && value.release_condition === "also_client_acceptance"

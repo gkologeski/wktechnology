@@ -813,6 +813,7 @@ function savedToForm(r: PreparationRow): PreparationData {
     company_id: r.company_id,
     contact_id: r.contact_id,
     deal_id: r.deal_id,
+    additional_deal_ids: r.additional_deal_ids ?? [],
     project_id: r.project_id,
     commercial_contract_id: r.commercial_contract_id,
     status: r.status,
