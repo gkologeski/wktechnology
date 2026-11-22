@@ -11,6 +11,8 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { setPrimaryDeal } from "@/lib/hiring/requests/additional-deals";
+import { PreparationAdditionalDeals } from "./preparation-additional-deals";
 import {
   changePreparationPurpose,
   purposeLabels,
@@ -172,54 +174,9 @@ export function PreparationForm({
                   "deal",
                   value.additional_deal_ids.length ? "Negócio principal" : "Negócio",
                   value.deal_id,
-                  (id) =>
-                    onChange({
-                      ...value,
-                      deal_id: id,
-                      additional_deal_ids: id
-                        ? value.additional_deal_ids.filter((d) => d !== id)
-                        : [],
-                    }),
+                  (id) => onChange(setPrimaryDeal(value, id)),
                 )}
-                {value.deal_id && (
-                  <div className="space-y-3" aria-label="Negócios adicionais atendidos">
-                    {value.additional_deal_ids.map((dealId, index) => (
-                      <div key={dealId}>
-                        {picker("deal", `Negócio adicional ${index + 1}`, dealId, (id) =>
-                          set(
-                            "additional_deal_ids",
-                            id && id !== value.deal_id && !value.additional_deal_ids.includes(id)
-                              ? value.additional_deal_ids.map((d) => (d === dealId ? id : d))
-                              : id
-                                ? value.additional_deal_ids
-                                : value.additional_deal_ids.filter((d) => d !== dealId),
-                          ),
-                        )}
-                      </div>
-                    ))}
-                    {value.additional_deal_ids.length < 20 && (
-                      <div key={`new-${value.additional_deal_ids.length}`}>
-                        {picker(
-                          "deal",
-                          "Adicionar outro negócio atendido (opcional)",
-                          null,
-                          (id) => {
-                            if (
-                              id &&
-                              id !== value.deal_id &&
-                              !value.additional_deal_ids.includes(id)
-                            )
-                              set("additional_deal_ids", [...value.additional_deal_ids, id]);
-                          },
-                        )}
-                      </div>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      Use quando o mesmo fornecedor atende mais de um negócio. Todos precisam ser da
-                      mesma entidade WK; o projeto deve pertencer a um deles.
-                    </p>
-                  </div>
-                )}
+                <PreparationAdditionalDeals value={value} onChange={onChange} picker={picker} />
                 {picker(
                   "commercial_contract",
                   "Contrato comercial — WK fornecedora",
