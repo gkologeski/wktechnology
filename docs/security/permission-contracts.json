@@ -15237,8 +15237,10 @@
         "review_by": "2027-02-18"
       },
       "files": {
-        "src/components/hiring-requests/preparation-form.tsx": "e34c94750251b4a434706901ae7ada463f55a38df673d54102dc1145dd7dc3c8",
-        "src/components/ui/search-create-field.tsx": "005c7d9d180cab8d3a90115e0d4a37ac8e1174bc5c9f1ac0cd037cacad6d83bf"
+        "src/components/hiring-requests/preparation-form.tsx": "b22765ccd83052ff3c7336d78d1d397888213e665fb121bbb315d68f68380894",
+        "src/components/ui/search-create-field.tsx": "005c7d9d180cab8d3a90115e0d4a37ac8e1174bc5c9f1ac0cd037cacad6d83bf",
+        "src/components/hiring-requests/preparation-additional-deals.tsx": "a9712fb21333c5fb9e4f2babf538d98f339206eb4cc8bd32f3d1e63142fcc00a",
+        "src/lib/hiring/requests/additional-deals.ts": "f3d35e53896137c0df8b805a6aa010dd9238abbb7589d4dad025c3c1a6dcca36"
       }
     },
     {
