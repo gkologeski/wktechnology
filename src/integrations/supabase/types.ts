@@ -37911,6 +37911,10 @@ export type Database = {
         Args: { p_contract: string; p_patch: Json }
         Returns: Json
       }
+      contract_purchase_payables_generate: {
+        Args: { p_contract: string; p_installments: Json }
+        Returns: Json
+      }
       contract_signature_package_store: {
         Args: {
           p_actor: string

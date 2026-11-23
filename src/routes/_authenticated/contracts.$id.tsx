@@ -74,6 +74,7 @@ import { AiLinkSuggestionsHistoryCard } from "@/components/contracts/ai-link-sug
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { ContractBodyFromSourceButton } from "@/components/contracts/contract-body-from-source-button";
 import { PurchaseTemplateFill } from "@/components/contracts/purchase-template-fill";
+import { PurchasePayablesPanel } from "@/components/contracts/purchase-payables-panel";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
@@ -744,6 +745,7 @@ function ContractDetail() {
               </CardContent>
             </Card>
           )}
+          <PurchasePayablesPanel contract={contract} />
         </TabsContent>
         <TabsContent value="document" className="space-y-5 pt-3">
           <Card>

@@ -3242,6 +3242,13 @@
       "when": 1795446088368,
       "tag": "0462_contracts_counterparty_columns_select",
       "breakpoints": true
+    },
+    {
+      "idx": 463,
+      "version": "7",
+      "when": 1795453753925,
+      "tag": "0463_purchase_contract_payables",
+      "breakpoints": true
     }
   ]
 }

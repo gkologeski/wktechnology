@@ -11944,9 +11944,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion.",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: generated types add only the contract_purchase_payables_generate RPC signature; no table/grant change.",
       "files": {
-        "src/integrations/supabase/types.ts": "c24b0b83566d456e2c10f8bdbe340dbd7ddca95419bbb62bf2dbb6fa4ddcbaee",
+        "src/integrations/supabase/types.ts": "e61d324c0d3f5e1f421869f8ac0efbb399b2d31c839b8449f0d1293df839ba79",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -12659,7 +12659,7 @@
     {
       "id": "dados-contrato-pure",
       "kind": "presentation",
-      "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping. TEXTO-PROPOSTA: pure proposal terms block helper. TEXTO-CONSULTORIA: pure signer choice helper. TABELA-FINAL: pure items-table placement helper and proposal document/PDF ordering (presentation only; same data, same token gate). PROPOSTA-COMPLETA: pure payment-terms completeness check; wizards require installments/due day (UI validation only, writes unchanged). EMPRESA-PROPOSTA: pure issuing legal entity preselection and friendly error message.",
+      "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping. TEXTO-PROPOSTA: pure proposal terms block helper. TEXTO-CONSULTORIA: pure signer choice helper. TABELA-FINAL: pure items-table placement helper and proposal document/PDF ordering (presentation only; same data, same token gate). PROPOSTA-COMPLETA: pure payment-terms completeness check; wizards require installments/due day (UI validation only, writes unchanged). EMPRESA-PROPOSTA: pure issuing legal entity preselection and friendly error message. CONTAS-A-PAGAR-COMPRA: pure purchase payables proposal and sum check (no I/O); generation stays under purchase-contract-payables.",
       "files": {
         "src/lib/proposals/proposal-draft-types.ts": "29c474556e912a317efa1d6bc38537a7838268e3b85fd319d52d4ed236443124",
         "src/lib/contracts/contract-terms-defaults.ts": "4243429565dc9b855faf2b73986e8044ef2ad746a9582ee841e0f85b42583463",
@@ -12671,7 +12671,8 @@
         "src/lib/proposals/proposal-pdf-rules.ts": "8bdfc0a514dcc11b1798d5bab756ddf63569fad299f46f8ac0af12d2dc1c9f15",
         "src/lib/proposals/proposal-terms-check.ts": "0d102ff46a544c4c0082238a7c1812340e56b161b72baadf206f5a18432b86a7",
         "src/lib/contracts/payment-schedule-text.ts": "c5c25669c1678812bee6b8a4194cac1962265f97659eb784f9fa0195795ada59",
-        "src/lib/proposals/proposal-legal-entity.ts": "9f165dbb22552ece4dc4c0bd0fc88e0aaed4ebc7b3f821a02fbbbbff5bc7ca7a"
+        "src/lib/proposals/proposal-legal-entity.ts": "9f165dbb22552ece4dc4c0bd0fc88e0aaed4ebc7b3f821a02fbbbbff5bc7ca7a",
+        "src/lib/contracts/purchase-payables.ts": "c7b456b840d8ab1fb1719e6f07eedf60e7a6c122e093d02bdb757973459643af"
       }
     },
     {
@@ -26458,7 +26459,7 @@
         "techcontracts.contracts.delete.workspace",
         "techcontracts.contracts.delete.own"
       ],
-      "rationale": "DESCARTA-LEGADO: administrative soft-discard is equivalent to removing a pending contract from use, so canonical contract delete is reused (not a new broader permission), additionally requiring contract view/update and private legacy-view. All previous actions in the touched legacy/contract files retain their user/RLS gates. No role grants, physical deletion, legal status change, billing release or source/evidence deletion. An immutable private receipt binds actor, workspace, confirmed reason, revision, fingerprint and stable operation id. Only pending draft legacies with no governed origin or operational FK are eligible. Current FK child writes serialize on the parent and reject discarded records. Canonical mutations/regularization are blocked afterwards. List returns only authorized discarded ids, never reasons or private paths. Current generated types only describe this additive schema. New dialog requires explicit confirmation and has no side effect on cancel.",
+      "rationale": "DESCARTA-LEGADO: administrative soft-discard is equivalent to removing a pending contract from use, so canonical contract delete is reused (not a new broader permission), additionally requiring contract view/update and private legacy-view. All previous actions in the touched legacy/contract files retain their user/RLS gates. No role grants, physical deletion, legal status change, billing release or source/evidence deletion. An immutable private receipt binds actor, workspace, confirmed reason, revision, fingerprint and stable operation id. Only pending draft legacies with no governed origin or operational FK are eligible. Current FK child writes serialize on the parent and reject discarded records. Canonical mutations/regularization are blocked afterwards. List returns only authorized discarded ids, never reasons or private paths. Current generated types only describe this additive schema. New dialog requires explicit confirmation and has no side effect on cancel. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: contract detail overview renders PurchasePayablesPanel (purchase contracts only); generation gated by usePermissions techfinance.entries.create and enforced again in the SQL RPC; no change to legacy discard.",
       "controls": [
         {
           "file": "src/integrations/supabase/auth-middleware.ts",
@@ -26578,7 +26579,7 @@
         "src/components/contracts/legacy/contract-legacy-panel.tsx": "c434e08ea45d5f0f37678bb05e87e9053df7e09f2ea23b9b516b119e1f666b0a",
         "src/lib/contracts/legacy.functions.ts": "29e306393c0daf2590d88a720bfd89bbe5683e9400af3efc0ebd85f04c3736a6",
         "src/lib/contracts/legacy.server.ts": "fdb7b015d3ccd7f3a081bb38900b362ab097d65a118d20420a4ea1a274dc5f47",
-        "src/routes/_authenticated/contracts.$id.tsx": "3c50ebbcf3bfb88644a6e336d4d407e6e3a1912a93af002d3a2f5be525b78475",
+        "src/routes/_authenticated/contracts.$id.tsx": "162a4079bf81e903cd5eb2a609c4381894252237e524675fa89ba940595f5c84",
         "drizzle/migrations/0454_contract_legacy_discard_pending.sql": "7ee86112069b893634b01b4babc64a3339947bf9b02524cbc8152a35ad8fbe72",
         "drizzle/migrations/0455_contract_legacy_discard_list_batch.sql": "255ab07053c066122545fc1c0a1f856a52241d543f95e055b3c90213a17621ab"
       }
@@ -26775,6 +26776,83 @@
           "name": "contract list rejects inactive membership before data access"
         }
       }
+    },
+    {
+      "id": "purchase-contract-payables",
+      "kind": "business",
+      "rationale": "23/11/2026 CONTAS-A-PAGAR-COMPRA: signed purchase contracts (role client) get proposed payable installments (pure purchase-payables.ts from contract payment_terms, single installment fallback); Finance confirms. Read uses requireWorkPermission(techcontracts.contracts view)+assertWorkRecord and user RLS on contracts/financial_entries. Generation goes only through SECURITY DEFINER RPC contract_purchase_payables_generate (EXECUTE to authenticated only, revoked from anon/public): contract view via work_context_access, active membership/active workspace/deny/read-only via finance_access_context requiring techfinance.entries.create.own|workspace, purchase role, signature, total_value set, 1-60 installments summing exactly, idempotent per contract (also skips when payment-terms entries already exist). No new permission key, no grants to roles.",
+      "files": {
+        "drizzle/migrations/0463_purchase_contract_payables.sql": "10112f507440489c9ee84d39235dfe0b29f8f48e6c8c11795eb4839538066754",
+        "src/components/contracts/purchase-payables-panel.tsx": "1155ed8c5aa9c1ca054414cbdb9e7521404f43b835c7f5f602e6d3dd60d0a46b",
+        "src/lib/contracts/purchase-payables.functions.ts": "4b1b1248f24c2fa7c4f47942e410b2d0b9c1680d764477da4cd00b0bd37c2e06"
+      },
+      "resources": [
+        "techcontracts.contracts",
+        "techfinance.entries"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.contracts.view.own",
+        "techcontracts.contracts.view.team",
+        "techcontracts.contracts.view.workspace",
+        "techfinance.entries.create.own",
+        "techfinance.entries.create.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0463_purchase_contract_payables.sql",
+          "symbol": "contract_purchase_payables_generate"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/purchase-payables-postgres.test.ts",
+          "name": "purchase payables SQL allows an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/purchase-payables-postgres.test.ts",
+          "name": "purchase payables SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/purchase-payables-postgres.test.ts",
+          "name": "purchase payables SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/purchase-payables-postgres.test.ts",
+          "name": "purchase payables SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/purchase-payables-postgres.test.ts",
+          "name": "purchase payables SQL rejects inactive membership"
+        }
+      },
+      "exception": null
     }
   ],
   "retired": {
