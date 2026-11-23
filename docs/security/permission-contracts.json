@@ -4874,7 +4874,7 @@
     {
       "id": "finance-sales-labels",
       "kind": "presentation",
-      "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales). | CAMPANHA-LIGACOES 12/11/2026: static PT-BR breadcrumb labels for /campaigns/calls; no access change. | SOLICITA-PREPARA: static preparation menu/breadcrumb, page and RPC enforce new per-module permissions.",
+      "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales). | CAMPANHA-LIGACOES 12/11/2026: static PT-BR breadcrumb labels for /campaigns/calls; no access change. | SOLICITA-PREPARA: static preparation menu/breadcrumb, page and RPC enforce new per-module permissions. Legacy supplier-requests entry removed from the menu (route kept for existing links).",
       "files": {
         "src/lib/access-control/resource-labels.ts": "b9486bd90fbd4e5aa1cf7af67fbb77163e7c88ac9d2a95dffcd041df79abfcef",
         "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d",
@@ -11953,9 +11953,9 @@
     {
       "id": "contract-draft-menu-entry",
       "kind": "presentation",
-      "rationale": "Static TechContracts menu entry; visibility filtered by canSeeHrMenu with the manage key and the screen re-checks it; server functions use requireWorkPermission. | SOLICITA-PREPARA: static preparation menu/breadcrumb, page and RPC enforce new per-module permissions.",
+      "rationale": "Static TechContracts menu entry; visibility filtered by canSeeHrMenu with the manage key and the screen re-checks it; server functions use requireWorkPermission. | SOLICITA-PREPARA: static preparation menu/breadcrumb, page and RPC enforce new per-module permissions. Legacy supplier-requests entry removed from the menu (route kept for existing links).",
       "files": {
-        "src/lib/menu-config-contracts.ts": "88dbd5f329fa5a720b0182973777ceb7097678fae47be274943ab82f334ecbac"
+        "src/lib/menu-config-contracts.ts": "634ee1bb9128e91b65afc618ae2acffad9bbe14a44d38fba2d501ebfb73f65f5"
       }
     },
     {
