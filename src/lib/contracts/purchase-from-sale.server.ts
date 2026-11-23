@@ -25,6 +25,8 @@ type Sale = {
   deal_id: string | null;
   contracting_legal_entity_id: string | null;
   currency: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
 };
 
 export function purchaseTitle(saleTitle: string | null, supplier: string): string {
@@ -50,7 +52,7 @@ export async function purchaseFromSale(
   const { data: saleRow, error } = await supabase
     .from("contracts")
     .select(
-      "id,title,number,role,document_kind,workspace_id,proposal_id,quote_id,deal_id,contracting_legal_entity_id,currency",
+      "id,title,number,role,document_kind,workspace_id,proposal_id,quote_id,deal_id,contracting_legal_entity_id,currency,starts_at,ends_at",
     )
     .eq("id", input.saleContractId)
     .eq("workspace_id", workspaceId)
@@ -95,6 +97,39 @@ export async function purchaseFromSale(
       supplierName = [c.first_name, c.last_name].filter(Boolean).join(" ") || "Profissional";
   }
 
+  // Vigência: venda + aditivos ativos + projetos ligados à venda/negócio.
+  const [{ data: amendments }, { data: projects }] = await Promise.all([
+    supabase
+      .from("contracts")
+      .select("starts_at,ends_at,status")
+      .eq("workspace_id", workspaceId)
+      .eq("parent_contract_id", sale.id)
+      .eq("document_kind", "amendment")
+      .not("status", "in", "(terminated,draft)"),
+    supabase
+      .from("projects")
+      .select("starts_at,due_at,status")
+      .eq("workspace_id", workspaceId)
+      .or(
+        sale.deal_id
+          ? `contract_id.eq.${sale.id},deal_id.eq.${sale.deal_id}`
+          : `contract_id.eq.${sale.id}`,
+      )
+      .neq("status", "cancelled"),
+  ]);
+  const { suggestPurchaseTerm } = await import("./purchase-term");
+  const term = suggestPurchaseTerm(
+    [
+      sale,
+      ...((amendments ?? []) as { starts_at: string | null; ends_at: string | null }[]),
+      ...((projects ?? []) as { starts_at: string | null; due_at: string | null }[]).map((p) => ({
+        starts_at: p.starts_at,
+        ends_at: p.due_at,
+      })),
+    ],
+    new Date().toISOString(),
+  );
+
   const { createContractShared } = await import("@/lib/contracts/contract-create.server");
   const result = await createContractShared(supabase, {
     workspaceId,
@@ -112,6 +147,8 @@ export async function purchaseFromSale(
       contracting_legal_entity_id: sale.contracting_legal_entity_id,
       currency: sale.currency ?? "BRL",
       total_value: 0,
+      starts_at: term.starts_at,
+      ends_at: term.ends_at,
     },
   });
   return { contract: result.contract };

@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 40
-version: 7
+version: 8
 is_published: true
 ---
 # Aninhar contratos de compra sob uma prestação
@@ -44,6 +44,8 @@ Contrato de compra associado à prestação e apresentado sob ela na listagem.
 2. O sistema propõe as parcelas pelas condições de pagamento do contrato (ou uma parcela única, se não houver condições). Revise descrição, valor e vencimento de cada parcela; adicione ou remova parcelas se precisar.
 3. Quando a soma fechar o valor total do contrato, clique em "Gerar contas a pagar". As parcelas passam a aparecer no Financeiro como contas a pagar em aberto.
 ## Regras e limites
+
+- Ao contratar um fornecedor, a vigência da compra já vem preenchida: começa hoje (ou na data de início da venda, se for futura) e termina no prazo mais longo entre a venda, seus aditivos ativos e o projeto ligado. Ajuste as datas se o fornecedor entregar antes.
 - "Gerar contas a pagar" exige permissão de criar lançamentos financeiros; quem não tem vê apenas o aviso de que o Financeiro precisa confirmar.
 - As contas a pagar só são geradas com o contrato assinado e o valor total preenchido, a soma das parcelas precisa fechar exatamente esse valor e cada contrato gera uma única vez.
 - "Contratar fornecedor" exige permissão de criar contratos; o botão não aparece para quem não tem.
