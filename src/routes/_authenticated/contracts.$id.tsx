@@ -73,6 +73,7 @@ import { AiLinkSuggestionsHistoryCard } from "@/components/contracts/ai-link-sug
 
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { ContractBodyFromSourceButton } from "@/components/contracts/contract-body-from-source-button";
+import { PurchaseTemplateFill } from "@/components/contracts/purchase-template-fill";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
@@ -750,6 +751,11 @@ function ContractDetail() {
               <CardTitle className="text-base">Cláusulas / corpo do contrato</CardTitle>
             </CardHeader>
             <CardContent>
+              <PurchaseTemplateFill
+                contract={contract}
+                canUpdate={canUpdateContract}
+                onFilled={() => void qc.invalidateQueries({ queryKey: ["contract", id] })}
+              />
               <ContractBodyFromSourceButton
                 contract={contract}
                 bodyHtml={bodyHtml}

@@ -3235,6 +3235,13 @@
       "when": 1795442281972,
       "tag": "0461_purchase_contracts_from_sale_proposal",
       "breakpoints": true
+    },
+    {
+      "idx": 462,
+      "version": "7",
+      "when": 1795446088368,
+      "tag": "0462_contracts_counterparty_columns_select",
+      "breakpoints": true
     }
   ]
 }

@@ -89,6 +89,8 @@ export async function purchaseFromSale(
     if (!c) throw new Error("Contato não encontrado neste workspace.");
     if (input.counterpartyKind === "company" && c.company_id !== input.companyId)
       throw new Error("O contato precisa pertencer à empresa fornecedora.");
+    if (input.counterpartyKind === "person" && c.company_id)
+      throw new Error("Para pessoa física, escolha um contato sem empresa vinculada.");
     if (input.counterpartyKind === "person")
       supplierName = [c.first_name, c.last_name].filter(Boolean).join(" ") || "Profissional";
   }
@@ -113,4 +115,102 @@ export async function purchaseFromSale(
     },
   });
   return { contract: result.contract };
+}
+
+/** Aplica um modelo de compra publicado ao rascunho de compra, com a contraparte do próprio contrato. */
+export async function fillPurchaseBody(
+  supabase: SupabaseClient,
+  userId: string,
+  input: { contractId: string; templateId: string },
+) {
+  const workspaceId = await resolveActiveWorkspace(userId);
+  await assertAnyPermission(supabase, userId, workspaceId, [
+    "techcontracts.contracts.update.own",
+    "techcontracts.contracts.update.team",
+    "techcontracts.contracts.update.workspace",
+  ]);
+  const sb = supabase as any;
+  const { data: c, error } = await sb
+    .from("contracts")
+    .select(
+      "id,role,status,title,starts_at,counterparty_kind,counterparty_company_id,counterparty_contact_id,contracting_legal_entity_id,metadata",
+    )
+    .eq("id", input.contractId)
+    .eq("workspace_id", workspaceId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!c) throw new Error("Contrato não encontrado.");
+  if (c.role !== "client") throw new Error("Use esta opção apenas em contratos de compra.");
+  if (c.status !== "draft") throw new Error("Só é possível preencher contratos em rascunho.");
+  const { data: t, error: te } = await sb
+    .from("contract_templates")
+    .select("*")
+    .eq("id", input.templateId)
+    .eq("workspace_id", workspaceId)
+    .maybeSingle();
+  if (te) throw new Error(te.message);
+  if (!t) throw new Error("Modelo não encontrado.");
+  if (t.status !== "published") throw new Error("Publique o modelo antes de usá-lo.");
+  if (t.role !== "client") throw new Error("Escolha um modelo do tipo Compra.");
+
+  const [{ buildMergeContext }, { mergeTemplateBody, templateFieldStatus }] = await Promise.all([
+    import("./template-merge.server"),
+    import("./template-tokens"),
+  ]);
+  const person = c.counterparty_kind === "person";
+  const { ctx, contract } = await buildMergeContext(
+    supabase,
+    workspaceId,
+    userId,
+    {
+      templateId: t.id,
+      title: c.title ?? undefined,
+      ...(person && c.counterparty_contact_id
+        ? { personContactId: c.counterparty_contact_id }
+        : {}),
+      ...(!person && c.counterparty_company_id ? { companyId: c.counterparty_company_id } : {}),
+      ...(!person && c.counterparty_contact_id ? { contactId: c.counterparty_contact_id } : {}),
+      ...(c.contracting_legal_entity_id
+        ? { contractingLegalEntityId: c.contracting_legal_entity_id }
+        : {}),
+    },
+    t,
+  );
+  const startsAt = c.starts_at ?? contract.starts_at;
+  const merged = { ...ctx, contract: { ...contract, title: c.title, starts_at: startsAt } };
+  const body = mergeTemplateBody(t.body_html ?? "", merged, { keepUnknown: true });
+  // Gravação pela RPC oficial de contratos (mesmas regras de acesso da ficha).
+  const { workRpc } = await import("@/lib/access-control/work-core.server");
+  await workRpc(supabase, "contract_mutate", {
+    p_contract: c.id,
+    p_patch: {
+      body_html: body,
+      starts_at: startsAt,
+      metadata: {
+        ...(c.metadata ?? {}),
+        contract_template_id: t.id,
+        contract_template_name: t.name,
+      },
+    },
+  });
+  return {
+    missing: templateFieldStatus(t.body_html ?? "", merged)
+      .filter((f: { missing: boolean }) => f.missing)
+      .map((f: { label: string }) => f.label),
+  };
+}
+
+/** Modelos de compra publicados do workspace ativo (RLS do usuário). */
+export async function listPurchaseTemplates(supabase: SupabaseClient, userId: string) {
+  const workspaceId = await resolveActiveWorkspace(userId);
+  const { data, error } = await (supabase as any)
+    .from("contract_templates")
+    .select("id,name")
+    .eq("workspace_id", workspaceId)
+    .eq("role", "client")
+    .eq("status", "published")
+    .order("name")
+    .limit(200);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as { id: string; name: string }[];
 }

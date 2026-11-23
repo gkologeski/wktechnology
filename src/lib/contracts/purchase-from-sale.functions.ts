@@ -85,3 +85,22 @@ export const searchPurchaseCounterparty = createServerFn({ method: "POST" })
       hint: r.email ?? "Sem e-mail",
     }));
   });
+
+// Preenche o rascunho de compra com um modelo de Compra publicado.
+export const fillPurchaseContractBody = createServerFn({ method: "POST" })
+  .middleware([requireWorkPermission("techcontracts.contracts", "update")])
+  .inputValidator((d) =>
+    z.object({ contractId: z.string().uuid(), templateId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertWorkRecord(context.supabase, "techcontracts.contracts", data.contractId, "update");
+    const { fillPurchaseBody } = await import("./purchase-from-sale.server");
+    return fillPurchaseBody(context.supabase, context.userId, data);
+  });
+
+export const listPurchaseContractTemplates = createServerFn({ method: "POST" })
+  .middleware([requireWorkPermission("techcontracts.contracts", "update")])
+  .handler(async ({ context }) => {
+    const { listPurchaseTemplates } = await import("./purchase-from-sale.server");
+    return listPurchaseTemplates(context.supabase, context.userId);
+  });

@@ -12351,9 +12351,12 @@
         "techcontracts.contracts.create.workspace",
         "techcontracts.contract_templates.view.own",
         "techcontracts.contract_templates.view.workspace",
-        "techsales.proposals.view.workspace"
+        "techsales.proposals.view.workspace",
+        "techcontracts.contracts.update.own",
+        "techcontracts.contracts.update.team",
+        "techcontracts.contracts.update.workspace"
       ],
-      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access. Reviewed concurrent ENDERECO-ATUAL change: cep added to the same workspace-filtered user/RLS company projection, pure party merge retains commercial snapshot values. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. TERMOS-MODELO 16/11/2026: template contracts copy payment_terms from the accepted proposal already read with the user client (RLS) under the existing create check; no access change. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 Fase 1 contratos unificados: contrato de compra (role client) pode referenciar a proposta aceita da venda como anexo técnico (mesmo workspace, negócio e cotação; empresa do fornecedor livre); venda mantém empresa igual. Nova contraparte PF/PJ (counterparty_kind, counterparty_contact_id) validada no mesmo workspace/empresa. Sem novas chaves ou grants; RLS de contracts inalterada. | COMPRA-VENDA 23/11/2026: 'Contratar fornecedor' on a sale contract creates a draft purchase contract (PJ company or PF contact) nested under the sale, reusing the sale's accepted proposal as technical annex. Server fn requires techcontracts.contracts create + view of the sale record; helper re-asserts create, reads sale/company/contact under user RLS filtered by active workspace; DB triggers (0461) validate contact workspace/company and proposal origin. Counterparty search is create-gated, user-RLS, workspace-filtered, limited to 20 rows. No new grants or keys.",
+      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access. Reviewed concurrent ENDERECO-ATUAL change: cep added to the same workspace-filtered user/RLS company projection, pure party merge retains commercial snapshot values. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. TERMOS-MODELO 16/11/2026: template contracts copy payment_terms from the accepted proposal already read with the user client (RLS) under the existing create check; no access change. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 Fase 1 contratos unificados: contrato de compra (role client) pode referenciar a proposta aceita da venda como anexo técnico (mesmo workspace, negócio e cotação; empresa do fornecedor livre); venda mantém empresa igual. Nova contraparte PF/PJ (counterparty_kind, counterparty_contact_id) validada no mesmo workspace/empresa. Sem novas chaves ou grants; RLS de contracts inalterada. | COMPRA-VENDA 23/11/2026: 'Contratar fornecedor' on a sale contract creates a draft purchase contract (PJ company or PF contact) nested under the sale, reusing the sale's accepted proposal as technical annex. Server fn requires techcontracts.contracts create + view of the sale record; helper re-asserts create, reads sale/company/contact under user RLS filtered by active workspace; DB triggers (0461) validate contact workspace/company and proposal origin. Counterparty search is create-gated, user-RLS, workspace-filtered, limited to 20 rows. No new grants or keys. COMPRA-MODELO: purchase draft body fill (fillPurchaseContractBody) requires techcontracts.contracts update middleware plus assertWorkRecord update on the record and assertAnyPermission; reads contract/template/company/contact under user RLS filtered by active workspace, only role=client drafts and published client templates; update is user-RLS guarded by status=draft. PF counterparty must be a contact without company. UI hides the control without update permission. 0462 grants column SELECT on non-sensitive counterparty_kind/counterparty_contact_id to authenticated (row access still by RLS); writes go through contract_mutate.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -12432,6 +12435,10 @@
         {
           "file": "drizzle/migrations/0461_purchase_contracts_from_sale_proposal.sql",
           "symbol": "contract_counterparty_guard"
+        },
+        {
+          "file": "drizzle/migrations/0462_contracts_counterparty_columns_select.sql",
+          "symbol": "contracts"
         }
       ],
       "tests": {
@@ -12459,7 +12466,7 @@
       "files": {
         "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
         "src/lib/contracts/contract-create.server.ts": "773a356a646938842dcd1ab4d34984d5c64143bd0e77bb68b0f0032155bb84a3",
-        "src/lib/contracts/template-merge.server.ts": "3e80845b4478cb663e57f465d6d0eb1aa759a34d9fbe502245fe7ee667737610",
+        "src/lib/contracts/template-merge.server.ts": "8fbdec9be8320303eb6de27687f7ad5551d2e26d13cb3bb066a420d48d559148",
         "src/lib/contracts/templates.functions.ts": "8125d98ec0b5e7a17cae0edc250ab28a3f335789774b52d5d7790ec09d0586bf",
         "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
         "src/lib/sales-flow.server.ts": "c9eaa4d789a9a9501d5401e97e44ad8b63068e21f0a2ba96642f3be77d0ac6ac",
@@ -12475,8 +12482,10 @@
         "drizzle/migrations/0461_purchase_contracts_from_sale_proposal.sql": "07ef5c297daf5a092c0e38b9fae2e2eec0c5b92be83ca9d461fc2cef310d93c2",
         "src/components/contracts/contract-parent-link.tsx": "761bc707792aab5eec1ccae6aac4bf36ab5c6bba440630a4b61306bebf12dadf",
         "src/components/contracts/purchase-from-sale-dialog.tsx": "29c7c493bdf84e7569928ad32f0e9f0dbc7f0d5d356231374d3d87560add1f24",
-        "src/lib/contracts/purchase-from-sale.functions.ts": "f2277ef04cf8959ae2aecc9ed16a74aaeefc348d1e1502af456f5db952791c21",
-        "src/lib/contracts/purchase-from-sale.server.ts": "fa93cf6af0f2ac48426d410932a184c83632c9fb8c6ee3b9413b0176ab196951"
+        "src/lib/contracts/purchase-from-sale.functions.ts": "8fab1b1cd1fc0a0c2dc7ea6dbdf8fd4e7d07ff9726a59b3b8866f9092ef05573",
+        "src/lib/contracts/purchase-from-sale.server.ts": "d2f6c20d36e045cd22e94e61411dc8822111766dc13cb946fde2b0b7c5ed2631",
+        "src/components/contracts/purchase-template-fill.tsx": "18393841c20a3011f962e702cda8a0a2eb7c16a6c9994ca695f7c1ac3b22ed15",
+        "drizzle/migrations/0462_contracts_counterparty_columns_select.sql": "d8ec6e27b68cbeb9ba2bfa442683698b3f501a8650190f36fb4a8c9e7c7da61c"
       }
     },
     {
@@ -23309,7 +23318,7 @@
       },
       "files": {
         "drizzle/migrations/0398_notification_projects.sql": "44a6f04a1e2cd6aa9d800ee5d083c73da8eee11c1e40cf0e78c08909bde016d5",
-        "src/lib/access-control/work-cost-projection.ts": "069eb2e21e6a491be78c467ab4cedd8ace706873732ca8987f21bac2c79d1732",
+        "src/lib/access-control/work-cost-projection.ts": "9ae74d87106c3e324451132ce3c3029927677ce45d3151f57a0c52f3dd2d7521",
         "src/lib/workflows/hydrate-associations.server.ts": "d58a6164142ff32fbc508be4afef09d6226e65be87a93d72f4b7ed8728f5f58b"
       }
     },
@@ -26568,7 +26577,7 @@
         "src/components/contracts/legacy/contract-legacy-panel.tsx": "c434e08ea45d5f0f37678bb05e87e9053df7e09f2ea23b9b516b119e1f666b0a",
         "src/lib/contracts/legacy.functions.ts": "29e306393c0daf2590d88a720bfd89bbe5683e9400af3efc0ebd85f04c3736a6",
         "src/lib/contracts/legacy.server.ts": "fdb7b015d3ccd7f3a081bb38900b362ab097d65a118d20420a4ea1a274dc5f47",
-        "src/routes/_authenticated/contracts.$id.tsx": "5f7821d306049541bf41a978d6a961b0b3c75f9aec4f94bc57509c3760304831",
+        "src/routes/_authenticated/contracts.$id.tsx": "3c50ebbcf3bfb88644a6e336d4d407e6e3a1912a93af002d3a2f5be525b78475",
         "drizzle/migrations/0454_contract_legacy_discard_pending.sql": "7ee86112069b893634b01b4babc64a3339947bf9b02524cbc8152a35ad8fbe72",
         "drizzle/migrations/0455_contract_legacy_discard_list_batch.sql": "255ab07053c066122545fc1c0a1f856a52241d543f95e055b3c90213a17621ab"
       }

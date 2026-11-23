@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 40
-version: 3
+version: 4
 is_published: true
 ---
 # Aninhar contratos de compra sob uma prestação
@@ -23,7 +23,8 @@ is_published: true
 1. Na venda, abra a aba "Aditivos e vínculos" e clique em "Contratar fornecedor".
 2. Escolha "Empresa (PJ)" e selecione a empresa fornecedora (e, se quiser, o contato que assina) ou escolha "Pessoa física" e selecione o profissional.
 3. Clique em "Criar contrato de compra". O sistema abre o novo contrato de compra em rascunho, já aninhado à venda e com a proposta comercial aceita da venda como anexo técnico.
-4. Siga pelo contrato de compra: escolha o modelo, revise a minuta e envie para assinatura como em qualquer contrato.
+4. No contrato de compra, abra a aba "Documento", escolha o "Modelo de compra" e clique em "Preencher com dados do fornecedor". O texto recebe a WK como contratante e a empresa ou o profissional como contratada; a data de início fica como hoje se ainda estiver vazia.
+5. Se aparecer o aviso "Complete manualmente", ajuste no texto os dados indicados e salve. Depois envie para assinatura como em qualquer contrato.
 
 Você pode contratar o fornecedor no mesmo dia da venda ou depois; a venda continua valendo sozinha.
 
@@ -40,7 +41,8 @@ Contrato de compra associado à prestação e apresentado sob ela na listagem.
 
 ## Regras e limites
 - "Contratar fornecedor" exige permissão de criar contratos; o botão não aparece para quem não tem.
-- O contato precisa ser da empresa escolhida. Pessoa física não usa empresa.
+- O contato precisa ser da empresa escolhida. Pessoa física deve ser um contato sem empresa vinculada.
+- "Preencher com dados do fornecedor" só aparece em contratos de compra em rascunho, para quem pode editar contratos, e substitui o texto atual.
 - Compra representa a WK como contratante do profissional; prestação representa a WK prestadora.
 - Compra não aninha outra compra ou prestação neste card. Aditivos têm painel próprio.
 - Autovínculo é impedido. Mover exige confirmação.

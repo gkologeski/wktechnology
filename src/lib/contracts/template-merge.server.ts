@@ -77,6 +77,8 @@ export type MergeInput = {
   contractingLegalEntityId?: string;
   /** Contratação de fornecedor: contato escolhido na solicitação (mesma empresa). */
   contactId?: string;
+  /** Compra com profissional PF: contraparte é o próprio contato (sem empresa). */
+  personContactId?: string;
   installmentsCount?: number;
   installmentsDueDay?: number;
   /** DADOS-ADITIVO: valores só do contrato informados no assistente. */
@@ -159,6 +161,19 @@ export async function buildMergeContext(
     if (input.contactId) contactQuery = contactQuery.eq("id", input.contactId);
     const { data } = await contactQuery.order("created_at", { ascending: true }).limit(1);
     contact = data?.[0] ?? null;
+  }
+
+  let person: any = null;
+  if (input.personContactId && !source) {
+    const { data } = await supabase
+      .from("contacts")
+      .select("first_name, last_name, email, phone, company_id, custom_fields")
+      .eq("workspace_id", workspaceId)
+      .eq("id", input.personContactId)
+      .maybeSingle();
+    if (!data) throw new Error("Profissional (pessoa física) indisponível neste workspace.");
+    person = data;
+    contact = data;
   }
 
   const entityId =
@@ -254,8 +269,8 @@ export async function buildMergeContext(
   const validityDays = source
     ? (proposalTerms?.validity_days ?? DEFAULT_VALIDITY_DAYS)
     : ((defaults.validity_days as number) ?? null);
-  const startsAt =
-    (defaults.starts_at as string) ?? (source ? now.toISOString().slice(0, 10) : null);
+  // Início da vigência: padrão do modelo ou hoje (evita minuta sem data de início).
+  const startsAt = (defaults.starts_at as string) ?? now.toISOString().slice(0, 10);
   const contract = {
     number: generateNumber(),
     title,
@@ -330,23 +345,40 @@ export async function buildMergeContext(
           }),
         }
       : null,
-    counterparty: {
-      name: company?.name ?? null,
-      cnpj: company?.cnpj ?? null,
-      address: company?.address ?? null,
-      city: company?.city ?? null,
-      state: company?.state ?? null,
-    },
+    counterparty: person
+      ? {
+          name: [person.first_name, person.last_name].filter(Boolean).join(" ") || null,
+          cnpj: null,
+          cpf: (person.custom_fields?.cpf as string) ?? null,
+          address: (person.custom_fields?.address as string) ?? null,
+          city: (person.custom_fields?.city as string) ?? null,
+          state: (person.custom_fields?.state as string) ?? null,
+        }
+      : {
+          name: company?.name ?? null,
+          cnpj: company?.cnpj ?? null,
+          address: company?.address ?? null,
+          city: company?.city ?? null,
+          state: company?.state ?? null,
+        },
     contracting: {
       name: entity?.name ?? null,
       cnpj: entity?.cnpj ?? null,
       address: legalEntityAddress(entity?.address_json),
     },
-    signer: {
-      full_name: signer ? [signer.first_name, signer.last_name].filter(Boolean).join(" ") : null,
-      cpf: (signer?.custom_fields?.cpf as string) ?? null,
-      email: signer?.email ?? null,
-    },
+    signer: person
+      ? {
+          full_name: [person.first_name, person.last_name].filter(Boolean).join(" ") || null,
+          cpf: (person.custom_fields?.cpf as string) ?? null,
+          email: person.email ?? null,
+        }
+      : {
+          full_name: signer
+            ? [signer.first_name, signer.last_name].filter(Boolean).join(" ")
+            : null,
+          cpf: (signer?.custom_fields?.cpf as string) ?? null,
+          email: signer?.email ?? null,
+        },
     contact: {
       full_name: contact ? [contact.first_name, contact.last_name].filter(Boolean).join(" ") : null,
       email: contact?.email ?? null,
