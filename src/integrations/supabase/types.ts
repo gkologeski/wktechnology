@@ -7741,6 +7741,55 @@ export type Database = {
           },
         ]
       }
+      contract_purchase_sales: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          purchase_contract_id: string
+          sale_contract_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          purchase_contract_id: string
+          sale_contract_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          purchase_contract_id?: string
+          sale_contract_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_purchase_sales_purchase_contract_id_fkey"
+            columns: ["purchase_contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_purchase_sales_sale_contract_id_fkey"
+            columns: ["sale_contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_purchase_sales_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_signature_packages: {
         Row: {
           contract_hash: string
@@ -37913,6 +37962,10 @@ export type Database = {
       }
       contract_purchase_payables_generate: {
         Args: { p_contract: string; p_installments: Json }
+        Returns: Json
+      }
+      contract_purchase_sale_set: {
+        Args: { p_link: boolean; p_purchase: string; p_sale: string }
         Returns: Json
       }
       contract_signature_package_store: {

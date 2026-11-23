@@ -14,6 +14,7 @@ export const createPurchaseFromSale = createServerFn({ method: "POST" })
         companyId: z.string().uuid().nullable().optional(),
         contactId: z.string().uuid().nullable().optional(),
         title: z.string().max(300).nullable().optional(),
+        extraSaleIds: z.array(z.string().uuid()).max(20).optional(),
       })
       .parse(d),
   )
@@ -34,7 +35,7 @@ export const searchPurchaseCounterparty = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
       .object({
-        entity: z.enum(["company", "contact", "sale"]),
+        entity: z.enum(["company", "contact", "sale", "sale_any"]),
         search: z.string().max(120),
         companyId: z.string().uuid().nullable().optional(),
         selected: z.string().uuid().nullable().optional(),
@@ -45,13 +46,14 @@ export const searchPurchaseCounterparty = createServerFn({ method: "POST" })
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const term = data.search.trim().replace(/[%,()]/g, " ");
-    if (data.entity === "sale") {
+    if (data.entity === "sale" || data.entity === "sale_any") {
       let q = context.supabase
         .from("contracts")
         .select("id,title,number,status")
         .eq("workspace_id", ws)
-        .eq("role", "provider")
-        .eq("document_kind", "main");
+        .eq("role", "provider");
+      // Vendas adicionais podem ser aditivos com negócio próprio (ex.: horas extras).
+      q = data.entity === "sale" ? q.eq("document_kind", "main") : q.in("document_kind", ["main", "amendment"]);
       if (data.selected) q = q.eq("id", data.selected);
       else if (term) q = q.or(`title.ilike.%${term}%,number.ilike.%${term}%`);
       const { data: rows, error } = await q.order("created_at", { ascending: false }).limit(20);
@@ -127,4 +129,36 @@ export const listPurchaseContractTemplates = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { listPurchaseTemplates } = await import("./purchase-from-sale.server");
     return listPurchaseTemplates(context.supabase, context.userId);
+  });
+
+// Vendas atendidas pelo contrato de compra (ou compras que atendem a venda).
+export const listPurchaseSales = createServerFn({ method: "POST" })
+  .middleware([requireWorkPermission("techcontracts.contracts", "view")])
+  .inputValidator((d) => z.object({ contractId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertWorkRecord(context.supabase, "techcontracts.contracts", data.contractId, "view");
+    const { listPurchaseSalesFor } = await import("./purchase-from-sale.server");
+    return listPurchaseSalesFor(context.supabase, data.contractId);
+  });
+
+// Liga ou desliga uma venda adicional do contrato de compra (RPC valida update/workspace).
+export const setPurchaseSale = createServerFn({ method: "POST" })
+  .middleware([requireWorkPermission("techcontracts.contracts", "update")])
+  .inputValidator((d) =>
+    z
+      .object({
+        purchaseId: z.string().uuid(),
+        saleId: z.string().uuid(),
+        link: z.boolean(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertWorkRecord(context.supabase, "techcontracts.contracts", data.purchaseId, "update");
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<{ linked: boolean; primary?: boolean }>(context.supabase, "contract_purchase_sale_set", {
+      p_purchase: data.purchaseId,
+      p_sale: data.saleId,
+      p_link: data.link,
+    });
   });

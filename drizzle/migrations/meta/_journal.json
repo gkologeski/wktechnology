@@ -3249,6 +3249,13 @@
       "when": 1795453753925,
       "tag": "0463_purchase_contract_payables",
       "breakpoints": true
+    },
+    {
+      "idx": 464,
+      "version": "7",
+      "when": 1795461614128,
+      "tag": "0464_purchase_contract_sales",
+      "breakpoints": true
     }
   ]
 }

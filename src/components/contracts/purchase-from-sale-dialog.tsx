@@ -51,10 +51,10 @@ export function PurchaseFromSaleButton({
   );
 }
 
-function CounterpartyField(props: {
+export function CounterpartyField(props: {
   id: string;
   label: string;
-  entity: "company" | "contact" | "sale";
+  entity: "company" | "contact" | "sale" | "sale_any";
   companyId?: string | null;
   value: string | null;
   onChange: (id: string | null) => void;
@@ -68,7 +68,8 @@ function CounterpartyField(props: {
     !props.value &&
     (term.trim().length >= 2 ||
       (props.entity === "contact" && !!props.companyId) ||
-      props.entity === "sale");
+      props.entity === "sale" ||
+      props.entity === "sale_any");
   const q = useQuery({
     queryKey: ["purchase-counterparty", props.entity, props.companyId ?? null, term],
     enabled,
@@ -122,6 +123,7 @@ export function PurchaseDialog({
   const [kind, setKind] = useState<"company" | "person">("company");
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [contactId, setContactId] = useState<string | null>(null);
+  const [extraSale, setExtraSale] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const ready = !!saleContractId && (kind === "company" ? !!companyId : !!contactId);
 
@@ -130,7 +132,13 @@ export function PurchaseDialog({
     setBusy(true);
     try {
       const r = await create({
-        data: { saleContractId, counterpartyKind: kind, companyId, contactId },
+        data: {
+          saleContractId,
+          counterpartyKind: kind,
+          companyId,
+          contactId,
+          ...(extraSale && extraSale !== saleContractId ? { extraSaleIds: [extraSale] } : {}),
+        },
       });
       toast.success("Contrato de compra criado em rascunho.");
       await qc.invalidateQueries({ queryKey: ["contract", saleContractId] });
@@ -167,6 +175,19 @@ export function PurchaseDialog({
               onChange={setPickedSale}
             />
           )}
+          <div className="space-y-1">
+            <CounterpartyField
+              id="purchase-extra-sale"
+              label="Outra venda atendida (opcional)"
+              entity="sale_any"
+              value={extraSale}
+              onChange={setExtraSale}
+            />
+            <p className="text-xs text-muted-foreground">
+              Use quando a mesma compra atende mais de uma venda (por exemplo, um aditivo de horas
+              com negócio próprio). Outras vendas podem ser incluídas depois na ficha.
+            </p>
+          </div>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">Tipo de contraparte</legend>
             <RadioGroup

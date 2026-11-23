@@ -60,6 +60,7 @@ import { getContract, updateContract, deleteContract } from "@/lib/contracts.fun
 import { ContractServices } from "@/components/services/contract-services";
 import { ContractApprovalsPanel } from "@/components/contracts/contract-approvals-panel";
 import { ContractParentLink } from "@/components/contracts/contract-parent-link";
+import { PurchaseSalesPanel } from "@/components/contracts/purchase-sales-panel";
 import {
   ContractAmendmentsPanel,
   type AmendmentRow,
@@ -804,6 +805,8 @@ function ContractDetail() {
                 .children ?? []
             }
           />
+
+          <PurchaseSalesPanel contractId={contract.id} role={role} canEdit={canUpdateContract} />
 
           <ContractAmendmentsPanel
             contractId={contract.id}

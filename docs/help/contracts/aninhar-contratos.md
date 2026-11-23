@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 40
-version: 8
+version: 9
 is_published: true
 ---
 # Aninhar contratos de compra sob uma prestação
@@ -62,3 +62,14 @@ Contrato de compra associado à prestação e apresentado sob ela na listagem.
 ## Relacionados
 - [Vincular aditivos](/ajuda/contracts/vincular-aditivo)
 - [Vinculação de contratos](/ajuda/contracts/revisar-vinculacao)
+
+## Uma compra que atende várias vendas
+
+Às vezes o mesmo fornecedor executa trabalho de mais de uma venda — por exemplo, um contrato de consultoria e um aditivo de horas, cada um com seu negócio.
+
+1. Abra o contrato de compra e vá em **Aditivos e vínculos**.
+2. No quadro **Vendas atendidas**, a venda de criação aparece como **Principal**.
+3. Em **Adicionar venda**, busque pelo título ou número do outro contrato (ou aditivo) de venda e clique em **Incluir**.
+4. Cada venda mostra o negócio ligado. O quadro também sugere a vigência que cobre todas as vendas; ajuste as datas da compra se necessário.
+
+Ao criar pelo botão **Contratar fornecedor**, você já pode informar uma **Outra venda atendida**. Na ficha de cada venda, a compra aparece em **Contratos de compra que também atendem esta venda**. Para remover um vínculo adicional, use o ícone de desligar e confirme. Só quem pode alterar o contrato de compra inclui ou remove vendas.

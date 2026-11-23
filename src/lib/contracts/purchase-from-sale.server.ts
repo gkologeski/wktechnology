@@ -11,6 +11,8 @@ export type PurchaseFromSaleInput = {
   companyId?: string | null;
   contactId?: string | null;
   title?: string | null;
+  /** Outras vendas (contratos ou aditivos com negócio próprio) atendidas pela mesma compra. */
+  extraSaleIds?: string[];
 };
 
 type Sale = {
@@ -97,7 +99,21 @@ export async function purchaseFromSale(
       supplierName = [c.first_name, c.last_name].filter(Boolean).join(" ") || "Profissional";
   }
 
-  // Vigência: venda + aditivos ativos + projetos ligados à venda/negócio.
+  const extraIds = [...new Set(input.extraSaleIds ?? [])].filter((id) => id !== sale.id);
+  let extras: { starts_at: string | null; ends_at: string | null }[] = [];
+  if (extraIds.length) {
+    const { data: ex, error: ee } = await supabase
+      .from("contracts")
+      .select("id,starts_at,ends_at,role")
+      .eq("workspace_id", workspaceId)
+      .in("id", extraIds);
+    if (ee) throw new Error(ee.message);
+    const ok = (ex ?? []).filter((r: { role: string | null }) => r.role === "provider");
+    if (ok.length !== extraIds.length) throw new Error("Uma das vendas adicionais não foi encontrada.");
+    extras = ok as typeof extras;
+  }
+
+  // Vigência: venda + vendas adicionais + aditivos ativos + projetos ligados à venda/negócio.
   const [{ data: amendments }, { data: projects }] = await Promise.all([
     supabase
       .from("contracts")
@@ -121,6 +137,7 @@ export async function purchaseFromSale(
   const term = suggestPurchaseTerm(
     [
       sale,
+      ...extras,
       ...((amendments ?? []) as { starts_at: string | null; ends_at: string | null }[]),
       ...((projects ?? []) as { starts_at: string | null; due_at: string | null }[]).map((p) => ({
         starts_at: p.starts_at,
@@ -151,6 +168,15 @@ export async function purchaseFromSale(
       ends_at: term.ends_at,
     },
   });
+  if (extraIds.length) {
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    for (const saleId of extraIds)
+      await workRpc(supabase, "contract_purchase_sale_set", {
+        p_purchase: (result.contract as { id: string }).id,
+        p_sale: saleId,
+        p_link: true,
+      });
+  }
   return { contract: result.contract };
 }
 
@@ -250,4 +276,73 @@ export async function listPurchaseTemplates(supabase: SupabaseClient, userId: st
     .limit(200);
   if (error) throw new Error(error.message);
   return (data ?? []) as { id: string; name: string }[];
+}
+
+// Vendas atendidas por uma compra: principal (parent_contract_id) + adicionais (contract_purchase_sales).
+export type PurchaseSaleRow = {
+  id: string;
+  number: string | null;
+  title: string | null;
+  status: string;
+  total_value: number;
+  currency: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  deal_id: string | null;
+  deal_title: string | null;
+  primary: boolean;
+};
+
+const COLS = "id,number,title,status,total_value,currency,starts_at,ends_at,deal_id,role,parent_contract_id";
+
+export async function listPurchaseSalesFor(supabase: SupabaseClient, contractId: string) {
+  const sb = supabase as any;
+  const { data: c, error } = await sb.from("contracts").select(COLS).eq("id", contractId).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!c) throw new Error("Contrato não encontrado.");
+  let ids: string[] = [];
+  let primaryId: string | null = null;
+  if (c.role === "client") {
+    const { data: links, error: e } = await sb
+      .from("contract_purchase_sales")
+      .select("sale_contract_id")
+      .eq("purchase_contract_id", contractId);
+    if (e) throw new Error(e.message);
+    primaryId = c.parent_contract_id;
+    ids = [primaryId, ...(links ?? []).map((l: any) => l.sale_contract_id)].filter(Boolean);
+  } else {
+    const { data: links, error: e } = await sb
+      .from("contract_purchase_sales")
+      .select("purchase_contract_id")
+      .eq("sale_contract_id", contractId);
+    if (e) throw new Error(e.message);
+    ids = (links ?? []).map((l: any) => l.purchase_contract_id);
+  }
+  if (!ids.length) return { role: c.role as string, rows: [] as PurchaseSaleRow[] };
+  const { data: rows, error: re } = await sb.from("contracts").select(COLS).in("id", ids);
+  if (re) throw new Error(re.message);
+  const dealIds = [...new Set((rows ?? []).map((r: any) => r.deal_id).filter(Boolean))];
+  const deals = new Map<string, string>();
+  if (dealIds.length) {
+    const { data: d } = await sb.from("deals").select("id,name").in("id", dealIds);
+    for (const x of d ?? []) deals.set(x.id, x.name);
+  }
+  return {
+    role: c.role as string,
+    rows: (rows ?? []).map(
+      (r: any): PurchaseSaleRow => ({
+        id: r.id,
+        number: r.number,
+        title: r.title,
+        status: r.status,
+        total_value: Number(r.total_value ?? 0),
+        currency: r.currency ?? "BRL",
+        starts_at: r.starts_at,
+        ends_at: r.ends_at,
+        deal_id: r.deal_id,
+        deal_title: r.deal_id ? (deals.get(r.deal_id) ?? null) : null,
+        primary: r.id === primaryId,
+      }),
+    ).sort((a: PurchaseSaleRow, b: PurchaseSaleRow) => Number(b.primary) - Number(a.primary)),
+  };
 }
