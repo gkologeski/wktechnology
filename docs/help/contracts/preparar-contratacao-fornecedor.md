@@ -8,7 +8,7 @@ route_pattern: /contracts/supplier-requests
 min_permission: techcontracts.supplier_requests.view.workspace
 audience: internal
 sort_order: 36
-version: 17
+version: 18
 is_published: true
 ---
 
@@ -76,6 +76,7 @@ O resumo mostra **Conferência da origem** com nome, entidade WK e CNPJ dos regi
 ## Formalização do instrumento aprovado
 
 1. Somente após aprovação válida da revisão pelo gestor e CEO, use **Preparar instrumento**. RH prepara profissional; Jurídico autorizado prepara compra de fornecedor. Exige a chave específica de formalização do módulo e acesso real de criação/leitura do contrato e minuta; não concede acesso a outros cargos.
+1. Em **Abrir minuta**, o Jurídico escolhe o modelo e usa **Preencher dados da proposta**: em compra de fornecedor, a contratada, o contato e a empresa contratante vêm da própria solicitação. Se faltar CNPJ ou endereço, complete o cadastro da empresa fornecedora.
 2. Profissional exige pessoa real definida, inclusive CLT/PJ/freelance; necessidade de seleção bloqueia este passo. Fornecedor exige empresa e contato canônico autorizado com e-mail cadastrado. Não se criam proposta, negócio ou vaga fictícios.
 3. Em **Abrir instrumento e anexos**, confira cláusulas, partes, vigência e condições e envie arquivos privados. WK é contratante e pessoa/empresa é contratada. O documento nasce em rascunho, sem validade de aprovação jurídica presumida. Para este fluxo, anexos devem ser arquivos completos; não use documentos comerciais vinculados como substituto da conferência.
 4. Registre a conferência e use **Encaminhar ao Jurídico**. O responsável jurídico configurado revisa o documento e anexos e confirma ou rejeita, com motivo; pode revisar explicitamente o documento que preparou, mas não pode aprovar sua própria demanda (autor ou solicitante da aprovação).

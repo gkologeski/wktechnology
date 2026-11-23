@@ -3221,6 +3221,13 @@
       "when": 1795390118080,
       "tag": "0459_inbox_occurrence_default_privileges",
       "breakpoints": true
+    },
+    {
+      "idx": 460,
+      "version": "7",
+      "when": 1795438790484,
+      "tag": "0460_contract_draft_merge_source_supplier",
+      "breakpoints": true
     }
   ]
 }

@@ -10,9 +10,18 @@
         "drizzle/migrations/0410_gmail_durable_sync_queue.sql": "08e13c6458c698ad36786eef39ee11f54839f23e867fdb9cee65eb21bcc4da2e",
         "src/lib/gmail-provider-time.ts": "b7999766a506c8f4635cf1b6ea35a965d9560dd8eb75c7749d117b3e836f4002"
       },
-      "resources": ["techsales.email_accounts"],
-      "actions": ["view", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.email_accounts"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.email_accounts.view.own",
         "techsales.email_accounts.view.team",
@@ -114,9 +123,19 @@
         "techfinance.entries",
         "techfinance.payments"
       ],
-      "actions": ["view", "export"],
-      "scopes": ["own", "team", "workspace"],
-      "permission_keys": ["system.home.view.workspace", "system.home.export.workspace"],
+      "actions": [
+        "view",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.home.view.workspace",
+        "system.home.export.workspace"
+      ],
       "rationale": "Home view/export use the authenticated shared boundary. Each finite aggregate independently rechecks its own current module and record permissions; field rules are resolved by the protected database views. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants.",
       "controls": [
         {
@@ -166,9 +185,23 @@
       }
     },
     {
-      "resources": ["system.automation.macros", "system.communication.subscription_types"],
-      "actions": ["view", "create", "update", "delete", "manage", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.automation.macros",
+        "system.communication.subscription_types"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.macros.create.own",
         "system.automation.macros.create.workspace",
@@ -235,9 +268,23 @@
       }
     },
     {
-      "resources": ["system.automation.macros", "system.communication.subscription_types"],
-      "actions": ["view", "create", "update", "delete", "manage", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.automation.macros",
+        "system.communication.subscription_types"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.macros.create.own",
         "system.automation.macros.create.workspace",
@@ -310,8 +357,19 @@
         "system.linkedin",
         "system.whatsapp_templates"
       ],
-      "actions": ["view", "create", "update", "delete", "manage", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.macros.create.own",
         "system.automation.macros.create.workspace",
@@ -388,9 +446,23 @@
       }
     },
     {
-      "resources": ["system.automation.macros", "system.communication.subscription_types"],
-      "actions": ["view", "create", "update", "delete", "manage", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.automation.macros",
+        "system.communication.subscription_types"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.macros.create.own",
         "system.automation.macros.create.workspace",
@@ -459,9 +531,22 @@
     {
       "id": "legacy-recurring-billing-authorization",
       "kind": "business",
-      "resources": ["techfinance.recurrences", "techfinance.invoices"],
-      "actions": ["view", "create", "update", "delete", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techfinance.recurrences",
+        "techfinance.invoices"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techfinance.invoices.create.own",
         "techfinance.invoices.create.workspace",
@@ -543,8 +628,16 @@
         "techsales.leads",
         "techsales.prospecting_scoring"
       ],
-      "actions": ["view", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.contacts.update.workspace",
         "techsales.companies.view.workspace",
@@ -597,9 +690,18 @@
     {
       "id": "document-read-equivalent-wide-path",
       "kind": "business",
-      "resources": ["techpeople.people", "techpeople.documents"],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techpeople.people",
+        "techpeople.documents"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.people.view.workspace",
         "techpeople.documents.view.workspace"
@@ -646,9 +748,18 @@
     {
       "id": "own-api-credential-management",
       "kind": "business",
-      "resources": ["system.api_keys"],
-      "actions": ["view", "create", "manage", "delete"],
-      "scopes": ["own"],
+      "resources": [
+        "system.api_keys"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "manage",
+        "delete"
+      ],
+      "scopes": [
+        "own"
+      ],
       "permission_keys": [
         "system.api_keys.view.own",
         "system.api_keys.create.own",
@@ -705,9 +816,23 @@
       }
     },
     {
-      "resources": ["system.automation.macros", "system.communication.subscription_types"],
-      "actions": ["view", "create", "update", "delete", "manage", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.automation.macros",
+        "system.communication.subscription_types"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.macros.create.own",
         "system.automation.macros.create.workspace",
@@ -770,9 +895,22 @@
     {
       "id": "legacy-recurring-billing-authorization-database",
       "kind": "business",
-      "resources": ["techfinance.recurrences", "techfinance.invoices"],
-      "actions": ["view", "create", "update", "delete", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techfinance.recurrences",
+        "techfinance.invoices"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techfinance.invoices.create.own",
         "techfinance.invoices.create.workspace",
@@ -847,9 +985,18 @@
     {
       "id": "own-api-credential-management-database",
       "kind": "business",
-      "resources": ["system.api_keys"],
-      "actions": ["view", "create", "manage", "delete"],
-      "scopes": ["own"],
+      "resources": [
+        "system.api_keys"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "manage",
+        "delete"
+      ],
+      "scopes": [
+        "own"
+      ],
       "permission_keys": [
         "system.api_keys.view.own",
         "system.api_keys.create.own",
@@ -898,10 +1045,18 @@
     {
       "id": "api-subject-existing-key-identity",
       "kind": "business",
-      "resources": ["system.api_keys"],
-      "actions": ["view"],
-      "scopes": ["own"],
-      "permission_keys": ["system.api_keys.view.own"],
+      "resources": [
+        "system.api_keys"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "permission_keys": [
+        "system.api_keys.view.own"
+      ],
       "rationale": "Private API role validates only the exact credential in its private transaction session, independently of browser credential-management permissions. Browser helper execution and private session writes are prohibited. API actions still require the current owner module permissions and immutable tenant/owner. Three additional actual SQL tests and eleven real-JWT HTTP/realtime acceptance checks cover this boundary. No role assignments or module grants are added.",
       "controls": [
         {
@@ -949,8 +1104,14 @@
         "techsales.companies",
         "techsales.deals"
       ],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.audit.view.own",
         "system.audit.view.team",
@@ -1014,8 +1175,14 @@
         "techsales.companies",
         "techsales.deals"
       ],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.audit.view.own",
         "system.audit.view.team",
@@ -1076,9 +1243,21 @@
       }
     },
     {
-      "resources": ["system.audit_exports", "system.audit"],
-      "actions": ["view", "create", "update", "delete", "manage", "export"],
-      "scopes": ["workspace"],
+      "resources": [
+        "system.audit_exports",
+        "system.audit"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "system.audit.view.workspace",
         "system.audit.export.workspace",
@@ -1149,9 +1328,21 @@
       }
     },
     {
-      "resources": ["system.audit_exports", "system.audit"],
-      "actions": ["view", "create", "update", "delete", "manage", "export"],
-      "scopes": ["workspace"],
+      "resources": [
+        "system.audit_exports",
+        "system.audit"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "system.audit.view.workspace",
         "system.audit.export.workspace",
@@ -1213,9 +1404,15 @@
     {
       "id": "audit-index-service-expression",
       "kind": "service",
-      "resources": ["system.audit"],
-      "actions": ["normalize_index_expression"],
-      "scopes": ["service"],
+      "resources": [
+        "system.audit"
+      ],
+      "actions": [
+        "normalize_index_expression"
+      ],
+      "scopes": [
+        "service"
+      ],
       "permission_keys": [],
       "rationale": "An existing service audit writer must evaluate the pure IMMUTABLE input-only tenant expression used by the audit index. The normalizer reads no table and grants no business row access. The mandatory pagination test inserts as service_role; browser raw payload ACL and the five SQL audit denials remain enforced.",
       "controls": [
@@ -1263,9 +1460,18 @@
       }
     },
     {
-      "resources": ["system.phone_normalization", "system.rbac_diagnostics", "system.roles"],
-      "actions": ["view", "manage"],
-      "scopes": ["workspace"],
+      "resources": [
+        "system.phone_normalization",
+        "system.rbac_diagnostics",
+        "system.roles"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "system.phone_normalization.view.workspace",
         "system.phone_normalization.manage.workspace",
@@ -1340,9 +1546,18 @@
       }
     },
     {
-      "resources": ["system.phone_normalization", "system.rbac_diagnostics", "system.roles"],
-      "actions": ["view", "manage"],
-      "scopes": ["workspace"],
+      "resources": [
+        "system.phone_normalization",
+        "system.rbac_diagnostics",
+        "system.roles"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "system.phone_normalization.view.workspace",
         "system.phone_normalization.manage.workspace",
@@ -1401,9 +1616,15 @@
     {
       "id": "active-self-context-metadata",
       "kind": "personal",
-      "resources": ["system.profile"],
-      "actions": ["view"],
-      "scopes": ["own"],
+      "resources": [
+        "system.profile"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own"
+      ],
       "permission_keys": [],
       "rationale": "Authenticated metadata callers bind the current actor to the actual active selected workspace. This personal context is not a grant to read or change any business record. Other-user inspection has the independent admin/IAM boundary.",
       "controls": [
@@ -1453,10 +1674,21 @@
     {
       "id": "permission-introspection-subject-boundary",
       "kind": "personal",
-      "resources": ["system.rbac_diagnostics", "system.roles"],
-      "actions": ["view"],
-      "scopes": ["own", "workspace"],
-      "permission_keys": ["system.rbac_diagnostics.view.workspace", "system.roles.view.workspace"],
+      "resources": [
+        "system.rbac_diagnostics",
+        "system.roles"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.rbac_diagnostics.view.workspace",
+        "system.roles.view.workspace"
+      ],
       "rationale": "Own effective permission metadata is personal and membership-bound. Another-user inspection additionally requires selected tenant, active platform admin and the diagnostics OR IAM key. Trusted service execution remains allowed. Unchecked resolver stays private. Canonical data scope excludes foreign creator-owned bindings; denied scope is neutral own, never a grant. Field simulation executes the real target shared_field_context in the established private transaction context and restores actor identity. No role grants or stored scope values change.",
       "controls": [
         {
@@ -1513,9 +1745,17 @@
     {
       "id": "sales-dashboard-protected-read-compatibility",
       "kind": "business",
-      "resources": ["techsales.deals"],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.deals"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.deals.view.own",
         "techsales.deals.view.team",
@@ -1581,8 +1821,14 @@
         "techsales.notes",
         "techsales.tasks"
       ],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.deals.view.workspace",
         "techsales.activities.view.workspace",
@@ -1651,8 +1897,14 @@
         "techsales.companies",
         "techsales.deals"
       ],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.audit.view.own",
         "system.audit.view.team",
@@ -1711,8 +1963,20 @@
         "techfinance.payments",
         "techfinance.entry_cancellation"
       ],
-      "actions": ["view", "update", "delete", "create", "manage", "export", "assign"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "update",
+        "delete",
+        "create",
+        "manage",
+        "export",
+        "assign"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techfinance.entries.view.workspace",
         "techfinance.entries.update.workspace",
@@ -1935,8 +2199,14 @@
         "techsales.contacts",
         "techsales.leads"
       ],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.inbox.email.view.own",
         "techsales.inbox.email.view.team",
@@ -1998,10 +2268,20 @@
     {
       "id": "whatsapp-cloud-connection-center",
       "kind": "business",
-      "resources": ["system.whatsapp"],
-      "actions": ["view", "manage"],
-      "scopes": ["workspace"],
-      "permission_keys": ["system.whatsapp.view.workspace", "system.whatsapp.manage.workspace"],
+      "resources": [
+        "system.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.whatsapp.view.workspace",
+        "system.whatsapp.manage.workspace"
+      ],
       "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants. The legacy WhatsApp route now renders the same extracted WhatsAppConfiguration used by the channel center; original transport operations and server checks are preserved. Additional WABAs may reuse encrypted credentials of an existing connection only inside the server after current manage authorization and same-workspace source resolution; Meta must return numbers for the new WABA before an explicitly disabled connection is persisted. Fresh private verification secrets are encrypted, never returned. Authorization is repeated after remote lookup. WABA subscriptions use connection-specific callback overrides on the fixed server public HTTPS origin, preserving app-level defaults and other accounts; verification/received-event gates for activation remain unchanged. Revisão 18/11/2026: catálogo de remetentes inclui o conector já existente somente após middleware de campanhas/inbox e membership ativo; nenhuma credencial é retornada. Remetentes diretos continuam limitados ao workspace e conexões habilitadas.",
       "controls": [
         {
@@ -2077,10 +2357,20 @@
     {
       "id": "whatsapp-cloud-transport-internal",
       "kind": "internal",
-      "resources": ["system.whatsapp"],
-      "actions": ["view", "manage"],
-      "scopes": ["workspace"],
-      "permission_keys": ["system.whatsapp.view.workspace", "system.whatsapp.manage.workspace"],
+      "resources": [
+        "system.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.whatsapp.view.workspace",
+        "system.whatsapp.manage.workspace"
+      ],
       "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos.",
       "controls": [
         {
@@ -2237,9 +2527,22 @@
     {
       "id": "whatsapp-cloud-authenticated-routing",
       "kind": "business",
-      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.whatsapp",
+        "techsales.inbox.whatsapp",
+        "techsales.marketing.campaigns"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.whatsapp.manage.workspace",
         "system.whatsapp.view.workspace",
@@ -2432,9 +2735,22 @@
     {
       "id": "whatsapp-cloud-internal-routing",
       "kind": "internal",
-      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.whatsapp",
+        "techsales.inbox.whatsapp",
+        "techsales.marketing.campaigns"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.whatsapp.manage.workspace",
         "system.whatsapp.view.workspace",
@@ -2633,9 +2949,22 @@
     {
       "id": "whatsapp-cloud-public-webhook",
       "kind": "public",
-      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.whatsapp",
+        "techsales.inbox.whatsapp",
+        "techsales.marketing.campaigns"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.whatsapp.manage.workspace",
         "system.whatsapp.view.workspace",
@@ -2802,9 +3131,22 @@
     {
       "id": "whatsapp-cloud-workers",
       "kind": "service",
-      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.whatsapp",
+        "techsales.inbox.whatsapp",
+        "techsales.marketing.campaigns"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.whatsapp.manage.workspace",
         "system.whatsapp.view.workspace",
@@ -2881,9 +3223,22 @@
     {
       "id": "whatsapp-cloud-channel-capability",
       "kind": "internal",
-      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.whatsapp",
+        "techsales.inbox.whatsapp",
+        "techsales.marketing.campaigns"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.whatsapp.manage.workspace",
         "system.whatsapp.view.workspace",
@@ -2945,9 +3300,22 @@
     {
       "id": "whatsapp-cloud-composer-policy",
       "kind": "internal",
-      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.whatsapp",
+        "techsales.inbox.whatsapp",
+        "techsales.marketing.campaigns"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.whatsapp.manage.workspace",
         "system.whatsapp.view.workspace",
@@ -3027,8 +3395,14 @@
         "techsales.marketing.sdr_agent",
         "system.whatsapp_templates"
       ],
-      "actions": ["view", "manage", "update"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "system.channels.view.workspace",
         "system.channels.manage.workspace",
@@ -3111,10 +3485,18 @@
     {
       "id": "service-channel-identity-resolution",
       "kind": "internal",
-      "resources": ["system.channels"],
-      "actions": ["view"],
-      "scopes": ["workspace"],
-      "permission_keys": ["system.channels.view.workspace"],
+      "resources": [
+        "system.channels"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace"
+      ],
       "rationale": "Pure identity interpolation and deterministic routing only; no network, persistence, or authorization decision. Callers must resolve authorized account metadata server-side. No runtime activation in this package.",
       "controls": [
         {
@@ -3173,10 +3555,24 @@
     {
       "id": "service-channel-worker-routing",
       "kind": "service",
-      "resources": ["system.channels", "techsales.marketing.sdr_agent", "techsales.inbox.whatsapp"],
-      "actions": ["view", "manage", "update", "create"],
-      "scopes": ["workspace"],
-      "permission_keys": ["system.channels.view.workspace", "system.channels.manage.workspace"],
+      "resources": [
+        "system.channels",
+        "techsales.marketing.sdr_agent",
+        "techsales.inbox.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "update",
+        "create"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "system.channels.manage.workspace"
+      ],
       "rationale": "Explicitly configured account routing only; discovery does not activate or silence legacy agents. The provider-only inbound RPC locks the tenant conversation, preserves human/paused ownership, active membership and opt-out, and never creates a receptive follow-up. Runtime validates account/agent/mode before inference, tools, commit and send. Existing assertSalesWorker, claim lease, CAS and transport checks remain mandatory. Identity snapshot writes are service-only. Browser configuration is checked by the channel matrix. Synthetic SQL validates actual permissions and RPC behavior in a rollback transaction. Review 29/10/2026: referral by email or name is saved only when new in the conversation state; follow-up scheduling skips enrollments whose stored state records a referral. Same assertSalesWorker, lease and CAS boundaries.",
       "controls": [
         {
@@ -3245,10 +3641,18 @@
     {
       "id": "service-channel-prompt-identity",
       "kind": "internal",
-      "resources": ["system.channels"],
-      "actions": ["view"],
-      "scopes": ["workspace"],
-      "permission_keys": ["system.channels.view.workspace"],
+      "resources": [
+        "system.channels"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace"
+      ],
       "rationale": "Prompt formatting uses only server-resolved account identity. Published persona remains stored intact; only explicit variables and legacy self-introduction names are adapted in memory. Authorized worker and sandbox callers retain provider and permission enforcement. No public identity lookup or credential access. Review 29/10/2026: technical contract now describes referral classification (referral_name written by the customer) and follow-up non-repetition; prompt text only, no data access. Review 17/11/2026: main 28f54718e adds only CAREERS_EMAIL and the candidate guidance prompt; no endpoint, access, grant or delivery boundary changes.",
       "controls": [
         {
@@ -3297,9 +3701,24 @@
     {
       "id": "service-channel-agent-sandbox",
       "kind": "business",
-      "resources": ["system.channels", "techsales.marketing.sdr_agent", "techsales.inbox.whatsapp"],
-      "actions": ["view", "create", "update", "manage", "delete", "delete"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.channels",
+        "techsales.marketing.sdr_agent",
+        "techsales.inbox.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage",
+        "delete",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.channels.view.workspace",
         "techsales.marketing.sdr_agent.view.workspace",
@@ -3404,9 +3823,21 @@
         "techsales.inbox.email",
         "techsales.inbox.chat"
       ],
-      "actions": ["view", "update", "create", "approve"],
-      "scopes": ["own", "team", "workspace"],
-      "permission_keys": ["system.channels.view.workspace", "system.channels.approve.workspace"],
+      "actions": [
+        "view",
+        "update",
+        "create",
+        "approve"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "system.channels.approve.workspace"
+      ],
       "rationale": "Real email/chat source records, canonical enrollment and source-actor RLS. Current binding/version/lease rechecked before each effect. Anonymous chat has no customer scope; verified email lookup is restricted to linked person. Private CRM context requires explicit approval. SQL acceptance in tests/sql/service-agent-queue-isolated.sql validates actual permissions, coalescence, historical/automatic exclusion, handoff and CAS in rollback; CI exercises RPC fail-closed paths. Authenticated cron starts WhatsApp and email/chat concurrently and waits for both outcomes. Source actor and lease are rechecked by each worker. Handoff uses the configured active workspace recipient only after source assign permission; otherwise keeps the current operator. Canonical reason and timestamp persist, and the recipient is notified. Existing recovery schedule is tightened to one minute without changing command, credentials or suspended state. Repeated automatic menus pause before inference; tests service-worker.test.ts, channel-tick.test.ts and isolated SQL handoff acceptance cover these paths. No production activation yet. Queue waiting re-reads a burst-postponed deadline within its bounded request budget. A running-to-finished trigger wakes an already queued newer inbound using the existing authenticated cron command; it never exposes or replaces credentials and never changes the queued message. Gmail-sync-before-callback is recognized only for the same stored source mailbox and trusted provider ID or in-flight delivery nonce plus canonical body. Authenticated operator messages and different body/header messages still take human ownership; actual SQL acceptance tests cover both orders and idempotent proof. Email/chat also honor the existing technical per-conversation/hour setting using only confirmed deliveries. The guarded RPC never consumes commercial/follow-up quotas, requires a current lease/source actor and causes a notified human handoff before inference when exceeded. SQL verifies threshold, rolling window and lost-lease denial; unit tests verify no model call and the technical reason. Inbox package2 reviewed: canonical transport quota/lease/send-uncertain and personal/current-source gates remain authoritative. Accepted private receipts drive metadata reconciliation; failures of notification projection never authorize a blind second provider call. Worker reconciliation may recover the original provider id from the accepted journal. No new account adoption, role grant, consent bypass or notification activation.",
       "controls": [
         {
@@ -3517,9 +3948,21 @@
         "techsales.inbox.email",
         "techsales.inbox.chat"
       ],
-      "actions": ["view", "update", "create", "approve"],
-      "scopes": ["own", "team", "workspace"],
-      "permission_keys": ["system.channels.view.workspace", "system.channels.approve.workspace"],
+      "actions": [
+        "view",
+        "update",
+        "create",
+        "approve"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "system.channels.approve.workspace"
+      ],
       "rationale": "Authenticated source-record view/update and current workspace enforced in server functions and SQL. Minimal inbox state only; raw service jobs and tool traces are not selectable by browser roles. Explicit system.channels.approve.workspace plus visible customer references required for private CRM. Source reassociation invalidates approval and in-flight turns. No automatic grants. Buttons follow SQL can_control/can_verify; final RPC always rechecks. Isolated SQL covers active grant, missing key, explicit deny, foreign tenant and inactive membership. Package2 chat UI passes an active-user/workspace/channel-scoped attempt UUID to the existing authenticated sender, preventing repeat transport on retry. Send and Enter respect the existing own/workspace coarse create gate; row RLS remains authoritative, without changing channel layout or account access.",
       "controls": [
         {
@@ -3593,9 +4036,21 @@
         "techsales.inbox.email",
         "techsales.inbox.chat"
       ],
-      "actions": ["view", "update", "create", "approve"],
-      "scopes": ["own", "team", "workspace"],
-      "permission_keys": ["system.channels.view.workspace", "system.channels.approve.workspace"],
+      "actions": [
+        "view",
+        "update",
+        "create",
+        "approve"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "system.channels.approve.workspace"
+      ],
       "rationale": "Existing visitor capability and exact stored session authorize public chat history. Only material IDs already attached to delivered messages can be signed, further filtered by the session workspace, active/approved/file status and tenant storage prefix. Signed links last five minutes; no public bucket or arbitrary requested path. UI displays sender name and delivered links; no new public CRM access. Public revocation scenarios replace employee membership scenarios because the widget intentionally has no user account. CANAIS-ATENDIMENTO: POST now requires a stable per-attempt UUID and delegates to a private service-only transaction that rechecks the stored session/visitor, locks the session and freezes content/visitor hashes. Manual retry retains the UUID; no automatic retry. New route tests in widget-producer.test.ts exercise capability rejection and delegation; inbox-producers-local.ts has 9 actual local service-JWT/PostgreSQL checks. These are not the five employee-JWT/RLS acceptance scenarios. GET material authorization and all previous controls remain unchanged. Inbox package2: real widget sender binds session+visitor, optional stable attempt UUID and canonical atomic commit; old open widgets remain compatible. Missing/invalid/foreign/revoked capability is denied. Errors expose generic retryable503, not database diagnostics, and success requires a valid confirmed message UUID. No public evidence read/mutation authority.",
       "controls": [
         {
@@ -3664,9 +4119,21 @@
         "techsales.inbox.email",
         "techsales.inbox.chat"
       ],
-      "actions": ["view", "update", "create", "approve"],
-      "scopes": ["own", "team", "workspace"],
-      "permission_keys": ["system.channels.view.workspace", "system.channels.approve.workspace"],
+      "actions": [
+        "view",
+        "update",
+        "create",
+        "approve"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "system.channels.approve.workspace"
+      ],
       "rationale": "Shared MIME encoder only: rejects CR/LF header injection and malformed deterministic message identifiers; auto-generated header suppresses email bot loops. Does not decide recipients, accounts or authorization. Existing authenticated mail handlers and new service delivery perform source permission and mailbox checks before calling this helper. Provider success recorded under a single authorized send token. Gmail transport requests now also use bounded timeouts and manual redirects; this does not introduce retries or change caller authorization.",
       "controls": [
         {
@@ -3715,9 +4182,19 @@
     {
       "id": "service-channel-inbox-direct-conversation",
       "kind": "business",
-      "resources": ["techsales.inbox.email", "techsales.inbox.chat", "techsales.inbox.whatsapp"],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.inbox.email",
+        "techsales.inbox.chat",
+        "techsales.inbox.whatsapp"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.inbox.chat.view.workspace",
         "techsales.inbox.email.view.workspace",
@@ -3781,8 +4258,18 @@
         "techsales.inbox.email",
         "system.whatsapp_templates"
       ],
-      "actions": ["view", "manage", "create", "update", "delete"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.channels.view.workspace",
         "system.whatsapp.view.workspace",
@@ -3868,9 +4355,21 @@
         "system.widget",
         "techsales.email_accounts"
       ],
-      "actions": ["view", "manage", "create", "update", "delete"],
-      "scopes": ["own", "team", "workspace"],
-      "permission_keys": ["system.channels.view.workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace"
+      ],
       "rationale": "Pure UI projection over current effective permission keys. Unknown, loading, error, absent workspace and mismatched workspace contexts fail closed; email actions remain independent. No I/O, grants or authorization bypass. Each actual operation retains its existing authenticated server and database boundary.",
       "controls": [
         {
@@ -3926,8 +4425,15 @@
         "techsales.leads",
         "techsales.tickets"
       ],
-      "actions": ["view", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.deals.view.workspace",
         "techsales.deals.update.workspace",
@@ -3996,9 +4502,22 @@
     {
       "id": "project-rpc-generated-type-compatibility",
       "kind": "internal",
-      "resources": ["techprojects.dashboard", "techprojects.projects", "techprojects.time_entries"],
-      "actions": ["view", "create", "update", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techprojects.dashboard",
+        "techprojects.projects",
+        "techprojects.time_entries"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [],
       "rationale": "Type-only compatibility after the upstream Supabase schema type refresh exceeded TypeScript instantiation depth. The existing finite RPC signatures are asserted before bind rather than after it. Runtime function, receiver, arguments, authenticated client, API-key subject execution and SQL permissions are identical. No query, permission key, RLS, grant or request validation is changed. Tests assert that the authenticated receiver and database refusals remain intact; existing API/offline tests cover payload validation and idempotency.",
       "controls": [
@@ -4127,9 +4646,17 @@
     {
       "id": "contaazul-people-reconciliation",
       "kind": "business",
-      "resources": ["techfinance.contaazul_people", "system.integrations"],
-      "actions": ["view", "manage"],
-      "scopes": ["workspace"],
+      "resources": [
+        "techfinance.contaazul_people",
+        "system.integrations"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techfinance.contaazul_people.view.workspace",
         "techfinance.contaazul_people.manage.workspace"
@@ -4191,9 +4718,17 @@
     {
       "id": "contaazul-full-import",
       "kind": "business",
-      "resources": ["system.integrations", "techfinance.contaazul_people"],
-      "actions": ["view", "manage"],
-      "scopes": ["workspace"],
+      "resources": [
+        "system.integrations",
+        "techfinance.contaazul_people"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techfinance.contaazul_people.view.workspace",
         "techfinance.contaazul_people.manage.workspace"
@@ -4269,10 +4804,18 @@
     {
       "id": "finance-sales",
       "kind": "business",
-      "resources": ["techfinance.sales"],
-      "actions": ["view"],
-      "scopes": ["workspace"],
-      "permission_keys": ["techfinance.sales.view.workspace"],
+      "resources": [
+        "techfinance.sales"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techfinance.sales.view.workspace"
+      ],
       "rationale": "Read-only list of sales imported from Conta Azul. The page renders only behind HrScreenAccess(techfinance.sales); listFinanceSales requires an authenticated session, resolves the active workspace and calls finance_sales_access (work_subject_context: active membership, deny, workspace) before reading through the caller's client, where RLS on finance_sales applies the same function. Authenticated users only have SELECT; rows are written exclusively by the authorized Conta Azul full import on the server. The key is not granted to any role automatically.",
       "controls": [
         {
@@ -4341,9 +4884,17 @@
     {
       "id": "projects-clickup-import",
       "kind": "business",
-      "resources": ["techprojects.clickup_import", "system.members"],
-      "actions": ["view", "manage"],
-      "scopes": ["workspace"],
+      "resources": [
+        "techprojects.clickup_import",
+        "system.members"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techprojects.clickup_import.view.workspace",
         "techprojects.clickup_import.manage.workspace",
@@ -4442,9 +4993,18 @@
     {
       "id": "projects-task-details-panel",
       "kind": "business",
-      "resources": ["techprojects.tasks"],
-      "actions": ["view", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techprojects.tasks"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techprojects.tasks.view.own",
         "techprojects.tasks.view.team",
@@ -4639,8 +5199,18 @@
         "techprojects.time_entries",
         "techprojects.profitability"
       ],
-      "actions": ["view", "create", "update", "delete", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techprojects.projects.view.own",
         "techprojects.projects.view.team",
@@ -4884,9 +5454,16 @@
     {
       "id": "sdr-referral-crm-registration",
       "kind": "internal",
-      "resources": ["techsales.marketing.sdr_agent"],
-      "actions": ["create", "update"],
-      "scopes": ["workspace"],
+      "resources": [
+        "techsales.marketing.sdr_agent"
+      ],
+      "actions": [
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [],
       "rationale": "Referral and corporate phone registration called only by the SDR worker after assertSalesWorker, lease and sdr_commit_turn CAS. Lookups and inserts are filtered by the job workspace from the server; author is the workspace SDR agent identity (active member mirroring its creator). Referral by email or phone creates a Lead for human review; name-only referral only adds a timeline note. Never sends messages to the referred person.",
       "controls": [
@@ -4943,8 +5520,12 @@
         "techsales.deals",
         "techsales.activities"
       ],
-      "actions": ["view"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.contacts.view.workspace",
         "techsales.companies.view.workspace",
@@ -5011,8 +5592,12 @@
         "techprojects.time_entries",
         "techpeople.allocations"
       ],
-      "actions": ["view"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techprojects.projects.view.workspace",
         "techprojects.tasks.view.workspace"
@@ -5084,9 +5669,19 @@
     {
       "id": "csv-import-batched",
       "kind": "business",
-      "resources": ["techsales.contacts", "techsales.leads", "techsales.companies"],
-      "actions": ["create", "update"],
-      "scopes": ["own", "workspace"],
+      "resources": [
+        "techsales.contacts",
+        "techsales.leads",
+        "techsales.companies"
+      ],
+      "actions": [
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.contacts.create.workspace",
         "techsales.contacts.create.own",
@@ -5167,9 +5762,19 @@
     {
       "id": "crm-derived-filter-options",
       "kind": "business",
-      "resources": ["techsales.contacts", "techsales.leads", "techsales.companies"],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.contacts",
+        "techsales.leads",
+        "techsales.companies"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.contacts.view.own",
         "techsales.contacts.view.team",
@@ -5241,9 +5846,17 @@
     {
       "id": "sales-dashboard-campaign-funnel",
       "kind": "business",
-      "resources": ["techsales.marketing.campaigns"],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.marketing.campaigns"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.marketing.campaigns.view.own",
         "techsales.marketing.campaigns.view.team",
@@ -5296,9 +5909,17 @@
     {
       "id": "sales-tasks-list-assignee-filter",
       "kind": "business",
-      "resources": ["techsales.activities"],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.activities"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.activities.view.own",
         "techsales.activities.view.team",
@@ -5346,9 +5967,16 @@
     {
       "id": "notifications-personal-history",
       "kind": "personal",
-      "resources": ["system.notifications"],
-      "actions": ["view", "update"],
-      "scopes": ["own"],
+      "resources": [
+        "system.notifications"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own"
+      ],
       "rationale": "Legacy global preference APIs preserve caller-scoped profile patches and CAS. Legacy list/read delegates to the new active-workspace RPCs; bulk reading requires explicit IDs/cutoff and never updates the whole personal history implicitly. Activity producers keep their canonical source/update/member checks. The new personal workspace contract owns the bell and SQL boundary; this compatibility contract does not certify source RLS via the old identifier tests.",
       "exception": {
         "mechanism": "Authenticated Supabase session; caller id from verified JWT; RLS user_id = auth.uid().",
@@ -5431,9 +6059,17 @@
       "id": "delete-guard-chunked",
       "kind": "business",
       "rationale": "Client helper that sends deletes with the caller's RLS-bound client in chunks of 100 ids and counts affected rows. It never widens access: each chunk is evaluated by the table's delete policies; denied rows are reported, not bypassed.",
-      "resources": ["techsales.contacts"],
-      "actions": ["delete"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.contacts"
+      ],
+      "actions": [
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.contacts.delete.own",
         "techsales.contacts.delete.team",
@@ -5485,8 +6121,18 @@
         "techsales.prospecting_voice",
         "techsales.prospecting_scripts"
       ],
-      "actions": ["view", "create", "update", "delete", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.marketing.campaigns.view.own",
         "techsales.marketing.campaigns.view.team",
@@ -5647,9 +6293,15 @@
     {
       "id": "prospecting-voice-webhook",
       "kind": "service",
-      "resources": ["techsales.prospecting_voice"],
-      "actions": ["update"],
-      "scopes": ["workspace"],
+      "resources": [
+        "techsales.prospecting_voice"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [],
       "rationale": "Vapi call status webhook. Both POST and GET require verifyVapiWebhook (shared VAPI_WEBHOOK_SECRET). Updates only the attempt matching the provider call id; the WhatsApp follow-up it triggers re-checks the campaign actor with assertSalesWorker.",
       "exception": {
@@ -5707,9 +6359,19 @@
     {
       "id": "meeting-whatsapp-reminders",
       "kind": "business",
-      "resources": ["techsales.meeting_settings", "techsales.meetings"],
-      "actions": ["view", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.meeting_settings",
+        "techsales.meetings"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.meeting_settings.view.workspace",
         "techsales.meeting_settings.update.workspace",
@@ -5803,9 +6465,19 @@
         "drizzle/migrations/0292_prospecting_sequence_drafts.sql": "6a7b0c212a5f254186442aad6a5ae1bdab3c134948d30919548e3c801b5982c1",
         "src/components/prospecting/sequences/sequence-planning-tab.tsx": "f85e319cdb180c766cd98e6667007735e084206eb16c5f8ace815ff58420c383"
       },
-      "resources": ["system.automation.sequences"],
-      "actions": ["view", "create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.automation.sequences"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -5892,8 +6564,17 @@
         "techsales.email_accounts",
         "techsales.marketing.sdr_agent"
       ],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -5983,9 +6664,20 @@
         "drizzle/migrations/0294_prospecting_sequence_cohorts.sql": "721727135c04e4aa006f76491142764c0da8a3a33ecfcb98697a844063bb966e",
         "drizzle/migrations/0300_sequence_cohort_prepare_indexed_identity.sql": "097325789de59a678233efe71fc614d161f543ce33fd8059cc6650948578cac2"
       },
-      "resources": ["system.automation.sequences", "techsales.contacts", "techsales.leads"],
-      "actions": ["view", "assign"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.automation.sequences",
+        "techsales.contacts",
+        "techsales.leads"
+      ],
+      "actions": [
+        "view",
+        "assign"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -6080,8 +6772,17 @@
         "techsales.inbox.email",
         "techsales.inbox.whatsapp"
       ],
-      "actions": ["view", "manage", "assign", "create"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -6175,8 +6876,17 @@
         "techsales.inbox.email",
         "techsales.inbox.whatsapp"
       ],
-      "actions": ["view", "create", "manage", "assign"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "manage",
+        "assign"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.channels.view.workspace",
         "system.automation.sequences.view.own",
@@ -6273,8 +6983,18 @@
         "techsales.inbox.email",
         "techsales.inbox.whatsapp"
       ],
-      "actions": ["view", "manage", "assign", "create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -6344,10 +7064,23 @@
       "files": {
         "src/lib/whatsapp/gateway-channel.server.ts": "c4159adddcdd95f08ac6e4eba454b388e8e45afea85c7763be9597758f8c586a"
       },
-      "resources": ["system.channels", "techsales.inbox.whatsapp"],
-      "actions": ["view", "create"],
-      "scopes": ["own", "team", "workspace"],
-      "permission_keys": ["system.channels.view.workspace", "techsales.inbox.whatsapp.create.own"],
+      "resources": [
+        "system.channels",
+        "techsales.inbox.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "techsales.inbox.whatsapp.create.own"
+      ],
       "rationale": "Server-only transport to the fixed official Lovable gateway. This change adds timeout/manual redirects; no recipient, account or authorization rules are delegated to the helper. Existing authenticated handlers/workers and the sequence delivery gate authorize the exact workspace account before calls. Environment credentials never enter metadata or client state. Transport tests cover bounded single attempts; delivery permission tests cover authorized caller boundaries.",
       "controls": [
         {
@@ -6405,8 +7138,18 @@
         "techsales.inbox.email",
         "techsales.inbox.whatsapp"
       ],
-      "actions": ["view", "manage", "assign", "create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -6483,8 +7226,18 @@
         "techsales.inbox.email",
         "techsales.inbox.whatsapp"
       ],
-      "actions": ["view", "manage", "assign", "create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -6561,8 +7314,18 @@
         "techsales.inbox.whatsapp",
         "techsales.tasks"
       ],
-      "actions": ["view", "manage", "assign", "create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -6659,8 +7422,18 @@
         "techsales.contacts",
         "techsales.leads"
       ],
-      "actions": ["view", "manage", "assign", "create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -6758,8 +7531,17 @@
         "techsales.inbox.email",
         "techsales.inbox.whatsapp"
       ],
-      "actions": ["view", "create", "manage", "assign"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "manage",
+        "assign"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.channels.view.workspace",
         "system.automation.sequences.view.own",
@@ -6858,8 +7640,17 @@
         "techsales.prospecting_scripts",
         "techsales.activities"
       ],
-      "actions": ["view", "create", "manage", "assign"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "manage",
+        "assign"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -6971,9 +7762,17 @@
         "src/lib/prospecting/sequences/insights.server.ts": "598703499616e94bc89730b741e64bfe72aea4830dd5749596655afebf900f0b",
         "src/components/prospecting/sequences/sequence-insights.tsx": "2ca92ff47678893eb826a1027ceae8a6ffeec277d0855c03c32eacbc80a96bbe"
       },
-      "resources": ["system.automation.sequences"],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.automation.sequences"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -7052,8 +7851,17 @@
         "techsales.inbox.email",
         "techsales.inbox.whatsapp"
       ],
-      "actions": ["view", "create", "manage", "assign"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "manage",
+        "assign"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.channels.view.workspace",
         "system.automation.sequences.view.own",
@@ -7145,8 +7953,18 @@
         "techsales.inbox.whatsapp",
         "techsales.tasks"
       ],
-      "actions": ["view", "manage", "assign", "create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -7226,8 +8044,14 @@
         "techsales.companies",
         "techsales.deals"
       ],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.sequences.view.own",
         "system.automation.sequences.view.team",
@@ -7305,10 +8129,18 @@
         "src/components/bug-report/bug-report-button.tsx": "e14a236527a049cfe48f40465965a4c9f9cb7e339114841a2c4e2f0fc27d2b95",
         "src/components/chat/chat-trigger.tsx": "6ffe99c24cb1dff26347a57979daa66d55905ba35610cc5abedbd74c8217c2e8"
       },
-      "resources": ["system.messenger"],
-      "actions": ["view"],
-      "scopes": ["own"],
-      "permission_keys": ["system.messenger.view.own"],
+      "resources": [
+        "system.messenger"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "permission_keys": [
+        "system.messenger.view.own"
+      ],
       "rationale": "Collapsible right-edge tab grouping Messenger, AI assistant and bug report shortcuts. Messenger option is shown only through messengerAllowed (effective permission, deny by default); drawers keep their existing server-side controls. No new routes, grants or data access.",
       "controls": [
         {
@@ -7380,8 +8212,12 @@
         "techsales.prospecting_cadences",
         "techsales.marketing.sdr_agent"
       ],
-      "actions": ["view"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.prospecting_queue.view.workspace",
         "techsales.prospecting_cadences.view.workspace",
@@ -7451,8 +8287,12 @@
         "techsales.prospecting_cadences",
         "techsales.marketing.sdr_agent"
       ],
-      "actions": ["view"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.prospecting_queue.view.workspace",
         "techsales.prospecting_cadences.view.workspace",
@@ -7513,8 +8353,12 @@
         "techsales.prospecting_cadences",
         "techsales.marketing.sdr_agent"
       ],
-      "actions": ["view"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.prospecting_queue.view.workspace",
         "techsales.prospecting_cadences.view.workspace",
@@ -7586,10 +8430,18 @@
     {
       "id": "whatsapp-number-suppressions",
       "kind": "business",
-      "resources": ["system.whatsapp_suppressions"],
-      "actions": ["manage"],
-      "scopes": ["workspace"],
-      "permission_keys": ["system.whatsapp_suppressions.manage.workspace"],
+      "resources": [
+        "system.whatsapp_suppressions"
+      ],
+      "actions": [
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.whatsapp_suppressions.manage.workspace"
+      ],
       "rationale": "Numbers refused by Meta (131026 no WhatsApp: 90 days; 131049 engagement: 7 days, repeated within 30 days: 30 days) are recorded only by a SECURITY DEFINER trigger on whatsapp_messages (wa_record_suppression, EXECUTE service_role only) in the message workspace. Read: table SELECT policy is active workspace membership; record view loads only the phones of a Contact/Lead the caller can read by RLS and re-checks active membership (authorizeSuppressionRead); planning stats return totals only, without phones. Release (special action) requires active membership plus the new key system.whatsapp_suppressions.manage.workspace in the suppression workspace (authorizeSuppressionRelease, deny wins through user_effective_permissions), the UI hides the button without the effective key, and RPC wa_release_number_suppression re-checks session, membership, key and read-only \"view as\" in the database. The key is registered without automatic grant (owners/admins receive catalogue keys as today). Contact and Lead records only render the notice; their existing operations (properties, delete guard, timeline, associations) are unchanged. Review 07/11/2026: qualification dialog opens before the RLS-guarded stage update and closes on error/denial; no authorization change. Prefetches the questionnaire through the same authenticated server functions. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access.",
       "controls": [
         {
@@ -7681,9 +8533,18 @@
     {
       "id": "form-submission-assignment",
       "kind": "business",
-      "resources": ["techsales.marketing.forms"],
-      "actions": ["create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.marketing.forms"
+      ],
+      "actions": [
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.marketing.forms.create.own",
         "techsales.marketing.forms.create.team",
@@ -7770,10 +8631,18 @@
     {
       "id": "public-form-submit",
       "kind": "public",
-      "resources": ["techsales.marketing.forms"],
-      "actions": ["create"],
-      "scopes": ["workspace"],
-      "permission_keys": ["techsales.marketing.forms.create.workspace"],
+      "resources": [
+        "techsales.marketing.forms"
+      ],
+      "actions": [
+        "create"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.marketing.forms.create.workspace"
+      ],
       "rationale": "Anonymous visitors submit published forms. Server validates Turnstile before any write, loads the form by slug with the service client, accepts only active forms (publicFormGate), limits 5 submissions per IP per form in 10 minutes, validates fields, and writes only into the form workspace. New records get their responsible from form_next_assignee (service_role only, active members).",
       "controls": [
         {
@@ -7843,8 +8712,16 @@
         "techhire.hiring_policies",
         "techsales.catalog.services"
       ],
-      "actions": ["view", "update", "create", "approve", "manage"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "update",
+        "create",
+        "approve",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techhire.hiring_demands.view.workspace",
         "techhire.hiring_demands.update.workspace",
@@ -8129,9 +9006,15 @@
         "src/lib/hiring/hiring-email.server.ts": "41d3123e410391f08050bed5d04b447ccd8918a01fd196836f55b26a752fea4e",
         "src/routes/api/public/hooks/hiring-approvals-tick.ts": "f7a48618567b59fcc17dd33ff2b8a303995a660bd255fe173cdd18de2765a7f8"
       },
-      "resources": ["techhire.hiring_demands"],
-      "actions": ["approve"],
-      "scopes": ["workspace"],
+      "resources": [
+        "techhire.hiring_demands"
+      ],
+      "actions": [
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [],
       "controls": [
         {
@@ -8228,7 +9111,11 @@
         "assign",
         "export"
       ],
-      "scopes": ["own", "team", "workspace"],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.signature_evidence.view.workspace",
         "techcontracts.signature_evidence.manage.workspace",
@@ -8958,8 +9845,20 @@
         "techhire.hiring_demands",
         "techcontracts.contract_templates"
       ],
-      "actions": ["view", "create", "update", "delete", "manage", "assign", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "assign",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.employment.view.workspace",
         "techpeople.employment.manage.workspace",
@@ -9343,8 +10242,15 @@
         "techcontracts.contracts",
         "system.workflows"
       ],
-      "actions": ["view", "manage", "approve", "create"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "approve",
+        "create"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techfinance.provisions.view.workspace",
         "techfinance.provisions.manage.workspace",
@@ -9455,7 +10361,9 @@
         "end_employment",
         "execute"
       ],
-      "scopes": ["workspace"],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.lifecycle.view.workspace",
         "techpeople.lifecycle.renew.workspace",
@@ -9540,8 +10448,14 @@
         "techpeople.employment",
         "techfinance.entry_cancellation"
       ],
-      "actions": ["view", "manage", "approve"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.lifecycle.view.workspace",
         "techpeople.lifecycle.manage.workspace",
@@ -9613,9 +10527,16 @@
     {
       "id": "hiring-stage6-reviewed-links",
       "kind": "business",
-      "resources": ["techprojects.reconciliation"],
-      "actions": ["view", "manage"],
-      "scopes": ["workspace"],
+      "resources": [
+        "techprojects.reconciliation"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techprojects.reconciliation.view.workspace",
         "techprojects.reconciliation.manage.workspace"
@@ -9692,10 +10613,20 @@
     {
       "id": "help-center",
       "kind": "business",
-      "resources": ["techservice.kb"],
-      "actions": ["update", "manage"],
-      "scopes": ["workspace"],
-      "permission_keys": ["techservice.kb.manage.workspace", "techservice.kb.update.workspace"],
+      "resources": [
+        "techservice.kb"
+      ],
+      "actions": [
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techservice.kb.manage.workspace",
+        "techservice.kb.update.workspace"
+      ],
       "rationale": "Help and Training area (/ajuda, header '?' button, sidebar link). Global platform content without workspace_id. Read: active member of the active workspace, published internal article, module allowed by the same rule as the menu (license ∩ effective keys, workspace admin unrestricted, core = any active member, platform = platform admin) and optional min_permission effective key (deny wins); enforced in every server function by loadHelpAccessInput + canReadHelpModule/filterReadableArticles and in the database by help_can_read RLS. Edit: platform admin or active member with existing knowledge base keys (help_can_edit RLS); no edit UI in this phase. Feedback and route misses are own-row only. No new key, no grant to roles. Official fixed-catalogue release is editor-authorized before dynamic import; user client/RLS only, no arbitrary input or admin client. Strictly higher versions replace existing content; repeat preserves applied versions. No schema/grant change. Layout Essencial: workspace light/dark logo and brand name are read from the existing member/RLS BrandingContext; menu permission filters and route destinations unchanged.",
       "controls": [
         {
@@ -9833,10 +10764,20 @@
     {
       "id": "help-training",
       "kind": "business",
-      "resources": ["techservice.kb"],
-      "actions": ["update", "manage"],
-      "scopes": ["workspace"],
-      "permission_keys": ["techservice.kb.manage.workspace", "techservice.kb.update.workspace"],
+      "resources": [
+        "techservice.kb"
+      ],
+      "actions": [
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techservice.kb.manage.workspace",
+        "techservice.kb.update.workspace"
+      ],
       "rationale": "Help Phase 3 training tracks, own reading progress, module quizzes and completion badges. No new key and no grant to roles: each track/quiz is available only when the Help module is readable for an active member (loadHelpAccessInput + canUseTraining/assertTrainingAccess, deny wins, active workspace only); articles filtered by filterReadableArticles. Progress is own-row only via user client and RLS (user_id = auth.uid(), active member, readable published article). Quiz answers stay server-only; the score is computed in submitTrainingQuiz after authentication and access checks and inserted with the admin client because help_quiz_attempts grants authenticated SELECT only (own rows). Listed keys are the existing Help editor keys inherited from help-center; editors get no extra power here.",
       "controls": [
         {
@@ -9934,8 +10875,16 @@
         "techpeople.people",
         "techhire.candidates"
       ],
-      "actions": ["view", "manage", "approve", "create", "update"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "approve",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.lifecycle.view.workspace",
         "techpeople.lifecycle.manage.workspace",
@@ -10011,8 +10960,14 @@
         "techprojects.projects",
         "techprojects.milestones"
       ],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techfinance.entries.view.own",
         "techfinance.entries.view.team",
@@ -10096,10 +11051,21 @@
     {
       "id": "lead-substatus-and-qualification-basic-fields",
       "kind": "business",
-      "resources": ["techsales.leads", "techsales.contacts"],
-      "actions": ["update"],
-      "scopes": ["own", "workspace"],
-      "permission_keys": ["techsales.leads.update.own", "techsales.contacts.update.workspace"],
+      "resources": [
+        "techsales.leads",
+        "techsales.contacts"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.leads.update.own",
+        "techsales.contacts.update.workspace"
+      ],
       "rationale": "Review 07/11/2026: (1) setting a lead substatus also writes the default lead pipeline and the stage already shown when the lead row has none (buildLeadSubstatusPatch), through the same user client UPDATE on leads; the sync_stage_substatus trigger still validates pipeline/stage. (2) The qualification screen adds a fixed 'Dados básicos' lead block (first/last name, e-mail, phone, WhatsApp) saved by the existing saveAll user-client UPDATE on leads, and the same values seed the contact created by ensureLeadRelations; title fix 'Dados da Empresa'. No new endpoint, grant, policy or permission key; RLS on leads/contacts and deleteRow/rls-denied checks (assertAffected/deniedIfUnaffected) remain the boundary.",
       "controls": [
         {
@@ -10162,10 +11128,18 @@
     {
       "id": "workflow-caller-tick-pending-lookup",
       "kind": "business",
-      "resources": ["system.workflows"],
-      "actions": ["manage"],
-      "scopes": ["workspace"],
-      "permission_keys": ["system.workflows.manage.workspace"],
+      "resources": [
+        "system.workflows"
+      ],
+      "actions": [
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.workflows.manage.workspace"
+      ],
       "rationale": "Review 07/11/2026: manual/after-save workflow tick keeps its gates (triggerTickNow requireSalesPermission system.workflows manage, active workspace via getActiveWorkspaceId, per-workflow can_manage via workRpc sales_capabilities). Pending event ids are now listed with the service client by workspace + processed_at IS NULL + run_at (partial index) and then re-read with the caller client by primary key, so RLS sales_view still decides which events the caller may process (pendingEventsVisibleToCaller). Fixes statement timeouts where non-leakproof RLS functions ran over the whole workspace queue. No new endpoint, grant or key.",
       "controls": [
         {
@@ -10212,10 +11186,18 @@
     {
       "id": "calendar-google-refresh-revoked",
       "kind": "business",
-      "resources": ["system.workflows"],
-      "actions": ["manage"],
-      "scopes": ["workspace"],
-      "permission_keys": ["system.workflows.manage.workspace"],
+      "resources": [
+        "system.workflows"
+      ],
+      "actions": [
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.workflows.manage.workspace"
+      ],
       "rationale": "Review 07/11/2026: Google token refresh returning invalid_grant (account deleted/revoked) marks the existing calendar account last_status disconnected and returns a friendly reconnect message instead of a raw 400. Same service-side update of the same row already selected by the caller's flow; no new endpoint, grant, key or data exposure. | DESLIGA-AGENDA 07/11/2026: deleted/revoked Google accounts (isGoogleAccountGone) also get sync_enabled=false.",
       "controls": [
         {
@@ -10258,10 +11240,21 @@
     {
       "id": "meeting-calendar-account-owner-selection",
       "kind": "business",
-      "resources": ["system.calendars"],
-      "actions": ["view", "manage"],
-      "scopes": ["own", "workspace"],
-      "permission_keys": ["system.calendars.view.workspace", "system.calendars.manage.workspace"],
+      "resources": [
+        "system.calendars"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.calendars.view.workspace",
+        "system.calendars.manage.workspace"
+      ],
       "rationale": "Plano DESLIGA-AGENDA (07/11/2026): listCalendarAccounts and pushActivityToCalendar keep requireSalesPermission system.calendars + assertSalesRecord; push now also refuses another member's calendar unless isWorkspaceAdmin, and refuses disconnected accounts. Google refresh failures for deleted/revoked accounts turn sync_enabled off. Meeting dialog only offers own (or admin: workspace) usable accounts. No new endpoint, grant or key.",
       "controls": [
         {
@@ -10323,10 +11316,18 @@
     {
       "id": "workflow-builder-offboarding-actions",
       "kind": "business",
-      "resources": ["system.workflows"],
-      "actions": ["manage"],
-      "scopes": ["workspace"],
-      "permission_keys": ["system.workflows.manage.workspace"],
+      "resources": [
+        "system.workflows"
+      ],
+      "actions": [
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.workflows.manage.workspace"
+      ],
       "rationale": "DESLIGA-AGENDA: step config panel routes the two new offboarding actions to HiringActionForm; execution is enforced server-side in actions-offboarding (owner/admin, workspace, legacy block). P12 reviewed: explicit default-off digest consent separate from visual grouping, civil IANA slots, private batch/occurrence ledger, bounded original-step reminders and explicit escalation. Current identity/source/proof/version/permission/consent and delivery fences remain mandatory; approvals reuse their canonical notice and cannot escalate. No source mutation, inferred CEO, real message or production activation.",
       "controls": [
         {
@@ -10585,10 +11586,26 @@
     {
       "id": "workflow-list-history-isolation",
       "kind": "business",
-      "resources": ["system.workflows", "system.workflow_approvals"],
-      "actions": ["view", "create", "update", "delete", "manage"],
-      "scopes": ["own", "team", "workspace"],
-      "permission_keys": ["system.workflows.view.workspace", "system.workflows.manage.workspace"],
+      "resources": [
+        "system.workflows",
+        "system.workflow_approvals"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.workflows.view.workspace",
+        "system.workflows.manage.workspace"
+      ],
       "rationale": "FLUXO-VISIVEL: existing endpoint and action gates preserved; recent history adds the workflow-view middleware. List, statistics, history and record enrollments use the user client/RLS narrowed by active workspace. Recent history narrows further to visible parent workflow ids. Independent query caches include workspace and effective permissions. No writes, execution, grants or policy changes. SQL sales_view and sales_run_source remain authoritative; unit denial evidence exercises sales_area_authorize boundary failures, not isolated PostgreSQL. Inbox package2: saveWorkflow uses the shared real draft payload helper and active workspace; initial Inbox drafts start disabled, live placeholder remains empty until canonical publication. Existing Workflow management, row capabilities, selected workspace and RLS remain authoritative. Real PostgreSQL lifecycle covers initial create/edit/publish/pause/reactivate and atomic invalid payload rejection. The list hides bulk-enrol only for the new readonly inbox_channel_occurrences source, whose events cannot be replayed retroactively. Existing sources keep their action and server guards; this removes an unsupported UI action, not an authorization boundary.",
       "controls": [
         {
@@ -10675,8 +11692,16 @@
         "techsales.proposal_share",
         "techsales.email_accounts"
       ],
-      "actions": ["manage", "create", "view"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "manage",
+        "create",
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.proposal_send.manage.workspace",
         "techsales.inbox.email.create.own"
@@ -10768,9 +11793,18 @@
     {
       "id": "contract-draft-legal-review",
       "kind": "business",
-      "resources": ["techcontracts.contract_drafts", "techcontracts.contract_draft_approvers"],
-      "actions": ["view", "approve", "manage"],
-      "scopes": ["workspace"],
+      "resources": [
+        "techcontracts.contract_drafts",
+        "techcontracts.contract_draft_approvers"
+      ],
+      "actions": [
+        "view",
+        "approve",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.contract_drafts.view.workspace",
         "techcontracts.contract_drafts.approve.workspace",
@@ -10855,6 +11889,10 @@
         {
           "file": "drizzle/migrations/0313_contract_draft_client_acceptance.sql",
           "symbol": "contract_draft_set_deal_substatus"
+        },
+        {
+          "file": "drizzle/migrations/0460_contract_draft_merge_source_supplier.sql",
+          "symbol": "contract_draft_merge_source"
         }
       ],
       "tests": {
@@ -10884,13 +11922,14 @@
         "drizzle/migrations/0312_contract_draft_legal_review.sql": "13ce7aa0ddad44bc26c81cccd662b1fb5a12f6cf606e87554beea542faed7e82",
         "src/components/contracts/contract-draft-approvers-page.tsx": "fd9f5b3f844bd1c641ae8f5cc67ee45bd354f9ef06ea3200e27f4027a7007376",
         "src/components/contracts/contract-draft-review-page.tsx": "6e50ced18fcec1473898b2afe75999a4426da846bd83d3823892b21186283dc1",
-        "src/lib/contracts/contract-drafts.functions.ts": "893de1e28acc1664e6867e96f354bd21e09ed76681047ed302f6086ebf6762db",
+        "src/lib/contracts/contract-drafts.functions.ts": "52c43453e317f42bb173e510b062212a88b706bfdfc6be04a12b9a9b0fefc741",
         "src/lib/workflows/engine/actions-contracts.server.ts": "ce77a960a2356639cd80d3245608044a2dabe2ef8d0dcd2dffa33f22ffb0c1d2",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
         "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "da7a3d3851d63c0e4409355465670d75feea86c2da22708494bc3851962b6d08",
         "src/components/contracts/contract-draft-send-panel.tsx": "cc71a524961b2cf592173f12b40ea37ccd3c0d37b671fd61fe2f1153c95e67fa",
         "drizzle/migrations/0313_contract_draft_client_acceptance.sql": "64d071e18989e467bbd1814dc101de073e6e85ca5eb195867879f101b1943a33",
-        "src/routes/_authenticated/contracts.contracting-flow.tsx": "d1a63f047503b314a2bed68a549d9591edd02695bd0cc54f1f09af2d43a2f2c5"
+        "src/routes/_authenticated/contracts.contracting-flow.tsx": "d1a63f047503b314a2bed68a549d9591edd02695bd0cc54f1f09af2d43a2f2c5",
+        "drizzle/migrations/0460_contract_draft_merge_source_supplier.sql": "3da53e065a21ecd1bca87425a3fd4101a673d3bcb813fbfceffd04b2ff47ead4"
       }
     },
     {
@@ -10922,9 +11961,16 @@
     {
       "id": "contract-draft-public-acceptance",
       "kind": "public",
-      "resources": ["techcontracts.contract_drafts"],
-      "actions": ["view", "approve"],
-      "scopes": ["workspace"],
+      "resources": [
+        "techcontracts.contract_drafts"
+      ],
+      "actions": [
+        "view",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.contract_drafts.view.workspace",
         "techcontracts.contract_drafts.approve.workspace"
@@ -11024,8 +12070,17 @@
         "techfinance.bank_accounts",
         "techfinance.entries"
       ],
-      "actions": ["view", "create", "update", "delete"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techfinance.legal_entities.view.workspace",
         "techfinance.legal_entities.create.workspace",
@@ -11140,8 +12195,17 @@
         "techcontracts.links",
         "techcontracts.legacy_contracts"
       ],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.imports.manage.workspace",
         "techcontracts.contract_templates.create.workspace",
@@ -11271,8 +12335,17 @@
         "techcontracts.contract_templates",
         "techsales.proposals"
       ],
-      "actions": ["view", "create", "update", "delete"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.contracts.create.own",
         "techcontracts.contracts.create.workspace",
@@ -11378,7 +12451,7 @@
       "files": {
         "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
         "src/lib/contracts/contract-create.server.ts": "f76b919e90f4330533e1d5b146a49c530a4e165bd5bdc61d606f758f5016fdcb",
-        "src/lib/contracts/template-merge.server.ts": "6fe5cf4573572e79ac1e5e905363fcf60476b161b655475858c096c0c913058e",
+        "src/lib/contracts/template-merge.server.ts": "3e80845b4478cb663e57f465d6d0eb1aa759a34d9fbe502245fe7ee667737610",
         "src/lib/contracts/templates.functions.ts": "8125d98ec0b5e7a17cae0edc250ab28a3f335789774b52d5d7790ec09d0586bf",
         "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
         "src/lib/sales-flow.server.ts": "c9eaa4d789a9a9501d5401e97e44ad8b63068e21f0a2ba96642f3be77d0ac6ac",
@@ -11396,9 +12469,17 @@
     {
       "id": "contract-template-token-formatting",
       "kind": "internal",
-      "resources": ["techcontracts.contract_templates"],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techcontracts.contract_templates"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [],
       "rationale": "Pure client-safe token catalogue and HTML escaping, with strict completeness validation for accepted proposal templates; no storage, identity, permission decisions or network access. Authorization belongs to template server handlers, proposal source RPC and contract RLS. DADOS-CONTRATO: catalogue gains validity/installment and signer tokens; pure, no data access.",
       "controls": [
@@ -11460,9 +12541,20 @@
     {
       "id": "legal-entity-lifecycle-inherited-boundaries",
       "kind": "business",
-      "resources": ["techfinance.legal_entities"],
-      "actions": ["view", "create", "update", "delete"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techfinance.legal_entities"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techfinance.legal_entities.view.workspace",
         "techfinance.legal_entities.create.workspace",
@@ -11562,10 +12654,18 @@
     {
       "id": "proposal-public-pdf",
       "kind": "public",
-      "resources": ["techsales.proposals"],
-      "actions": ["view"],
-      "scopes": ["workspace"],
-      "permission_keys": ["techsales.proposals.view.workspace"],
+      "resources": [
+        "techsales.proposals"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.proposals.view.workspace"
+      ],
       "rationale": "TABELA-FINAL: public PDF of a sent proposal through its capability link. The random public_token (column revoked from authenticated) scopes the read to one proposal via loadProposalDocument; no listing, no internal ids; drafts are not exported.",
       "controls": [
         {
@@ -11630,9 +12730,19 @@
     {
       "id": "note-attachment-server-upload",
       "kind": "business",
-      "resources": ["techsales.notes", "techsales.tasks", "techsales.activities"],
-      "actions": ["create"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.notes",
+        "techsales.tasks",
+        "techsales.activities"
+      ],
+      "actions": [
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.notes.create.own",
         "techsales.notes.create.team",
@@ -11696,9 +12806,17 @@
     {
       "id": "tempo-itens-deal-recalc",
       "kind": "business",
-      "resources": ["techsales.deals"],
-      "actions": ["update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.deals"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.deals.update.own",
         "techsales.deals.update.team",
@@ -11756,9 +12874,17 @@
     {
       "id": "sales-quote-payment-terms",
       "kind": "business",
-      "resources": ["techsales.quotes"],
-      "actions": ["update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.quotes"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.quotes.update.own",
         "techsales.quotes.update.team",
@@ -11848,9 +12974,21 @@
     {
       "id": "service-activation-payment-terms",
       "kind": "business",
-      "resources": ["techservice.services", "techservice.billing", "techfinance.entries"],
-      "actions": ["update", "manage", "create"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techservice.services",
+        "techservice.billing",
+        "techfinance.entries"
+      ],
+      "actions": [
+        "update",
+        "manage",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techservice.services.update.own",
         "techservice.services.update.team",
@@ -11951,8 +13089,20 @@
         "techsales.contacts",
         "techsales.companies"
       ],
-      "actions": ["view", "update", "delete", "assign", "approve", "export", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "update",
+        "delete",
+        "assign",
+        "approve",
+        "export",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.quotes.view.workspace",
         "techsales.deals.view.workspace",
@@ -12021,10 +13171,20 @@
     {
       "id": "proposal-cancel",
       "kind": "business",
-      "resources": ["techsales.proposals"],
-      "actions": ["update"],
-      "scopes": ["own", "team", "workspace"],
-      "permission_keys": ["techsales.proposals.update.workspace"],
+      "resources": [
+        "techsales.proposals"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.proposals.update.workspace"
+      ],
       "rationale": "CANCELA-PROPOSTA: cancelProposal reuses techsales.proposals update (requireSalesPermission + assertSalesRecord per record, RLS client, compare-and-set on status). UI buttons gated by SalesAction update. Public token read already only exposes sent/accepted/rejected, so canceled proposals cannot be accepted. No schema, grant or policy change. Ficha also hosts the existing proposal email/send actions (same gates as before). | Jornada: remover atalho de contrato e criação direta de proposta da ficha; ações da lista seguem capacidades por registro em useSalesCapabilities, cancelamento mantém a fronteira existente.",
       "controls": [
         {
@@ -12081,9 +13241,18 @@
     {
       "id": "proposal-legal-entity",
       "kind": "business",
-      "resources": ["techsales.proposals"],
-      "actions": ["create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.proposals"
+      ],
+      "actions": [
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.proposals.create.workspace",
         "techsales.proposals.update.workspace"
@@ -12153,8 +13322,13 @@
         "techprojects.jibble_import",
         "techprojects.clickup_import"
       ],
-      "actions": ["view", "manage"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techprojects.clockify_import.manage.workspace",
         "techprojects.jibble_import.manage.workspace",
@@ -12304,9 +13478,19 @@
     {
       "id": "unipile-personal-account-foundation",
       "kind": "business",
-      "resources": ["system.linkedin", "techhire.candidates"],
-      "actions": ["view", "manage"],
-      "scopes": ["own", "workspace", "team"],
+      "resources": [
+        "system.linkedin",
+        "techhire.candidates"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "workspace",
+        "team"
+      ],
       "permission_keys": [
         "system.linkedin.view.own",
         "system.linkedin.view.workspace",
@@ -12466,9 +13650,15 @@
     {
       "id": "unipile-v2-signed-webhook",
       "kind": "public",
-      "resources": ["system.linkedin"],
-      "actions": ["manage"],
-      "scopes": ["own"],
+      "resources": [
+        "system.linkedin"
+      ],
+      "actions": [
+        "manage"
+      ],
+      "scopes": [
+        "own"
+      ],
       "permission_keys": [],
       "rationale": "Verified signed callback resolves only an exact already mapped provider account. It never activates or adopts an account. Private inbound journal and cadence pause are atomic and deduplicated by account/message ID; reply is distinct from opt-out. CANAIS-ATENDIMENTO: route persists SHA256 of the verified envelope, signed provider timestamp and explicit provenance through an atomic service-only RPC. Message date comes only from provider timestamp or exact authenticated message hydration, never envelope creation or local time. Unknown direction requires hydration; self/history are excluded. Complete SQL dispatch/cutoff acceptance remains unverified. A preexisting journal row or history discovery cannot become a live occurrence on retry. Raw body, credentials, signature headers and tokens are not stored in occurrence snapshots. Route/parser/signature unit tests passed; user-JWT/RLS and live provider integration acceptance remain UNVERIFIED and the release lock remains closed.",
       "controls": [
@@ -12542,9 +13732,15 @@
     {
       "id": "unipile-auth-callback-navigation",
       "kind": "public",
-      "resources": ["system.linkedin"],
-      "actions": ["manage"],
-      "scopes": ["own"],
+      "resources": [
+        "system.linkedin"
+      ],
+      "actions": [
+        "manage"
+      ],
+      "scopes": [
+        "own"
+      ],
       "permission_keys": [],
       "rationale": "Public callback displays no private data and never confirms credentials. Bounded pointers go only to a fixed local authenticated route; server flow validates exact account, scope, expiry and active membership.",
       "controls": [
@@ -12605,8 +13801,16 @@
         "system.channels",
         "techsales.marketing.sdr_agent"
       ],
-      "actions": ["view", "create", "manage", "update"],
-      "scopes": ["own", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "manage",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.inbox.linkedin.view.own",
         "techsales.inbox.linkedin.create.own",
@@ -12716,8 +13920,14 @@
         "techsales.marketing.campaigns",
         "techsales.prospecting_voice"
       ],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.inbox.email.view.own",
         "techsales.inbox.email.view.team",
@@ -12803,8 +14013,20 @@
         "techsales.tasks",
         "system.calendars"
       ],
-      "actions": ["view", "update", "delete", "assign", "approve", "export", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "update",
+        "delete",
+        "assign",
+        "approve",
+        "export",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.activities.view.workspace",
         "techsales.notes.view.workspace",
@@ -12873,10 +14095,20 @@
     {
       "id": "contact-signer-custom-fields",
       "kind": "business",
-      "resources": ["techsales.contacts"],
-      "actions": ["update"],
-      "scopes": ["own", "workspace"],
-      "permission_keys": ["techsales.contacts.update.own", "techsales.contacts.update.workspace"],
+      "resources": [
+        "techsales.contacts"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.contacts.update.own",
+        "techsales.contacts.update.workspace"
+      ],
       "rationale": "Contact signer/CPF editor delegates all writes to setCustomFieldValue: authenticated user client, active workspace and assertSalesRecord(update), existing contacts row guard/RLS. UI denies absent edit permission; each record is still checked by the server. No grants or new endpoint.",
       "controls": [
         {
@@ -12931,9 +14163,20 @@
     {
       "id": "summary-capabilities-calendar-candidates",
       "kind": "business",
-      "resources": ["techsales.ai_summaries", "system.calendars"],
-      "actions": ["view", "delete", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.ai_summaries",
+        "system.calendars"
+      ],
+      "actions": [
+        "view",
+        "delete",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.ai_summaries.view.workspace",
         "techsales.ai_summaries.delete.workspace",
@@ -12990,10 +14233,22 @@
     {
       "id": "calendar-pending-meetings-read-index",
       "kind": "business",
-      "resources": ["techsales.activities", "system.calendars"],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
-      "permission_keys": ["techsales.activities.view.workspace", "system.calendars.view.workspace"],
+      "resources": [
+        "techsales.activities",
+        "system.calendars"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.activities.view.workspace",
+        "system.calendars.view.workspace"
+      ],
       "rationale": "Index-only performance follow-up for the unchanged Google Calendar pending-meetings read: owner_id, meeting type, non-null due_date, horizon ordering/limit. The partial composite index removes unrelated activity scans before the existing RLS checks. No rows, query predicates, jobs, grants or policies change. Table comment documents the existing protected surface.",
       "files": {
         "drizzle/migrations/0355_calendar_pending_meetings_index.sql": "9aeb457947861c2c461d156d4f4f2e9e76b5452578aa7039c95bddb8da9c0a2b"
@@ -13050,9 +14305,18 @@
     {
       "id": "contract-service-profile-fields",
       "kind": "business",
-      "resources": ["techservice.services"],
-      "actions": ["view", "create"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techservice.services"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techservice.services.create.own",
         "techservice.services.view.workspace",
@@ -13122,8 +14386,17 @@
         "techcontracts.signature_evidence",
         "techservice.services"
       ],
-      "actions": ["view", "create", "approve", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "approve",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.deals.view.own",
         "techsales.deals.view.team",
@@ -13241,8 +14514,16 @@
         "techcontracts.contracts",
         "techcontracts.esign_send"
       ],
-      "actions": ["view", "send", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "send",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.esign_send.manage.workspace",
         "techcontracts.signature_evidence.view.workspace",
@@ -13381,8 +14662,13 @@
         "techcontracts.forsign_settings",
         "techcontracts.signature_evidence"
       ],
-      "actions": ["manage", "view"],
-      "scopes": ["workspace"],
+      "actions": [
+        "manage",
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.forsign.manage.workspace",
         "techcontracts.forsign_settings.manage.workspace",
@@ -13520,9 +14806,15 @@
     {
       "id": "forsign-public-webhook",
       "kind": "public",
-      "resources": ["techcontracts.forsign"],
-      "actions": ["manage"],
-      "scopes": ["workspace"],
+      "resources": [
+        "techcontracts.forsign"
+      ],
+      "actions": [
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [],
       "rationale": "ForSign webhook: HMAC-SHA256 over the raw body with the workspace-specific secret plus fresh timestamp before parsing; the payload only names the operation, which is looked up inside that workspace and re-read from the ForSign API. Sync route is the managed cron (authenticateCronRequest) and only reconciles already-created pending operations.",
       "controls": [
@@ -13604,8 +14896,16 @@
         "techcontracts.esign",
         "techsales.contacts"
       ],
-      "actions": ["view", "manage", "create"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.signature_evidence.manage.workspace",
         "techcontracts.signature_evidence.view.workspace",
@@ -13705,8 +15005,18 @@
         "techsales.tasks",
         "techcontracts.contract_draft_approvers"
       ],
-      "actions": ["view", "manage", "create", "assign", "approve"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "create",
+        "assign",
+        "approve"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.handoffs.manage.workspace",
         "techcontracts.contract_draft_approvers.manage.workspace",
@@ -13857,8 +15167,15 @@
         "techhire.candidates",
         "techhire.jobs"
       ],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace", "custom"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace",
+        "custom"
+      ],
       "permission_keys": [
         "techsales.contacts.view.workspace",
         "techsales.companies.view.workspace",
@@ -13959,8 +15276,16 @@
         "techsales.proposals",
         "techcontracts.signature_evidence"
       ],
-      "actions": ["view", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.contracts.view.own",
         "techcontracts.contracts.view.team",
@@ -14109,10 +15434,18 @@
     {
       "id": "quote-public-pdf-shared-renderer",
       "kind": "public",
-      "resources": ["techsales.quotes"],
-      "actions": ["view"],
-      "scopes": ["workspace"],
-      "permission_keys": ["techsales.quotes.view.workspace"],
+      "resources": [
+        "techsales.quotes"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.quotes.view.workspace"
+      ],
       "rationale": "Existing public quote PDF keeps its random token lookup and published/sent/accepted/declined/expired status gate; only renderer moved to a shared server module used by the authorized signature assembler. No new public data or identifier query.",
       "controls": [
         {
@@ -14169,10 +15502,18 @@
     {
       "id": "contract-draft-client-bypass",
       "kind": "business",
-      "resources": ["techcontracts.contract_draft_client_bypass"],
-      "actions": ["approve"],
-      "scopes": ["workspace"],
-      "permission_keys": ["techcontracts.contract_draft_client_bypass.approve.workspace"],
+      "resources": [
+        "techcontracts.contract_draft_client_bypass"
+      ],
+      "actions": [
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.contract_draft_client_bypass.approve.workspace"
+      ],
       "rationale": "MINUTA-BLOQUEIO: dispensing the client acceptance of a contract draft requires a listed active legal approver with the dedicated bypass key in the active workspace, after legal approval, with a mandatory reason recorded in draft events. Not granted to any role automatically.",
       "controls": [
         {
@@ -14228,10 +15569,20 @@
         "src/components/branding/layout-selector.tsx": "2337980c9308ad98d61f458b25115bbfe12d5b10d3bab2b46c326a4b895ba982"
       },
       "rationale": "Workspace layout choice reuses the existing system.branding view/update gates. Save calls requireSharedPermission before the existing workspace-resolved user/RLS upsert; unknown layouts are rejected by Zod. Preview controls require view, actual save requires update and is disabled for read-only users. No migration, grant, role change, data action or change to identity. Classic is the default and remains reversible. Existing server getBranding retains authenticated user RLS reads and asset refresh unchanged. The editor resets on workspace changes and discards late loads; saves carry an expected-workspace id checked against the middleware-authorized workspace before the RLS upsert. The transport field is never persisted. Legacy callers keep the same active-workspace API. Approved light/dark appearance is selected from the existing palettes, validated as an enum, workspace-scoped and reset at logout; legacy theme defaults to light. No palette or identity rewrite.",
-      "resources": ["system.branding"],
-      "actions": ["view", "update"],
-      "scopes": ["workspace"],
-      "permission_keys": ["system.branding.view.workspace", "system.branding.update.workspace"],
+      "resources": [
+        "system.branding"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.branding.view.workspace",
+        "system.branding.update.workspace"
+      ],
       "controls": [
         {
           "file": "src/lib/access-control/shared-permission.middleware.ts",
@@ -14302,9 +15653,15 @@
         "src/lib/branding.tsx": "5922b998ca81187795d1e753fc7302e9db60d939961d43492b0c5a55293be9d7"
       },
       "rationale": "Authenticated workspace appearance only. Existing user/RLS reads remain filtered by the resolved active workspace. No unscoped cache or pre-auth appearance is applied; logout and workspace change clear structure, palette and module state. Only workspace theme selects layout, module tokens cannot replace structure. No new data or write action. Opt-in sidebar header reads the existing BrandingContext for workspace name and light/dark logo; existing menu permission filters and route destinations remain unchanged. Approved light/dark appearance is selected from the existing palettes, validated as an enum, workspace-scoped and reset at logout; legacy theme defaults to light. No palette or identity rewrite.",
-      "resources": ["system.branding"],
-      "actions": ["view"],
-      "scopes": ["workspace"],
+      "resources": [
+        "system.branding"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [],
       "controls": [
         {
@@ -14382,8 +15739,18 @@
         "techprojects.time_entries",
         "techprojects.profitability"
       ],
-      "actions": ["view", "create", "update", "delete", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techprojects.projects.view.own",
         "techprojects.projects.view.team",
@@ -14563,8 +15930,20 @@
         "techsales.contacts",
         "techsales.companies"
       ],
-      "actions": ["view", "update", "delete", "assign", "approve", "export", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "update",
+        "delete",
+        "assign",
+        "approve",
+        "export",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.quotes.view.workspace",
         "techsales.deals.view.workspace",
@@ -14688,8 +16067,15 @@
         "techcontracts.supplier_requests.approval_request",
         "techcontracts.supplier_requests.approval"
       ],
-      "actions": ["view", "create", "update", "approve"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.hiring_requests.view.workspace",
         "techpeople.hiring_requests.create.workspace",
@@ -15159,8 +16545,14 @@
         "techpeople.hiring_requests.reference",
         "techcontracts.supplier_requests.reference"
       ],
-      "actions": ["view", "create", "update"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.hiring_requests.view.workspace",
         "techpeople.hiring_requests.create.workspace",
@@ -15259,8 +16651,14 @@
         "techcontracts.supplier_requests.approval",
         "techcontracts.supplier_requests.reference"
       ],
-      "actions": ["view", "create", "approve"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "create",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.hiring_requests.approval_request.create.workspace",
         "techpeople.hiring_requests.approval.approve.workspace",
@@ -15566,8 +16964,13 @@
         "techpeople.hiring_requests.formalization",
         "techcontracts.supplier_requests.formalization"
       ],
-      "actions": ["manage", "approve"],
-      "scopes": ["workspace"],
+      "actions": [
+        "manage",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.hiring_requests.formalization.manage.workspace",
         "techpeople.hiring_requests.formalization.approve.workspace",
@@ -15674,8 +17077,12 @@
         "techpeople.hiring_requests.execution",
         "techcontracts.supplier_requests.execution"
       ],
-      "actions": ["approve"],
-      "scopes": ["workspace"],
+      "actions": [
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.hiring_requests.execution.approve.workspace",
         "techcontracts.supplier_requests.execution.approve.workspace"
@@ -15768,8 +17175,15 @@
         "techpeople.hiring_requests.deliveries",
         "techpeople.hiring_requests.fiscal_documents"
       ],
-      "actions": ["manage", "approve", "create", "view"],
-      "scopes": ["workspace"],
+      "actions": [
+        "manage",
+        "approve",
+        "create",
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.hiring_requests.deliveries.manage.workspace",
         "techcontracts.supplier_requests.deliveries.manage.workspace",
@@ -16071,8 +17485,12 @@
         "techpeople.hiring_requests.fiscal_documents",
         "techcontracts.supplier_requests.fiscal_documents"
       ],
-      "actions": ["attest_stored_bytes"],
-      "scopes": ["service"],
+      "actions": [
+        "attest_stored_bytes"
+      ],
+      "scopes": [
+        "service"
+      ],
       "permission_keys": [],
       "rationale": "Service-only immutable confirmation of bytes re-read from the exact path returned by a user-authorized fiscal reservation. It rechecks the original uploader, active workspace/membership, current fiscal create permission/deny and execution proof. Registration still runs as the user and requires the attested hash; service cannot create a purchase obligation through this boundary.",
       "controls": [
@@ -16128,8 +17546,14 @@
         "techcontracts.supplier_requests.economics",
         "techcontracts.supplier_requests.provisions"
       ],
-      "actions": ["view", "manage", "approve"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.hiring_requests.economics.view.workspace",
         "techpeople.hiring_requests.economics.manage.workspace",
@@ -16262,8 +17686,14 @@
         "techpeople.hiring_requests.payables_reconciliation",
         "techcontracts.supplier_requests.payables_reconciliation"
       ],
-      "actions": ["view", "manage", "approve"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.hiring_requests.payables.view.workspace",
         "techpeople.hiring_requests.payables.manage.workspace",
@@ -16378,9 +17808,20 @@
     {
       "id": "contract-legacy-regularization-batch-a",
       "kind": "business",
-      "resources": ["techcontracts.legacy_contracts", "techcontracts.contracts"],
-      "actions": ["view", "create", "approve", "update"],
-      "scopes": ["workspace", "own"],
+      "resources": [
+        "techcontracts.legacy_contracts",
+        "techcontracts.contracts"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "approve",
+        "update"
+      ],
+      "scopes": [
+        "workspace",
+        "own"
+      ],
       "permission_keys": [
         "techcontracts.legacy_contracts.view.workspace",
         "techcontracts.legacy_contracts.create.workspace",
@@ -16512,9 +17953,15 @@
     {
       "id": "contract-legacy-evidence-server-attestation",
       "kind": "service",
-      "resources": ["techcontracts.legacy_contracts"],
-      "actions": ["attest_stored_bytes"],
-      "scopes": ["service"],
+      "resources": [
+        "techcontracts.legacy_contracts"
+      ],
+      "actions": [
+        "attest_stored_bytes"
+      ],
+      "scopes": [
+        "service"
+      ],
       "permission_keys": [],
       "rationale": "Service-only confirmation of PDF bytes re-read from the exact path returned by a user-authorized legacy evidence reservation; rechecks uploader, active workspace/membership, legacy approve key/deny and contract view. Regularization still runs as the user.",
       "controls": [
@@ -16587,8 +18034,17 @@
         "techcontracts.imports",
         "techcontracts.legacy_contracts"
       ],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.imports.manage.workspace",
         "techcontracts.legacy_contracts.create.workspace",
@@ -16667,9 +18123,17 @@
     {
       "id": "contract-legacy-validation-read-boundary",
       "kind": "business",
-      "resources": ["techcontracts.contracts"],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techcontracts.contracts"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.contracts.view.workspace",
         "techcontracts.contracts.view.own",
@@ -16717,9 +18181,18 @@
     {
       "id": "legacy-canonical-party-editor",
       "kind": "business",
-      "resources": ["techcontracts.contracts"],
-      "actions": ["view", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techcontracts.contracts"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.contracts.view.own",
         "techcontracts.contracts.view.team",
@@ -16794,9 +18267,17 @@
     {
       "id": "hiring-origin-reference-column-grants",
       "kind": "business",
-      "resources": ["techpeople.hiring_requests", "techcontracts.supplier_requests"],
-      "actions": ["create", "update"],
-      "scopes": ["workspace"],
+      "resources": [
+        "techpeople.hiring_requests",
+        "techcontracts.supplier_requests"
+      ],
+      "actions": [
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.hiring_requests.create.workspace",
         "techcontracts.supplier_requests.create.workspace"
@@ -16892,8 +18373,15 @@
         "techcontracts.supplier_requests",
         "techpeople.hiring_requests"
       ],
-      "actions": ["view", "create"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.companies.create.own",
         "techsales.contacts.create.own",
@@ -16994,8 +18482,15 @@
         "techcontracts.supplier_requests.approval_request",
         "techcontracts.supplier_requests.approval"
       ],
-      "actions": ["view", "create", "update", "approve"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.hiring_requests.view.workspace",
         "techpeople.hiring_requests.create.workspace",
@@ -17136,8 +18631,16 @@
         "techpeople.hiring_requests",
         "techcontracts.imports"
       ],
-      "actions": ["view", "create", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.companies.create.own",
         "techsales.contacts.create.own",
@@ -17280,8 +18783,14 @@
         "techpeople.hiring_requests.fiscal_documents",
         "techcontracts.supplier_requests.fiscal_documents"
       ],
-      "actions": ["view", "create"],
-      "scopes": ["own", "workspace"],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
       "rationale": "Atomic service-only notification dispatcher binds current published workflow, version, run, executor and actual source workspace. Private non-BYPASSRLS subject bridges retain canonical source policies and explicit deny for all six modules. Each resolved candidate requires active membership and actual source read. Named managers/delegates and pending approvers never escalate implicitly; no followers invented. Raw variable templates become a neutral notice, not executor snapshot values. Existing workflow step authorization remains in force for all other operations; no role key or grant is added. UI edits the existing workflow draft, no direct notification writes. SQL-claims disposable tests execute the real dispatcher and canonical predicates; real JWT/PostgREST acceptance is separate. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation. P11 reviewed: five exact Finance notification keys, current payment-derived balance, same-day/post-publication deadline semantics, private canonical fiscal receipt with no raw SELECT grant, minimal event fields and read-only mutation fences. Fresh authorized destinations preserve permissions and saved state; no production application or automatic activation. P12 reviewed: explicit default-off digest consent separate from visual grouping, civil IANA slots, private batch/occurrence ledger, bounded original-step reminders and explicit escalation. Current identity/source/proof/version/permission/consent and delivery fences remain mandatory; approvals reuse their canonical notice and cannot escalate. No source mutation, inferred CEO, real message or production activation.",
       "exception": {
         "mechanism": "service_role execute grant plus role claim and null auth.uid; workflow/run/version/source proof; private bridges revoked from browser and service callers.",
@@ -18014,9 +19523,16 @@
     {
       "id": "notification-center-personal-workspace",
       "kind": "personal",
-      "resources": ["system.notifications"],
-      "actions": ["view", "update"],
-      "scopes": ["own"],
+      "resources": [
+        "system.notifications"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own"
+      ],
       "rationale": "Personal center and preferences bind verified session, active selected workspace, own recipient and membership. New source proof is captured only for new inserts with actual source workspace; no historical attribution/backfill. Workspace reads and raw Data API RLS revalidate source access using private non-BYPASSRLS subject bridges; old unproven history is neutral without links. IDs/cutoff bounded reads, snooze state and revision CAS never approve or conclude tasks. Direct notification update/delete and preference/context tables are private. Workspace/event preference overlay extends the service-only package 2 dispatcher without bypassing its workflow/run/source/recipient checks. Bell revalidates realtime payload through the authorized API before interruption; identity/workspace-qualified caches and silence are personal. No new grants, scheduled external delivery, channels, WhatsApp opt-in or activation of planned events. Package 5 reviewed: independent bounded live badge and protected ID lookup, batched scoped realtime, cross-session read/snooze refresh, gated search actions, context navigation and mobile detail. No new producers, priorities, deliveries or forced channels. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation. P12 reviewed: explicit default-off digest consent separate from visual grouping, civil IANA slots, private batch/occurrence ledger, bounded original-step reminders and explicit escalation. Current identity/source/proof/version/permission/consent and delivery fences remain mandatory; approvals reuse their canonical notice and cannot escalate. No source mutation, inferred CEO, real message or production activation.",
       "exception": {
         "mechanism": "Authenticated JWT plus work_access_context and explicit expected workspace; SQL actor derives auth.uid and enforces active membership. Service dispatcher retains service_role-only execution and run proof.",
@@ -18624,8 +20140,13 @@
         "techpeople.hiring_requests.fiscal_documents",
         "techcontracts.supplier_requests.fiscal_documents"
       ],
-      "actions": ["create"],
-      "scopes": ["own", "workspace"],
+      "actions": [
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
       "rationale": "Compatibility source-binding and content-minimization only. Existing reminder worker is imported exclusively by the CRON_SECRET-guarded route; existing approval step validates the named recipient through sales_workflow_approval_recipient in the authorized workflow engine. Neither endpoint, target choice nor email delivery is broadened. In-app notices now carry explicit source workspace and real activity/workflow-source ids with neutral content, never a private activity/comment/approval snapshot authorized only against a parent deal. The new center RLS revalidates active recipient and actual source on every read; no role grants or external channel is introduced. Reminder creation keeps the existing service worker selection and preferences, with access at consumption enforced by the new SQL boundary. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation. P11 reviewed: five exact Finance notification keys, current payment-derived balance, same-day/post-publication deadline semantics, private canonical fiscal receipt with no raw SELECT grant, minimal event fields and read-only mutation fences. Fresh authorized destinations preserve permissions and saved state; no production application or automatic activation.",
       "exception": {
         "mechanism": "Server-only trusted service imports: existing CRON_SECRET route invokes bounded reminder scan; authorized Workflow engine and service-only recipient RPC guard approval creation. Pure notice constructors validate UUID source/workspace and remove private snapshots.",
@@ -19100,8 +20621,13 @@
         "system.whatsapp_templates",
         "techsales.inbox.whatsapp"
       ],
-      "actions": ["view", "manage"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "system.notification_settings.view.workspace",
         "system.notification_settings.manage.workspace",
@@ -20100,9 +21626,16 @@
     {
       "id": "notification-center-live-reads",
       "kind": "personal",
-      "resources": ["system.notifications"],
-      "actions": ["view", "update"],
-      "scopes": ["own"],
+      "resources": [
+        "system.notifications"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own"
+      ],
       "rationale": "Package 5 completes original Central/Bell scope already partly delivered in package 3. New badge returns bounded own/source-authorized count only; lookup accepts at most 30 explicit UUIDs and proves own recipient, active selected workspace and current source access. Read-only helper resolves professional/supplier module from authorized canonical request kind, without title/link inference. Existing list, cursor, cutoff, mark/snooze and legacy-neutral history contracts preserved. No new producer, channel, grants, priority inference or external messages.",
       "exception": {
         "mechanism": "Verified session, work_access_context, explicit expected selected workspace and auth.uid-derived actor; private source bridge runs actual current RLS.",
@@ -20171,9 +21704,15 @@
     {
       "id": "notification-center-realtime-buffer",
       "kind": "internal",
-      "resources": ["system.notifications"],
-      "actions": ["view"],
-      "scopes": ["own"],
+      "resources": [
+        "system.notifications"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own"
+      ],
       "rationale": "Bounded ephemeral UUID queue and timer coalescing for scoped UI refresh and interruptions. No direct database/provider I/O, stored message content, recipient lookup or business mutation. Bell binds active lifetime to authenticated identity/workspace; current source, membership and preferences are revalidated by protected lookup before interruption. UPDATE/DELETE refresh only, never emit new business events. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication.",
       "exception": {
         "mechanism": "Executable active lifetime guard and UUID validation; caller binds isActive to mounted authenticated identity plus selected workspace. All callback reads are delegated to requireWorkspaceContext and current source RLS.",
@@ -20328,8 +21867,18 @@
         "system.notification_deliveries",
         "system.automation.workflows"
       ],
-      "actions": ["view", "create", "update", "delete", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "rationale": "P6 completes email and Slack on the existing notification ledger/tick. Slack is a collective occurrence+endpoint, never a personal recipient or a fan-out channel. Existing webhook connection and legacy route rows are preserved but overrides blocked and raw dispatcher removed. Fixed neutral model plus canonical authenticated central URL only. Interactive APIs require selected active workspace, settings keys and current integration record policies; worker service proves actual published workflow, run, step, executor/source access and current endpoint/policy revision. Endpoint URL remains private, never jobs/history/browser. Shared hash rate state serializes an endpoint across tenants without exposing tenant data. No auto-grants, auto-activation, producers, external tests or publication. Email opt-in guard/error preservation changes keep legacy result-based callers compatible; their existing caller authorization and purposes remain unchanged.",
       "exception": {
         "mechanism": "Authenticated active-workspace wrapper and canonical SQL subject/RLS bridge. Service-role-only dispatch/claim/preflight/finish and endpoint resolution with lease token. Helpers/forms delegate to guarded canonical callers; no new public operation. Fixed URL syntax and no redirects plus pre-POST guard.",
@@ -20477,8 +22026,16 @@
         "system.notification_deliveries",
         "system.whatsapp"
       ],
-      "actions": ["view", "manage", "create", "update"],
-      "scopes": ["own", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
       "rationale": "P7 completes the previously anticipated official Cloud API notification channel, without new business producers. Every profile phone mutation revokes prior own consents. First claim pins connection; final live sender and template guard precedes lease revalidation and POST. Private receipt RPC correlates workspace+connection+sender+destination hash+wamid+attempt, independently of Inbox projection; canonical HMAC-bound events supply original metadata. Historical receipts remain eligible after disablement, without activating inbound or outbound. Existing durable webhook queue handles receipt-before-acceptance; no parallel queue or scheduler. Reputation/rate outcomes never enqueue email fallback, including exhausted retries. Shared connection cooldowns preserve the longest finite provider deadline through indefinite stops and explicit authorized reactivation. Indefinite reputation refusals disable only the notification WhatsApp policy, without email fallback. Exact workspace/wamid/error-code suppression receipts correlate canonical projection and ledger callbacks, including late failure details, without duplicate suppression counts. Existing connectors and source permissions remain; no automatic grants, activation, production SQL, provider messages or publication.",
       "exception": {
         "mechanism": "Private worker RPCs require service_role with null auth.uid; interactive wrappers use selected active workspace and canonical record/channel/settings checks. Cloud public capability is connection-specific HMAC plus WABA/phone binding; markers overwritten only after signature verification. Queue and projection helpers are internal service delegation, never browser entry points.",
@@ -20651,8 +22208,16 @@
         "techcontracts.supplier_requests.fiscal_documents",
         "techsales.inbox.whatsapp"
       ],
-      "actions": ["view", "manage", "create", "update"],
-      "scopes": ["own", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
       "rationale": "P8 connects exactly eight named TechSales and TechContracts events to the existing Workflow queue and notification ledger. Database producers derive workspace, source and transitions from canonical records, using private immutable occurrence proofs and hashes. Named workflows alone are workspace scoped, with current executor, recipient and source authorization. Canonical eventKey comes from protected context or intent metadata; legacy types, generic workflows and existing handoffs remain compatible. Proposal-origin approvals and event/run feeds delegate to the canonical proposal view gate under invoker RLS; source deny and inactive or foreign membership remain blocking. New rules start disabled, without external channels. Deadline events use explicit bounded lead time and the existing service time tick; no automatic renewal or historical backfill. No grants, role changes, production SQL, real provider messages, push or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation. P11 reviewed: five exact Finance notification keys, current payment-derived balance, same-day/post-publication deadline semantics, private canonical fiscal receipt with no raw SELECT grant, minimal event fields and read-only mutation fences. Fresh authorized destinations preserve permissions and saved state; no production application or automatic activation. P12 reviewed: explicit default-off digest consent separate from visual grouping, civil IANA slots, private batch/occurrence ledger, bounded original-step reminders and explicit escalation. Current identity/source/proof/version/permission/consent and delivery fences remain mandatory; approvals reuse their canonical notice and cannot escalate. No source mutation, inferred CEO, real message or production activation. Workflow WhatsApp inbound reviewed: read-only message metadata and explicit account/receiving-number intersection are revalidated against active workspace, current executor/source/recipient access and deny precedence. Only verified new Cloud/Lovable occurrences after activation are eligible; publishing does not enable a rule or transport. Private body/customer data are not projected; legacy unread assignee notices are reused rather than duplicated implicitly. No role grant, source mutation or inferred recipient is introduced. Inbox package2: closed13 channel-specific selectors extend metadata only; WhatsApp shared.message.received remains exact and unchanged. Channel/account selection renders the bounded current-user/workspace RPC-backed control. Persistence, publication, execution and delivery continue through canonical server and private SQL proof gates; field allowlists exclude bodies, contacts, signatures and credentials.",
       "exception": {
         "mechanism": "Named event minting is private database delegation; event checks and deadline production require service_role with null auth.uid. Interactive rules and previews retain selected active workspace plus canonical Workflow row/action gates. Public selector columns cannot establish a private proof. The internal canvas only renders validated selector metadata and edits an in-memory draft through parent callbacks; it has no persistence or publication authority. Existing parent save/publish handlers and canonical server/SQL gates authorize every effect; the label helper validates display, not user privileges.",
@@ -21402,8 +22967,16 @@
         "techhire.offer_terms",
         "techpeople.people_sensitive"
       ],
-      "actions": ["view", "create", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "rationale": "P9 adds four opt-in TechProjects occurrences to the existing Workflow queue, private occurrence proofs and delivery ledger. Start is a real planning-to-active transition. DATE deadlines follow America/Sao_Paulo; overdue crossings before publication are excluded. A persistent source/deadline cursor prevents daily, version or A-to-B-to-A repetition. Current executor and recipient source permissions, active membership, tenant, parent relation and custom task completion are revalidated. Milestone links use a current same-workspace parent and protected central context. Project costs are removed from new generic/named snapshots before private hashing, projected out of privileged trigger/association reads and forbidden in generic project actions; other module values remain. The shared user-client cost adapter delegates to the unchanged canonical work_cost_projection RPC, preserving financial access checks and error results. No automatic rule/channel, role grant, task, time, billing, real provider message or production publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "exception": {
         "mechanism": "Minting and URL derivation are private SQL delegation. Scheduler and proof-check APIs require the existing service-role boundary with null auth.uid. Private emitter, cursor/proof tables, task-state helper and milestone URL helper are not executable/readable by authenticated users or service clients. Internal hydration runs after canonical executor/source/association authorization in workflowSourceAllowed; sanitizeWorkflowSnapshot restricts fields and does not grant privileges. loadWorkCostProjection delegates to the SQL financial permission boundary using the authenticated user client; it neither queries raw costs nor impersonates a service client. Interactive rule and preference APIs keep their existing actor, active workspace and canonical row gates.",
@@ -21756,8 +23329,18 @@
         "techpeople.hiring_requests",
         "techpeople.hiring_requests.reference"
       ],
-      "actions": ["view", "create", "update", "manage", "approve"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage",
+        "approve"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "rationale": "P10 adds six explicit TechHire/TechPeople occurrences to the existing Workflows queue and protected delivery ledger. ATS receipt uses the actual application date so historical imports do not become new applications. Interviews require a future scheduled occurrence and signed offers require the canonical signing proof, without implying hiring. Employment start means a governed admission or authorized direct start. Documents use their own read permission and a bounded civil-date window. Pending approval covers only professional preparation and the named current released approver, reusing the canonical in-app notice. New offers/documents/preparation sources are read-only Workflow entities. Named snapshots contain only source identifiers, states and dates; protected HR fields are removed prospectively while public legacy aliases remain compatible. No automatic rules/channels, role grants, hiring, approval, second task or real provider message.",
       "exception": {
         "mechanism": "Private trigger emitters mint immutable occurrence proofs. Existing service-only tick/check/delivery APIs validate the original workflow, version, actor and source. Source visibility and worker cross-module references execute EXISTS under the non-BYPASSRLS subject role and canonical current RLS; service possession is not permission. Interactive readers use authenticated identity, active workspace and canonical HR record gates. Snapshot minimization and source-link formatting are data/presentation fences, never authorization.",
@@ -22031,8 +23614,18 @@
         "techpeople.hiring_requests.fiscal_documents",
         "techcontracts.supplier_requests.fiscal_documents"
       ],
-      "actions": ["view", "create", "update", "manage", "approve"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage",
+        "approve"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "rationale": "P11 adds five exact Finance occurrences to existing Workflows and the protected delivery ledger. Payables/receivables due today follow the Sao Paulo civil day, including rules first published during that day; overdue occurrences require a post-publication date crossing with recovery of missed ticks and no historical backlog. A private aggregate of authoritative payments returns only current positive-balance eligibility after source authorization, even for an entry reader without payment-row access. It never projects amounts. Fiscal receipt means only a new canonical nfse/nfe registration in the existing professional/supplier contracting flow, with attested storage/hash, current start/revision/signature and receipt event. It excludes outgoing invoices, payroll/RPA and imported already-registered rows. Its new Workflow source is read-only and raw fiscal SELECT grants remain revoked. Named snapshots contain only identifiers, states and dates. Missing projected fields and financial/source mutations are rejected before filters or effects; generic pre-existing Finance workflows preserve their aliases and ordinary action boundaries. No rule/channel activation, collection, title, payment, provision, invoice issuance or real message.",
       "exception": {
         "mechanism": "Private emitters mint immutable occurrence proofs and durable date cursors. Existing service-only tick/check/delivery APIs validate the original workflow, version, actor, current source and balance. Ordinary source visibility uses a non-BYPASSRLS subject. Fiscal visibility derives the document/request/start/kind and combines canonical fiscal_documents.view and preparation permissions with a subject-owned parent RLS check; no authenticated raw-table SELECT is added. A narrow authenticated boolean gateway derives auth.uid and the active workspace itself, returns no fiscal data and records no download. Interactive destination reads use the current actor/workspace and canonical Finance or fiscal RPCs. Projection and link formatting are not authorization.",
@@ -22246,8 +23839,17 @@
         "system.workflows",
         "system.workflow_approvals"
       ],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "rationale": "P12 adds explicitly opted-in civil-time digests and bounded reminders/escalation to existing proved notification steps. All workspace/personal switches default off. Visual grouping stays separate. Only explicitly low-priority initial canonical occurrences can join a digest, excluding pending approvals. Each envelope has a private batch identity across workflows, no fabricated run, and only neutral central-link content. Reminders derive the original send_notification step without replaying the Workflow, require an existing unread original notice and current source state, and stop after configured limits or revocation. Approval reminders reuse the canonical notice without changing tasks or decisions; fiscal follow-ups stop after review. Escalation requires one explicit supported selector and never infers a CEO or grants authority. No new business events, activation, real transmission or production change.",
       "exception": {
         "mechanism": "Authenticated personal RPCs derive auth.uid and active workspace, accept no target user and use revision CAS. Workspace switches retain existing notification_settings view/manage keys. The private service tick is bounded and uses the existing scheduler, original run/version/step and canonical source proof. Every digest member and derived child is revalidated at closure, claim and preflight through current source RLS and active memberships. Raw scheduling tables and private test-clock helpers have no authenticated/service_role execute or SELECT grants. Interactive fields additionally match current user/workspace before editing or saving.",
@@ -22513,8 +24115,14 @@
         "system.whatsapp",
         "system.integrations"
       ],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.notification_settings.view.workspace",
         "system.workflows.view.own",
@@ -22643,8 +24251,13 @@
         "system.whatsapp",
         "system.workflows"
       ],
-      "actions": ["view", "manage"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "system.notification_settings.view.workspace",
         "system.notification_settings.manage.workspace",
@@ -22724,9 +24337,20 @@
     {
       "id": "meta-whatsapp-template-center",
       "kind": "business",
-      "resources": ["system.whatsapp_templates", "system.whatsapp", "system.channels"],
-      "actions": ["view", "create", "update", "delete"],
-      "scopes": ["workspace"],
+      "resources": [
+        "system.whatsapp_templates",
+        "system.whatsapp",
+        "system.channels"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "system.whatsapp_templates.view.workspace",
         "system.whatsapp_templates.create.workspace",
@@ -22811,9 +24435,20 @@
     {
       "id": "meta-whatsapp-template-provider-transport",
       "kind": "internal",
-      "resources": ["system.whatsapp_templates", "system.whatsapp", "system.channels"],
-      "actions": ["view", "create", "update", "delete"],
-      "scopes": ["workspace"],
+      "resources": [
+        "system.whatsapp_templates",
+        "system.whatsapp",
+        "system.channels"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "system.whatsapp_templates.view.workspace",
         "system.whatsapp_templates.create.workspace",
@@ -22912,8 +24547,15 @@
         "techprojects.time_entries",
         "techhire.sourcing"
       ],
-      "actions": ["view", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [],
       "controls": [
         {
@@ -22974,8 +24616,14 @@
         "techhire.candidates",
         "system.legal_entities"
       ],
-      "actions": ["view"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [],
       "controls": [
         {
@@ -23045,9 +24693,19 @@
       "files": {
         "src/lib/ats/cv-parse-pdf.functions.ts": "741f1e7eaa2ea7fed23ba37af91f7766ff0340e2884794aaf1403ad7e8db5c7d"
       },
-      "resources": ["techhire.candidates"],
-      "actions": ["view", "create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techhire.candidates"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [],
       "controls": [
         {
@@ -23101,9 +24759,19 @@
       "files": {
         "src/lib/ats/email-engine.server.ts": "d43b79e407c00734a031c3eb711edc146f0e7831aa9c677f3c19027a9c54a794"
       },
-      "resources": ["techhire.candidates", "techhire.stage_emails"],
-      "actions": ["view", "create"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techhire.candidates",
+        "techhire.stage_emails"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [],
       "controls": [
         {
@@ -23163,8 +24831,16 @@
         "techsales.email_broadcasts",
         "techsales.email_accounts"
       ],
-      "actions": ["view", "export", "create"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "export",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [],
       "controls": [
         {
@@ -23215,9 +24891,17 @@
         "src/lib/email-tracking.server.ts": "82ee0b7482cbd27634a46299deb530ec56affd17ba5fcf55880695a69dbdf7b2",
         "src/routes/api/public/email/pixel.$messageId.ts": "d0262d2d09f80d8e3c6fde4032b0a6e68834bfaa1e92a25f0490b476de8e6874"
       },
-      "resources": ["techsales.email_messages"],
-      "actions": ["update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.email_messages"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [],
       "controls": [
         {
@@ -23271,10 +24955,20 @@
       "files": {
         "src/lib/gmail-sync.functions.ts": "528bb040672a2c657fafe84a1100360aa7f207b0be2c5c304047f3c431b94eef"
       },
-      "resources": ["techsales.email_accounts"],
-      "actions": ["update"],
-      "scopes": ["own", "team", "workspace"],
-      "permission_keys": ["techsales.email_accounts.update.workspace"],
+      "resources": [
+        "techsales.email_accounts"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.email_accounts.update.workspace"
+      ],
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -23317,9 +25011,18 @@
       "files": {
         "src/routes/api/public/v1/ats/jobs.ts": "4097fe82df31372046278a453a692d061d637e189d76de8892400e7a78e6fb0c"
       },
-      "resources": ["techhire.jobs"],
-      "actions": ["view", "create"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techhire.jobs"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [],
       "controls": [
         {
@@ -23407,8 +25110,18 @@
         "techsales.leads",
         "techfinance.reports"
       ],
-      "actions": ["view", "create", "update", "manage", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [],
       "controls": [
         {
@@ -23557,8 +25270,16 @@
         "techhire.interviews",
         "techsales.inbox.chat"
       ],
-      "actions": ["view", "create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [],
       "controls": [
         {
@@ -23648,9 +25369,22 @@
     {
       "id": "workflow-whatsapp-inbound-boundary",
       "kind": "internal",
-      "resources": ["system.workflows", "techsales.inbox.whatsapp", "system.notifications"],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.workflows",
+        "techsales.inbox.whatsapp",
+        "system.notifications"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.workflows.create.own",
         "system.workflows.create.team",
@@ -23796,9 +25530,19 @@
     {
       "id": "workflow-event-producer-maintenance",
       "kind": "internal",
-      "resources": ["system.workflows"],
-      "actions": ["view", "create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.workflows"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "rationale": "Narrow trigger maintenance only: consolidate the two known generic CRM emitters to one canonical active emitter per table and compare actual project-task status/custom_status_id fields. The migration preserves the existing function OID, owner, SECURITY DEFINER settings and execute ACL, both derivation/project-link backfill guards, tenant payload semantics and historical events/runs. Unknown, disabled or altered producer metadata aborts instead of broadening its firing boundary. No new user operation, callable privilege, policy, grant or row-access path exists. The five actor scenarios cite the unchanged canonical Workflow authorization boundary; Dedicated PostgreSQL maintenance tests separately prove event multiplicity, real status changes, cross-tenant payloads, backfill suppression, ACL invariance, history preservation and fail-closed metadata preflight. The real processEvent engine also consumes actual produced SQL events and persists successful runs plus a synthetic SQL effect with reenrollment disabled/enabled; repeated delivery is constrained by the physical unique(workflow_id,event_id), and only reenrollment permits a later update effect. Authorization/hydration and the final synthetic action are mocked only in those enrollment cases; they do not assert RBAC or external delivery.",
       "exception": {
         "mechanism": "Existing row-change triggers invoke the pre-existing enqueue_workflow_event trigger function after an already authorized business write; the additive migration changes known trigger metadata and the task-stage comparison only. No additional execute grants or user-facing RPC are introduced.",
@@ -23870,8 +25614,17 @@
         "techsales.inbox.chat",
         "techsales.inbox.linkedin"
       ],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.workflows.create.own",
         "system.workflows.create.team",
@@ -23973,8 +25726,17 @@
         "techsales.inbox.chat",
         "techsales.inbox.linkedin"
       ],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "rationale": "Inbox package2: private immutable evidence/occurrence/transition/confirmed-response journals bind exact workspace/account/conversation/message, activation cutoff, published workflow/version, original event hash and continuation ancestry. Named events are read-only Workflow sources; public selector metadata never mints proof. Current source RLS applies separately to author, executor and each recipient. Existing WhatsApp and28 legacy reference/dispatch permission decisions are compared for five synthetic SQL role profiles before/after. Recipient tests execute actual PostgreSQL/PostgREST inapp/v2/Slack dispatch, legacy unread reuse, concurrency, scheduling and revocation; catalogue tests separately prove author metadata, not runtime authority. Availability is released separately by0452 after canonical producer/first-response/continuation/recovery cases. The release test executes that exact SQL on the owned copy and compares every other role, membership, function definition/ACL/security, relation grant/RLS and policy before/after. It does not activate any user rule. This contract is an authorization-impact inventory; final verification/CI and publication remain independent gates. Additive0445/0446 impose immutable Gmail acceptance lineage and preserve the canonical provider uniqueness; no ACL or row-scope expansion. Reviewed0447/0448 retain original private Inbox occurrence time and exact deterministic child identity without changing legacy resume timestamps; original OID/ACL/security/dependencies and chat policy identity/roles/restrictiveness are asserted. Published0122 own/workspace predicate is retained, never team-expanded. Additive0459 removes Supabase public-schema default table grants from anon/authenticated and PUBLIC, preserving exactly the original13 authenticated metadata columns and the existing source RLS. Owned PostgreSQL regression installs the real broad defaults before0406, reproduces the exposure, applies0459, checks twelve private tables and denied TRUNCATE/private columns, and confirms real service ingestion and the five unchanged legacy access vectors. No existing function, policy, role, membership, service grant or business record is changed.",
       "exception": {
         "mechanism": "Service-only RPC dispatch and durable private journals; producer identity is verified Gmail incremental queue, session-bound atomic widget input or signed Unipile envelope. Human transitions require authenticated active actor and row action gate. Technical evaluators temporarily install the exact current subject for invoker RLS and restore claims. Specific private bridge function ACLs are changed; temporary schema CREATE is revoked atomically, and temporary auth USAGE is revoked by0431. No business-role grants.",
@@ -24232,9 +25994,20 @@
     {
       "id": "email-human-send-and-attempt-ui",
       "kind": "business",
-      "resources": ["techsales.inbox.email", "techsales.email_accounts", "techsales.inbox.chat"],
-      "actions": ["view", "create"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.inbox.email",
+        "techsales.email_accounts",
+        "techsales.inbox.chat"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.inbox.email.create.own",
         "techsales.inbox.email.create.team",
@@ -24321,9 +26094,20 @@
     {
       "id": "inbox-chat-authenticated-transport",
       "kind": "business",
-      "resources": ["techsales.inbox.chat", "techsales.tickets"],
-      "actions": ["view", "create", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.inbox.chat",
+        "techsales.tickets"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.inbox.chat.view.own",
         "techsales.inbox.chat.view.team",
@@ -24401,9 +26185,18 @@
     {
       "id": "inbox-private-transport-reconciliation",
       "kind": "internal",
-      "resources": ["techsales.inbox.email", "techsales.inbox.linkedin"],
-      "actions": ["view", "create"],
-      "scopes": ["own", "workspace"],
+      "resources": [
+        "techsales.inbox.email",
+        "techsales.inbox.linkedin"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
       "rationale": "Internal transport helper is reached only after canonical authenticated sender or current service-job/Unipile permission/lease gates. It cannot grant access or bypass the database: private receipt SELECT/INSERT requires the service client, and must propagates database denial before transport/projection. Accepted source proof/current workspace+account+actor and immutable private receipts remain authoritative. No authenticated journal or raw-body read is introduced. Pure transport unit tests cover acceptance/projection separation, concurrent retry, uncertain send and conflicting identity; actual provider callbacks in PostgreSQL cases are synthetic and do not claim a real external send. Reviewed0445/0446: Gmail acceptance is durable before thread reads; a separate reconciled receipt preserves parent timestamp and full payload, exact actor/account/message and real provider thread. Stable full-request fingerprint rejects changed recipients, subject or attachment bytes. SDR LinkedIn recovery requires exact private sent attempt, workspace, personal account, chat and body and invokes the existing completion RPC without provider resend. Confirmation time comes from the database default; no host-clock authority.",
       "exception": {
         "mechanism": "Privileged server-only caller delegation into private immutable receipt tables. Every database error stops the relevant step; projection failure after acceptance reports pending and never repeats provider POST. Incoming public mirrors and editable status cannot attest accepted transport.",
@@ -24468,9 +26261,19 @@
     {
       "id": "gmail-conversation-reply-boundary",
       "kind": "business",
-      "resources": ["techsales.inbox.email", "techsales.email_accounts"],
-      "actions": ["view", "create"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.inbox.email",
+        "techsales.email_accounts"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.inbox.email.view.own",
         "techsales.inbox.email.view.team",
@@ -24532,9 +26335,19 @@
     {
       "id": "gmail-private-acceptance-recovery",
       "kind": "internal",
-      "resources": ["techsales.email_accounts", "techsales.inbox.email"],
-      "actions": ["view", "create", "update"],
-      "scopes": ["own", "workspace"],
+      "resources": [
+        "techsales.email_accounts",
+        "techsales.inbox.email"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
       "rationale": "Human Gmail accepted transport is recovered by the existing authorized manual/cron sync independently of a closed composer. The private queue includes all immutable accepted Gmail attempts, uses bounded25-row SKIP LOCKED claims and leases, schedules failed rows with backoff, and audits SQLSTATE-only outcomes. Atomic projection checks current account owner, active membership, account job authorization, current row view+create, original body/hash/payload lineage and canonical source proof before committing. Recovery has no provider send API and cannot promote reservations, history mirrors or uncertain sends. Portable mandatory PostgreSQL/PostgREST cases exercise five distinct current authorization profiles plus receipt identity, backlog, concurrency, rollback and sync; provider callbacks are synthetic, not real external sends.",
       "exception": {
         "mechanism": "Service-only RPCs and server-only helper after assertSalesAccountJob; queue/audit tables are private definer-owned with RLS, no direct grants even to service_role. Each atomic projection rechecks current actor and source.",
@@ -24598,9 +26411,23 @@
     {
       "id": "contract-legacy-pending-discard",
       "kind": "business",
-      "resources": ["techcontracts.contracts", "techcontracts.legacy_contracts"],
-      "actions": ["view", "update", "delete", "create", "approve", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techcontracts.contracts",
+        "techcontracts.legacy_contracts"
+      ],
+      "actions": [
+        "view",
+        "update",
+        "delete",
+        "create",
+        "approve",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.legacy_contracts.view.workspace",
         "techcontracts.contracts.view.workspace",
@@ -24742,9 +26569,21 @@
         "src/routes/_authenticated/settings.proposal-templates.tsx": "66b03a511606d91abcfcb35da4f63b5154f01397ce25d0bdfabe493a493a20f2",
         "drizzle/migrations/0456_proposal_template_contract_model.sql": "65e79b97e4585fef45390294a63311c9fa401138285fa90a825965c719c7bffb"
       },
-      "resources": ["techsales.proposal_templates", "techcontracts.contract_templates"],
-      "actions": ["view", "create", "update", "delete"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techsales.proposal_templates",
+        "techcontracts.contract_templates"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techsales.proposal_templates.view.own",
         "techsales.proposal_templates.view.team",
@@ -24828,9 +26667,23 @@
         "src/components/contracts/contracts-bulk-bar.tsx": "f733ab87754b4a9432a06450da1f5cd8d57a495c9eebebda9f31b1bb7c56fe20",
         "src/components/contracts/contracts-grouped-list.tsx": "32e88c99298ff76506805e4dc7f6791c7938f6f3792df9de7925ed8aff034ec6"
       },
-      "resources": ["techcontracts.contracts", "techcontracts.links"],
-      "actions": ["view", "create", "update", "delete", "export", "assign"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techcontracts.contracts",
+        "techcontracts.links"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "export",
+        "assign"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.contracts.view.own",
         "techcontracts.contracts.view.team",

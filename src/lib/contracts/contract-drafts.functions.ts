@@ -237,6 +237,11 @@ export const prepareContractDraftText = createServerFn({ method: "POST" })
       deal_id: string;
       template: Record<string, any>;
       prepared_terms?: { starts_at?: string; ends_at?: string | null; number?: string };
+      supplier?: {
+        company_id: string | null;
+        contact_id: string | null;
+        legal_entity_id: string | null;
+      } | null;
     }>(context.supabase, "contract_draft_merge_source", {
       p_draft: data.draftId,
       p_template: data.templateId,
@@ -250,7 +255,16 @@ export const prepareContractDraftText = createServerFn({ method: "POST" })
       context.supabase,
       source.workspace_id,
       context.userId,
-      { templateId: data.templateId, proposalId: source.proposal_id, dealId: source.deal_id },
+      source.supplier?.company_id
+        ? {
+            templateId: data.templateId,
+            companyId: source.supplier.company_id,
+            ...(source.supplier.contact_id ? { contactId: source.supplier.contact_id } : {}),
+            ...(source.supplier.legal_entity_id
+              ? { contractingLegalEntityId: source.supplier.legal_entity_id }
+              : {}),
+          }
+        : { templateId: data.templateId, proposalId: source.proposal_id, dealId: source.deal_id },
       template,
     );
     const preparedTerms = {

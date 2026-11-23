@@ -75,6 +75,8 @@ export type MergeInput = {
   title?: string;
   proposalId?: string;
   contractingLegalEntityId?: string;
+  /** Contratação de fornecedor: contato escolhido na solicitação (mesma empresa). */
+  contactId?: string;
   installmentsCount?: number;
   installmentsDueDay?: number;
   /** DADOS-ADITIVO: valores só do contrato informados no assistente. */
@@ -149,13 +151,13 @@ export async function buildMergeContext(
 
   let contact: any = source?.contact ?? null;
   if (companyId && !source) {
-    const { data } = await supabase
+    let contactQuery = supabase
       .from("contacts")
       .select("first_name, last_name, email, phone")
       .eq("workspace_id", workspaceId)
-      .eq("company_id", companyId)
-      .order("created_at", { ascending: true })
-      .limit(1);
+      .eq("company_id", companyId);
+    if (input.contactId) contactQuery = contactQuery.eq("id", input.contactId);
+    const { data } = await contactQuery.order("created_at", { ascending: true }).limit(1);
     contact = data?.[0] ?? null;
   }
 
