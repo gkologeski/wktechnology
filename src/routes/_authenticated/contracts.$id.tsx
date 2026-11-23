@@ -350,7 +350,13 @@ function ContractDetail() {
     }
     if (!(await confirmDialog("Excluir este contrato?"))) return;
     try {
-      await del({ data: { id } });
+      const res = await del({ data: { id } });
+      if ("archived" in res && res.archived) {
+        toast.success("Contrato encerrado: o histórico da preparação é preservado.");
+        await qc.invalidateQueries({ queryKey: ["contract", id] });
+        await qc.invalidateQueries({ queryKey: ["contracts"] });
+        return;
+      }
       toast.success("Contrato excluído.");
       qc.removeQueries({ queryKey: ["contract", id] });
       await qc.invalidateQueries({ queryKey: ["contracts"] });

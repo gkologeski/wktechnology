@@ -3256,6 +3256,27 @@
       "when": 1795461614128,
       "tag": "0464_purchase_contract_sales",
       "breakpoints": true
+    },
+    {
+      "idx": 465,
+      "version": "7",
+      "when": 1795466707146,
+      "tag": "0465_release_draft_formalization",
+      "breakpoints": true
+    },
+    {
+      "idx": 466,
+      "version": "7",
+      "when": 1795467105245,
+      "tag": "0466_release_draft_formalization_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 467,
+      "version": "7",
+      "when": 1795467172462,
+      "tag": "0467_release_draft_formalization_archive",
+      "breakpoints": true
     }
   ]
 }

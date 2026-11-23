@@ -976,6 +976,15 @@ export const deleteContract = createServerFn({ method: "POST" })
       "techcontracts.contracts.delete.workspace",
       "techcontracts.contracts.delete.own",
     ]);
+    // Rascunho criado pela antiga solicitação de fornecedor: descarta a
+    // formalização ainda em edição (a RPC recusa se houver andamento).
+    const { data: released, error: relErr } = await supabase.rpc(
+      "contract_release_draft_formalization",
+      { p_contract: data.id },
+    );
+    if (relErr) throw relErr;
+    // Histórico imutável: a preparação foi invalidada e o rascunho encerrado.
+    if (released === -1) return { ok: true, deleted: 0, archived: true };
     const { data: deleted, error } = await workCostTable(supabase, "contracts")
       .delete()
       .eq("id", data.id)

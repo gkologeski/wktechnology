@@ -11946,7 +11946,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: generated types add only the contract_purchase_payables_generate RPC signature; no table/grant change. 23/11/2026: regenerated for contract_purchase_sales table and contract_purchase_sale_set RPC (no new grants).",
       "files": {
-        "src/integrations/supabase/types.ts": "bb15c6dd088e0456ec23a79b0471b1d69c4e41322515e1320f11d1048af79177",
+        "src/integrations/supabase/types.ts": "65a450f41cea3e2940bb85237ffb18397418dc2c3e1ae258c7c4cf286e99c08b",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -26580,7 +26580,7 @@
         "src/components/contracts/legacy/contract-legacy-panel.tsx": "c434e08ea45d5f0f37678bb05e87e9053df7e09f2ea23b9b516b119e1f666b0a",
         "src/lib/contracts/legacy.functions.ts": "29e306393c0daf2590d88a720bfd89bbe5683e9400af3efc0ebd85f04c3736a6",
         "src/lib/contracts/legacy.server.ts": "fdb7b015d3ccd7f3a081bb38900b362ab097d65a118d20420a4ea1a274dc5f47",
-        "src/routes/_authenticated/contracts.$id.tsx": "0cb73cbafb52fb0e6a1df33d7175d6206d06858a2ff4e7cf4b9a6d059a8cde6a",
+        "src/routes/_authenticated/contracts.$id.tsx": "1015bc65c7ad25e7a958327f54fe01c056f311e2398834344daab1928e295aee",
         "drizzle/migrations/0454_contract_legacy_discard_pending.sql": "7ee86112069b893634b01b4babc64a3339947bf9b02524cbc8152a35ad8fbe72",
         "drizzle/migrations/0455_contract_legacy_discard_list_batch.sql": "255ab07053c066122545fc1c0a1f856a52241d543f95e055b3c90213a17621ab"
       }
@@ -26688,7 +26688,7 @@
       "kind": "business",
       "rationale": "Completes three previously unreviewed current-main sources before releasing reusable model configuration. All sixteen server handlers now use the canonical exact-action work permission middleware before any query; existing per-record, field, transition, linking and RLS gates remain intact. The middleware delegates to work_area_authorize, whose context validates active membership, active workspace and effective keys with deny precedence. Bulk and inline UI default to denied until useWorkCapabilities confirms each selected row; assign additionally requires can_assign, export additionally requires the export key, and discarded legacy rows cannot mutate. No grants, members, roles or business records are changed. Unit tests execute the real middleware and server handler against allowed/denied RPC responses and assert no data access on denial; existing PostgreSQL RBAC/RLS suites remain mandatory in full verify.",
       "files": {
-        "src/lib/contracts.functions.ts": "8f6ee809fec7488d3bc3fb15be106fc2815e027aceec6d7f47e80074051ac181",
+        "src/lib/contracts.functions.ts": "f2e530e7d06b30763e432a428f70320c90e68fd7c49516f57924deb1a8358fcc",
         "src/components/contracts/contracts-bulk-bar.tsx": "f733ab87754b4a9432a06450da1f5cd8d57a495c9eebebda9f31b1bb7c56fe20",
         "src/components/contracts/contracts-grouped-list.tsx": "32e88c99298ff76506805e4dc7f6791c7938f6f3792df9de7925ed8aff034ec6"
       },
@@ -26927,6 +26927,77 @@
         "inactive_member": {
           "file": "src/lib/contracts/purchase-sales-postgres.test.ts",
           "name": "purchase sales SQL rejects inactive membership"
+        }
+      },
+      "exception": null
+    },
+    {
+      "id": "contract-delete-draft-formalization",
+      "kind": "business",
+      "rationale": "23/11/2026: deleting a draft contract created by the legacy supplier request failed on hiring_formalizations FK. deleteContract (requireWorkPermission delete + assertWorkRecord) first calls SECURITY DEFINER RPC contract_release_draft_formalization (EXECUTE authenticated only): contract delete via work_context_access (active membership, workspace, deny); only draft contracts whose formalization is still 'editing' with no legal/acceptance/finance step; removes that formalization and its orphan draft. No new permission key.",
+      "files": {
+        "drizzle/migrations/0465_release_draft_formalization.sql": "a28516ccbf2b85c45c7d45a9fa5aa57d975b87c0c4bd6a7eedea900d5daca8dd",
+        "drizzle/migrations/0466_release_draft_formalization_history.sql": "1502fb238cf92f13a67712a9bcd41ccc90756ea64201141c5c420f099247533d",
+        "drizzle/migrations/0467_release_draft_formalization_archive.sql": "3b315819148c2354b95687ef6a3d1a0166f5264cc24b42fb1b23ffe4b88f67b1"
+      },
+      "resources": [
+        "techcontracts.contracts"
+      ],
+      "actions": [
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.contracts.delete.own",
+        "techcontracts.contracts.delete.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0465_release_draft_formalization.sql",
+          "symbol": "contract_release_draft_formalization"
+        },
+        {
+          "file": "drizzle/migrations/0466_release_draft_formalization_history.sql",
+          "symbol": "contract_release_draft_formalization"
+        },
+        {
+          "file": "drizzle/migrations/0467_release_draft_formalization_archive.sql",
+          "symbol": "contract_release_draft_formalization"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/release-formalization-postgres.test.ts",
+          "name": "release formalization SQL allows an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/release-formalization-postgres.test.ts",
+          "name": "release formalization SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/release-formalization-postgres.test.ts",
+          "name": "release formalization SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/release-formalization-postgres.test.ts",
+          "name": "release formalization SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/release-formalization-postgres.test.ts",
+          "name": "release formalization SQL rejects inactive membership"
         }
       },
       "exception": null

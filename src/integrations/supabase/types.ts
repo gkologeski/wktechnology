@@ -37968,6 +37968,10 @@ export type Database = {
         Args: { p_link: boolean; p_purchase: string; p_sale: string }
         Returns: Json
       }
+      contract_release_draft_formalization: {
+        Args: { p_contract: string }
+        Returns: number
+      }
       contract_signature_package_store: {
         Args: {
           p_actor: string
