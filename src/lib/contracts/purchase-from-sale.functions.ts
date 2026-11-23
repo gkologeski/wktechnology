@@ -34,7 +34,7 @@ export const searchPurchaseCounterparty = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
       .object({
-        entity: z.enum(["company", "contact"]),
+        entity: z.enum(["company", "contact", "sale"]),
         search: z.string().max(120),
         companyId: z.string().uuid().nullable().optional(),
         selected: z.string().uuid().nullable().optional(),
@@ -45,6 +45,30 @@ export const searchPurchaseCounterparty = createServerFn({ method: "POST" })
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const term = data.search.trim().replace(/[%,()]/g, " ");
+    if (data.entity === "sale") {
+      let q = context.supabase
+        .from("contracts")
+        .select("id,title,number,status")
+        .eq("workspace_id", ws)
+        .eq("role", "provider")
+        .eq("document_kind", "main");
+      if (data.selected) q = q.eq("id", data.selected);
+      else if (term) q = q.or(`title.ilike.%${term}%,number.ilike.%${term}%`);
+      const { data: rows, error } = await q.order("created_at", { ascending: false }).limit(20);
+      if (error) throw new Error(error.message);
+      return (
+        (rows ?? []) as {
+          id: string;
+          title: string | null;
+          number: string | null;
+          status: string;
+        }[]
+      ).map((r) => ({
+        id: r.id,
+        label: r.title ?? r.number ?? "Contrato de venda",
+        hint: r.number ?? "Sem número",
+      }));
+    }
     if (data.entity === "company") {
       let q = context.supabase.from("companies").select("id,name,cnpj").eq("workspace_id", ws);
       q = data.selected

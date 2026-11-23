@@ -70,6 +70,7 @@ import { FiltersSidebar, ViewsTabs } from "@/components/crm/hubspot-shell";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle, type ListViewMode } from "@/components/kanban/view-mode-toggle";
+import { NewPurchaseButton } from "@/components/contracts/purchase-from-sale-dialog";
 
 type GroupBy = "none" | "company" | "service" | "job_profile" | "seniority";
 
@@ -686,6 +687,7 @@ function ContractsPage() {
                 </Link>
               </Button>
 
+              <NewPurchaseButton />
               <Button onClick={() => setOpenNew(true)}>
                 <Plus className="h-4 w-4 mr-1" /> Novo contrato
               </Button>

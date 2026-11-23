@@ -54,7 +54,7 @@ export function PurchaseFromSaleButton({
 function CounterpartyField(props: {
   id: string;
   label: string;
-  entity: "company" | "contact";
+  entity: "company" | "contact" | "sale";
   companyId?: string | null;
   value: string | null;
   onChange: (id: string | null) => void;
@@ -66,7 +66,9 @@ function CounterpartyField(props: {
   const enabled =
     focused &&
     !props.value &&
-    (term.trim().length >= 2 || (props.entity === "contact" && !!props.companyId));
+    (term.trim().length >= 2 ||
+      (props.entity === "contact" && !!props.companyId) ||
+      props.entity === "sale");
   const q = useQuery({
     queryKey: ["purchase-counterparty", props.entity, props.companyId ?? null, term],
     enabled,
@@ -105,13 +107,15 @@ function CounterpartyField(props: {
   );
 }
 
-function PurchaseDialog({
-  saleContractId,
+export function PurchaseDialog({
+  saleContractId: fixedSale,
   onClose,
 }: {
-  saleContractId: string;
+  saleContractId?: string;
   onClose: () => void;
 }) {
+  const [pickedSale, setPickedSale] = useState<string | null>(null);
+  const saleContractId = fixedSale ?? pickedSale;
   const navigate = useNavigate();
   const qc = useQueryClient();
   const create = useServerFn(createPurchaseFromSale);
@@ -119,9 +123,10 @@ function PurchaseDialog({
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [contactId, setContactId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const ready = kind === "company" ? !!companyId : !!contactId;
+  const ready = !!saleContractId && (kind === "company" ? !!companyId : !!contactId);
 
   async function submit() {
+    if (!saleContractId) return;
     setBusy(true);
     try {
       const r = await create({
@@ -143,13 +148,25 @@ function PurchaseDialog({
     <Dialog open onOpenChange={(v) => !v && !busy && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Contratar fornecedor para esta venda</DialogTitle>
+          <DialogTitle>
+            {fixedSale ? "Contratar fornecedor para esta venda" : "Contratar fornecedor"}
+          </DialogTitle>
           <DialogDescription>
-            Cria um contrato de compra em rascunho, ligado a esta venda. A proposta comercial aceita
-            segue como anexo técnico.
+            Cria um contrato de compra em rascunho, ligado{" "}
+            {fixedSale ? "a esta venda" : "à venda escolhida"}. A proposta comercial aceita segue
+            como anexo técnico.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-1">
+          {!fixedSale && (
+            <CounterpartyField
+              id="purchase-sale"
+              label="Contrato de venda"
+              entity="sale"
+              value={pickedSale}
+              onChange={setPickedSale}
+            />
+          )}
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">Tipo de contraparte</legend>
             <RadioGroup
@@ -220,5 +237,25 @@ function PurchaseDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Lista de contratos: contratar fornecedor escolhendo a venda de origem. */
+export function NewPurchaseButton() {
+  const [open, setOpen] = useState(false);
+  const p = usePermissions();
+  const canCreate =
+    !p.isLoading &&
+    !p.isError &&
+    p.canAny(["own", "workspace"].map((s) => `techcontracts.contracts.create.${s}`));
+  if (!canCreate) return null;
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        <UserPlus className="mr-1 h-4 w-4" aria-hidden="true" />
+        Contratar fornecedor
+      </Button>
+      {open ? <PurchaseDialog onClose={() => setOpen(false)} /> : null}
+    </>
   );
 }
