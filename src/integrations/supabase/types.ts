@@ -8058,6 +8058,8 @@ export type Database = {
           confidentiality_term_months: number | null
           contracting_legal_entity_id: string | null
           counterparty_company_id: string | null
+          counterparty_contact_id: string | null
+          counterparty_kind: string
           created_at: string
           cure_period_days: number | null
           currency: string
@@ -8120,6 +8122,8 @@ export type Database = {
           confidentiality_term_months?: number | null
           contracting_legal_entity_id?: string | null
           counterparty_company_id?: string | null
+          counterparty_contact_id?: string | null
+          counterparty_kind?: string
           created_at?: string
           cure_period_days?: number | null
           currency?: string
@@ -8182,6 +8186,8 @@ export type Database = {
           confidentiality_term_months?: number | null
           contracting_legal_entity_id?: string | null
           counterparty_company_id?: string | null
+          counterparty_contact_id?: string | null
+          counterparty_kind?: string
           created_at?: string
           cure_period_days?: number | null
           currency?: string
@@ -8254,6 +8260,20 @@ export type Database = {
             columns: ["counterparty_company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_counterparty_contact_id_fkey"
+            columns: ["counterparty_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_counterparty_contact_id_fkey"
+            columns: ["counterparty_contact_id"]
+            isOneToOne: false
+            referencedRelation: "shared_fields_contacts"
             referencedColumns: ["id"]
           },
           {
@@ -37712,6 +37732,8 @@ export type Database = {
           confidentiality_term_months: number | null
           contracting_legal_entity_id: string | null
           counterparty_company_id: string | null
+          counterparty_contact_id: string | null
+          counterparty_kind: string
           created_at: string
           cure_period_days: number | null
           currency: string

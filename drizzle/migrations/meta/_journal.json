@@ -3228,6 +3228,13 @@
       "when": 1795438790484,
       "tag": "0460_contract_draft_merge_source_supplier",
       "breakpoints": true
+    },
+    {
+      "idx": 461,
+      "version": "7",
+      "when": 1795442281972,
+      "tag": "0461_purchase_contracts_from_sale_proposal",
+      "breakpoints": true
     }
   ]
 }
