@@ -76,8 +76,12 @@ export function DealContracts({
     });
     if (!yes) return;
     try {
-      await del({ data: { id } });
-      toast.success("Contrato excluído.");
+      const res = await del({ data: { id } });
+      toast.success(
+        "archived" in res && res.archived
+          ? "Contrato encerrado: o histórico da preparação é preservado."
+          : "Contrato excluído.",
+      );
       void qc.invalidateQueries({ queryKey: ["deal-contracts", dealId] });
       void qc.invalidateQueries({ queryKey: ["contracts"] });
     } catch (e) {
