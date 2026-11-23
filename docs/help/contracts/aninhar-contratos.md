@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 40
-version: 2
+version: 3
 is_published: true
 ---
 # Aninhar contratos de compra sob uma prestação
@@ -18,6 +18,16 @@ is_published: true
 **Antes de começar:** Identificar a prestação principal e o contrato de compra correto.
 
 ## Passo a passo
+
+### Contratar fornecedor a partir da venda
+1. Na venda, abra a aba "Aditivos e vínculos" e clique em "Contratar fornecedor".
+2. Escolha "Empresa (PJ)" e selecione a empresa fornecedora (e, se quiser, o contato que assina) ou escolha "Pessoa física" e selecione o profissional.
+3. Clique em "Criar contrato de compra". O sistema abre o novo contrato de compra em rascunho, já aninhado à venda e com a proposta comercial aceita da venda como anexo técnico.
+4. Siga pelo contrato de compra: escolha o modelo, revise a minuta e envie para assinatura como em qualquer contrato.
+
+Você pode contratar o fornecedor no mesmo dia da venda ou depois; a venda continua valendo sozinha.
+
+### Aninhar um contrato de compra já existente
 1. Na prestação, abra "Contratos de compra aninhados" e clique em "Aninhar contrato de compra".
 2. Selecione o contrato de compra e clique em "Aninhar".
 3. Se ele já estiver vinculado a outro contrato, use "Mover" e confirme a troca de vínculo.
@@ -29,6 +39,8 @@ is_published: true
 Contrato de compra associado à prestação e apresentado sob ela na listagem.
 
 ## Regras e limites
+- "Contratar fornecedor" exige permissão de criar contratos; o botão não aparece para quem não tem.
+- O contato precisa ser da empresa escolhida. Pessoa física não usa empresa.
 - Compra representa a WK como contratante do profissional; prestação representa a WK prestadora.
 - Compra não aninha outra compra ou prestação neste card. Aditivos têm painel próprio.
 - Autovínculo é impedido. Mover exige confirmação.

@@ -162,6 +162,8 @@ export type CreateContractArgs = {
 const INSERTABLE = new Set([
   "title",
   "counterparty_company_id",
+  "counterparty_kind",
+  "counterparty_contact_id",
   "contracting_legal_entity_id",
   "parent_contract_id",
   "amendment_of_id",

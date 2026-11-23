@@ -22,6 +22,8 @@ import {
 import { listLinkableContracts, linkContractParent } from "@/lib/contracts.functions";
 import { formatCurrency } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { PurchaseFromSaleButton } from "@/components/contracts/purchase-from-sale-dialog";
 
 type Role = "provider" | "client";
 
@@ -130,6 +132,10 @@ function ProviderView({
   canEdit: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const perms = usePermissions();
+  const canUpdate = perms.canAny(
+    ["own", "team", "workspace"].map((s) => `techcontracts.contracts.update.${s}`),
+  );
   const ordered = useMemo(
     () => [...children].sort((a, b) => (a.starts_at ?? "").localeCompare(b.starts_at ?? "")),
     [children],
@@ -161,9 +167,12 @@ function ProviderView({
             aditivos deste contrato são vinculados no card “Aditivos”.
           </p>
         </div>
-        <Button size="sm" onClick={() => setOpen(true)} disabled={!canEdit}>
-          Aninhar contrato de compra
-        </Button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <PurchaseFromSaleButton saleContractId={contractId} disabled={!canEdit || !canUpdate} />
+          <Button size="sm" variant="outline" onClick={() => setOpen(true)} disabled={!canEdit}>
+            Aninhar contrato de compra
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Margem */}
