@@ -1,4 +1,5 @@
 import { ContractHandoffs } from "@/components/contracts/contract-handoffs";
+import { PurchaseFromSaleButton } from "@/components/contracts/purchase-from-sale-dialog";
 import { lazy, Suspense, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -345,6 +346,9 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
               </Link>
             </Button>
           )}
+          {j.contract && canCreateContract && (
+            <PurchaseFromSaleButton saleContractId={j.contract.id} />
+          )}
         </div>
       );
     return (
@@ -356,6 +360,9 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
               Consultar fluxo do contrato
             </Link>
           </Button>
+        )}
+        {j.contract && canCreateContract && (
+          <PurchaseFromSaleButton saleContractId={j.contract.id} />
         )}
       </div>
     );

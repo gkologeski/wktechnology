@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 40
-version: 4
+version: 5
 is_published: true
 ---
 # Aninhar contratos de compra sob uma prestação
@@ -26,7 +26,7 @@ is_published: true
 4. No contrato de compra, abra a aba "Documento", escolha o "Modelo de compra" e clique em "Preencher com dados do fornecedor". O texto recebe a WK como contratante e a empresa ou o profissional como contratada; a data de início fica como hoje se ainda estiver vazia.
 5. Se aparecer o aviso "Complete manualmente", ajuste no texto os dados indicados e salve. Depois envie para assinatura como em qualquer contrato.
 
-Você pode contratar o fornecedor no mesmo dia da venda ou depois; a venda continua valendo sozinha.
+Você pode contratar o fornecedor no mesmo dia da venda ou depois; a venda continua valendo sozinha. O mesmo botão "Contratar fornecedor" também aparece na ficha do negócio, na jornada de contratação, assim que o contrato de venda existe.
 
 ### Aninhar um contrato de compra já existente
 1. Na prestação, abra "Contratos de compra aninhados" e clique em "Aninhar contrato de compra".
