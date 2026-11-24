@@ -27057,6 +27057,74 @@
         "src/lib/contracts/effective-terms.ts": "fddebd7d0f427907f722e428109d7b59cbe62d045d6dc0bcde58ff05c8b10baa",
         "src/components/contracts/effective-terms-card.tsx": "65be6fcfca9ab7ce742b25e5a912b8aea07a3328a9574f3fede40fc491c5f38f"
       }
+    },
+    {
+      "id": "mcp-deals-protected-read",
+      "kind": "internal",
+      "rationale": "Existing read-only MCP listing now uses the canonical masked shared_fields_deals view with the verified user token. Projection, tenant/deleted filters, ordering and cap stay unchanged. No grants, policies, role assignments or privileged fallback. Unit tests verify preservation of database denial, empty RLS results and masked null values; existing PostgreSQL field/sales tests cover the underlying unchanged boundary.",
+      "files": {
+        "src/lib/mcp/tools/list-deals.ts": "8360904d9587937f8540f2ccf5d2bb6791f548ff9441856c30ac706fad3d6751"
+      },
+      "resources": [
+        "techsales.deals"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.deals.view.own",
+        "techsales.deals.view.team",
+        "techsales.deals.view.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/mcp/supabase.ts",
+          "symbol": "supabaseForUser"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0228_order5_fields_prepare.sql",
+          "symbol": "shared_fields_deals"
+        },
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "sales_view"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/mcp/tools/list-deals.test.ts",
+          "name": "MCP deals allows authorized rows from the protected field view"
+        },
+        "missing_permission": {
+          "file": "src/lib/mcp/tools/list-deals.test.ts",
+          "name": "MCP deals preserves the database result when permission is missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/mcp/tools/list-deals.test.ts",
+          "name": "MCP deals preserves an explicit database deny without fallback"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/mcp/tools/list-deals.test.ts",
+          "name": "MCP deals does not fabricate foreign workspace rows hidden by RLS"
+        },
+        "inactive_member": {
+          "file": "src/lib/mcp/tools/list-deals.test.ts",
+          "name": "MCP deals stops when workspace resolution rejects inactive membership"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing verified OAuth token forwarded to the user client; canonical masked view and caller RLS enforce record access.",
+        "boundary": "Read-only bounded deal listing, active workspace filter, maximum 50 results; no privileged database client.",
+        "revocation": "Existing membership, deny, row scopes and protected-field rules govern every query.",
+        "review_by": "2027-02-24"
+      }
     }
   ],
   "retired": {

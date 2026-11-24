@@ -32,7 +32,7 @@ export default defineTool({
     const supabase = supabaseForUser(ctx);
     const workspaceId = await resolveWorkspaceId(supabase, ctx.getUserId()!);
     let q = supabase
-      .from("deals")
+      .from("shared_fields_deals")
       .select(
         "id,name,value,currency,stage,expected_close_date,company_id,primary_contact_id,updated_at",
       )

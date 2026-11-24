@@ -8,7 +8,7 @@ route_pattern: /deals
 min_permission:
 audience: internal
 sort_order: 200
-version: 3
+version: 4
 is_published: true
 ---
 # Acompanhar negócios
@@ -24,6 +24,12 @@ is_published: true
 4. Para percorrer os resultados, clique em "Iniciar fila".
 5. Para cadastrar um registro, clique em "Criar negócio" e preencha o formulário. O botão só aparece para quem pode criar negócios.
 ![Tela: cabeçalho de Negócios com visualizações, filtros, Criar negócio e Iniciar fila](/help-media/crm/acompanhar-negocios.webp)
+
+## Consultar pelo chat conectado
+
+Após autenticar o TechERP no chat, peça para confirmar seu usuário e workspace e listar os últimos 10 negócios. A consulta mostra os negócios acessíveis mais recentemente atualizados, com filtros opcionais por etapa e empresa, e retorna no máximo 50 por chamada. Ela não representa o total vendido no período.
+
+As mesmas regras de acesso por usuário, equipe e workspace continuam valendo. Valores ocultos ou mascarados pelo perfil não são revelados no chat; um valor ausente não significa zero.
 
 ## Resultado esperado
 Os negócios aparecem na visualização escolhida. A fila usa os negócios do filtro atual.
