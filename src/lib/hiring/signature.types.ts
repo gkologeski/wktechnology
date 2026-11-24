@@ -8,6 +8,7 @@ export type SignatureContext = {
   entity_id: string | null;
   can_manage: boolean;
   commercial_source: boolean;
+  is_purchase?: boolean;
   entities: { id: string; name: string; cnpj: string | null }[];
   evidence: {
     id: string;

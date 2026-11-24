@@ -176,7 +176,7 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
         As ações usam a versão salva deste contrato. Alterar conteúdo, partes ou condições exige
         nova evidência. Marcar o contrato como ativo ou preencher uma data não comprova assinatura.
       </p>
-      {manage && !c.hiring_origin && (
+      {manage && !c.hiring_origin && !c.is_purchase && (
         <div className="space-y-3 rounded-md border p-3">
           <h3 className="font-medium">Origem comercial</h3>
           <Label>Negócio</Label>
@@ -214,7 +214,7 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
           </Button>
         </div>
       )}
-      {!c.hiring_origin && (
+      {!c.hiring_origin && !c.is_purchase && (
         <p className="text-sm">
           {c.commercial_source
             ? "Este é o contrato comercial selecionado para recrutamento do negócio."
@@ -226,7 +226,7 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
       )}
       {manage && (
         <div className="flex flex-wrap gap-2">
-          {!c.hiring_origin && (
+          {!c.hiring_origin && !c.is_purchase && (
             <Button
               variant="outline"
               disabled={busy || !c.deal_id || c.commercial_source}
