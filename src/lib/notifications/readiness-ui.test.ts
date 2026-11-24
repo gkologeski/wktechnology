@@ -130,6 +130,10 @@ const button = (text = "Conferir configuração publicada") =>
 async function click(text?: string) {
   await act(async () => {
     button(text).click();
+  });
+  // Commit the requested query before waiting for React Query's notifications.
+  // A timer inside the click's act can expire before React runs that effect.
+  await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
 }
