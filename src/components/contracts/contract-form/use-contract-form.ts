@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getDealContractPrefill } from "@/lib/contracts/contract-defaults.functions";
+import { useLegalEntities } from "@/components/finance/legal-entity-select";
 import { effectiveDefaults } from "@/lib/contracts/contract-defaults-shared";
 import { fieldsForKind } from "@/lib/contracts/contract-field-catalog";
 import { buildContractTitle } from "@/lib/contracts/title";
@@ -39,15 +40,15 @@ export function useContractForm({
     staleTime: 30_000,
   });
 
-  const ownEntity = useQuery({
-    queryKey: ["own-legal-entity-name"],
-    queryFn: async () => {
-      const { data } = await supabase.from("legal_entities").select("name").limit(1).maybeSingle();
-      return (data?.name as string | undefined) ?? null;
-    },
-    enabled: open,
-    staleTime: 300_000,
-  });
+  const { data: legalEntities = [] } = useLegalEntities();
+  const selectedLeId = (values["contracting_legal_entity_id"] as string | null) ?? null;
+  const ownEntityName = useMemo(() => {
+    const active = legalEntities.filter((e) => e.active !== false);
+    const chosen = selectedLeId
+      ? active.find((e) => e.id === selectedLeId)
+      : (active.find((e) => e.is_default) ?? active[0]);
+    return chosen?.name ?? null;
+  }, [legalEntities, selectedLeId]);
 
   const companyId = (values["counterparty_company_id"] as string | null) ?? null;
   const companyQuery = useQuery({
@@ -115,9 +116,9 @@ export function useContractForm({
     const suggestion = buildContractTitle({
       role,
       documentKind: kind === "amendment" ? "amendment" : "main",
-      contractingName: role === "client" ? (ownEntity.data ?? null) : companyName,
+      contractingName: role === "client" ? ownEntityName : companyName,
       counterpartyName: companyName,
-      ownName: ownEntity.data ?? null,
+      ownName: ownEntityName,
       startsAt: (values["starts_at"] as string | null) ?? null,
     });
     if (!suggestion) return;
@@ -128,7 +129,7 @@ export function useContractForm({
       lastSuggestion.current = suggestion;
       return { ...current, title: suggestion };
     });
-  }, [open, kind, companyName, ownEntity.data, values]);
+  }, [open, kind, companyName, ownEntityName, values]);
 
   const fields = useMemo(() => fieldsForKind(kind), [kind]);
 

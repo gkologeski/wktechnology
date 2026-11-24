@@ -227,14 +227,13 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
       setSheet("draft");
       toast.success("Minuta preparada para revisão jurídica.");
     });
+  const effectiveEntityId = j.draft?.legal_entity_id ?? j.proposal?.legal_entity_id ?? null;
   const finalContract = () =>
     void run(async () => {
       const r = await create({
         data: {
           proposalId: j.proposal!.id,
-          ...(j.proposal!.legal_entity_id
-            ? { contractingLegalEntityId: j.proposal!.legal_entity_id }
-            : {}),
+          ...(effectiveEntityId ? { contractingLegalEntityId: effectiveEntityId } : {}),
         },
       });
       await q.refetch();
@@ -822,9 +821,10 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                       Signatários serão conferidos antes do envio para assinatura.
                     </p>
                   </div>
-                  {!j.proposal?.legal_entity_id && (
+                  {!effectiveEntityId && (
                     <p role="alert" className="text-sm text-destructive">
-                      Defina a empresa prestadora WK na proposta antes de preparar o contrato.
+                      Defina a empresa prestadora WK na proposta ou na minuta antes de preparar o
+                      contrato.
                     </p>
                   )}
                   <Button
@@ -832,7 +832,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                       busy ||
                       !j.clausesApproved ||
                       !canCreateContract ||
-                      !j.proposal?.legal_entity_id ||
+                      !effectiveEntityId ||
                       j.proposal?.total_amount == null
                     }
                     onClick={finalContract}

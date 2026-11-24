@@ -8,7 +8,7 @@ route_pattern: /settings/quotes
 min_permission:
 audience: internal
 sort_order: 204
-version: 3
+version: 4
 is_published: true
 ---
 # Gerenciar cotações e gerar propostas
@@ -35,6 +35,7 @@ A proposta reaproveita os vínculos e dados comerciais da cotação. O contrato 
 
 ## Regras e limites
 - O fluxo permite Cotação → Proposta → Contrato e também Cotação → Contrato.
+- Ao criar ou editar uma cotação no negócio, é possível escolher a **Empresa prestadora (CNPJ WK)** ativa do workspace. Depois que a cotação é aceita pelo cliente, a empresa prestadora fica bloqueada para edição.
 - A proposta reaproveita empresa, contato, negócio, moeda, valor, validade e responsável, salvo ajustes feitos no assistente.
 - Se já existir proposta para a cotação, ela é reutilizada. O contrato também evita duplicação para a mesma origem.
 - A escolha automática do modelo de contrato considera os serviços do catálogo, priorizando modelos publicados e padrão elegíveis.

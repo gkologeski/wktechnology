@@ -35,6 +35,7 @@ import {
   getContractDraftVersion,
   getContractDraftTemplateBody,
   reviewContractDraft,
+  setContractDraftLegalEntity,
 } from "@/lib/contracts/contract-drafts.functions";
 import {
   CONTRACT_DRAFT_EVENT_LABEL,
@@ -49,6 +50,7 @@ import { ContractDraftBypassButton } from "@/components/contracts/contract-draft
 import { usedTokens } from "@/lib/contracts/template-tokens";
 import { sanitizeTemplateHtml } from "@/lib/contracts/template-html-format";
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { LegalEntityField } from "@/components/finance/legal-entity-select";
 import { readViewAs } from "@/lib/view-as-client";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 
@@ -90,7 +92,9 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
   } | null>(null);
   const reviewFn = useServerFn(reviewContractDraft);
   const reopenFn = useServerFn(reopenContractDraft);
+  const setEntityFn = useServerFn(setContractDraftLegalEntity);
   const [reopen, setReopen] = useState(false);
+  const [entityChangedNotice, setEntityChangedNotice] = useState(false);
   const [historicalRevision, setHistoricalRevision] = useState<number | null>(null);
   const versionFn = useServerFn(getContractDraftVersion);
   const historical = useQuery({
@@ -105,6 +109,7 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [note, setNote] = useState("");
   const [loadingTpl, setLoadingTpl] = useState(false);
+  const [savingEntity, setSavingEntity] = useState(false);
 
   useEffect(() => {
     if (q.data?.draft) {
@@ -153,6 +158,7 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
       setPreparedTerms(r.preparedTerms);
       setMissing(r.missing);
       setDirty(true);
+      setEntityChangedNotice(false);
       toast.success(
         r.missing.length
           ? "Dados disponíveis preenchidos. Confira as pendências."
@@ -162,6 +168,27 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
       toast.error(e instanceof Error ? e.message : "Não foi possível preencher a minuta.");
     } finally {
       setLoadingTpl(false);
+    }
+  }
+  async function changeLegalEntity(nextId: string) {
+    if (!nextId || nextId === q.data?.draft?.legal_entity_id) return;
+    setSavingEntity(true);
+    try {
+      const r = await setEntityFn({ data: { draftId: id, legalEntityId: nextId } });
+      if (r.changed) {
+        setEntityChangedNotice(true);
+        toast.success(
+          "Empresa prestadora alterada. Preencha os dados da proposta novamente para atualizar o texto.",
+        );
+        await qc.invalidateQueries({ queryKey: ["contract-draft", id] });
+        void qc.invalidateQueries({ queryKey: ["deal-contracting-journey"] });
+      }
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Não foi possível alterar a empresa prestadora.",
+      );
+    } finally {
+      setSavingEntity(false);
     }
   }
   async function switchTemplate(next: string) {
@@ -204,11 +231,11 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
       </div>
     );
 
-  const { draft, deal, canReview, templates, events, versions } = q.data;
+  const { draft, deal, canReview, templates, legalEntities, events, versions } = q.data;
   const status = draft.status as ContractDraftStatus;
   const reviewerWritable = canReview && !readViewAs()?.readOnly && readViewAs()?.mode !== "role";
   const editable = reviewerWritable && isContractDraftReviewable(status);
-  const busy = review.isPending || loadingTpl;
+  const busy = review.isPending || loadingTpl || savingEntity;
 
   return (
     <div className={embedded ? "space-y-5" : "mx-auto max-w-6xl space-y-6 p-6"}>
@@ -279,6 +306,30 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
           Somente os aprovadores jurídicos configurados podem editar e aprovar esta minuta.
         </p>
       )}
+      <section className="space-y-3 rounded-md border p-4">
+        <div className="max-w-md">
+          <LegalEntityField
+            id="draft-legal-entity"
+            value={draft.legal_entity_id}
+            options={legalEntities}
+            onChange={(nextId) => void changeLegalEntity(nextId)}
+            disabled={!editable || busy}
+            readOnlyReason={
+              !editable
+                ? status === "pending_legal" || status === "changes_requested"
+                  ? "Somente aprovadores jurídicos podem alterar a empresa prestadora."
+                  : "Minuta já decidida: abra uma nova revisão para alterar a empresa prestadora."
+                : null
+            }
+          />
+        </div>
+        {entityChangedNotice && editable && (
+          <p role="status" className="text-xs text-amber-700 dark:text-amber-400">
+            A empresa prestadora foi alterada. Clique em “Preencher dados da proposta” abaixo para
+            atualizar razão social, CNPJ e endereço no texto da minuta antes de aprovar.
+          </p>
+        )}
+      </section>
       {editable && templateId && (
         <div className="space-y-3 rounded-md border bg-muted/40 p-4">
           <p className="text-sm">
@@ -514,9 +565,20 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
           ) : (
             <ol className="space-y-3" aria-label="Histórico da minuta">
               {events.map(
-                (e: { id: string; kind: string; actor_name: string; created_at: string }) => (
+                (e: {
+                  id: string;
+                  kind: string;
+                  detail?: { from_name?: string | null; to_name?: string | null } | null;
+                  actor_name: string;
+                  created_at: string;
+                }) => (
                   <li key={e.id} className="text-sm">
                     <p className="font-medium">{CONTRACT_DRAFT_EVENT_LABEL[e.kind] ?? e.kind}</p>
+                    {e.kind === "legal_entity_changed" && e.detail ? (
+                      <p className="text-xs text-muted-foreground">
+                        De {e.detail.from_name ?? "não definida"} para {e.detail.to_name ?? "—"}
+                      </p>
+                    ) : null}
                     <p className="text-muted-foreground">
                       {e.actor_name} · {new Date(e.created_at).toLocaleString("pt-BR")}
                     </p>

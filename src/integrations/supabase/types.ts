@@ -37666,6 +37666,10 @@ export type Database = {
         Args: { p_draft: string; p_name: string }
         Returns: boolean
       }
+      contract_draft_set_legal_entity: {
+        Args: { p_draft: string; p_legal_entity: string }
+        Returns: Json
+      }
       contract_draft_template_body: {
         Args: { p_draft: string; p_template: string }
         Returns: string
@@ -37971,6 +37975,10 @@ export type Database = {
       contract_release_draft_formalization: {
         Args: { p_contract: string }
         Returns: number
+      }
+      contract_set_legal_entity: {
+        Args: { p_contract: string; p_legal_entity: string }
+        Returns: Json
       }
       contract_signature_package_store: {
         Args: {

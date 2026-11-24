@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Building2, Users } from "lucide-react";
 
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -206,5 +207,100 @@ export function LegalEntitySelect({
         )}
       </SelectContent>
     </Select>
+  );
+}
+
+export type LegalEntityFieldOption = {
+  id: string;
+  name: string;
+  cnpj?: string | null;
+  code?: string | null;
+  active?: boolean;
+  is_default?: boolean;
+};
+
+function formatCnpjDisplay(raw: string | null | undefined): string {
+  const d = (raw ?? "").replace(/\D/g, "");
+  if (d.length !== 14) return raw?.trim() || "";
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
+/**
+ * Campo único para selecionar a empresa prestadora (CNPJ WK) ativa do workspace.
+ * Usa `finance_reference_list`, acessível a todos os módulos (Vendas, Contratos, Financeiro).
+ */
+export function LegalEntityField({
+  id,
+  label = "Empresa prestadora (CNPJ WK)",
+  value,
+  onChange,
+  options: externalOptions,
+  disabled = false,
+  placeholder = "Selecione a empresa prestadora",
+  hint,
+  readOnlyReason,
+}: {
+  id?: string;
+  label?: string;
+  value: string | null | undefined;
+  onChange: (nextId: string) => void;
+  options?: LegalEntityFieldOption[];
+  disabled?: boolean;
+  placeholder?: string;
+  hint?: string | null;
+  readOnlyReason?: string | null;
+}) {
+  const { data: loaded = [], isLoading } = useLegalEntities();
+  const allOptions = useMemo<LegalEntityFieldOption[]>(() => {
+    const src = (externalOptions ?? (loaded as LegalEntityFieldOption[])) || [];
+    return src.filter((e) => e.active !== false);
+  }, [externalOptions, loaded]);
+
+  const selected = allOptions.find((e) => e.id === value);
+  const triggerId = id ?? "legal-entity-field";
+
+  return (
+    <div className="space-y-1.5">
+      {label ? <Label htmlFor={triggerId}>{label}</Label> : null}
+      <Select
+        value={value || undefined}
+        onValueChange={onChange}
+        disabled={disabled || (!externalOptions && isLoading) || allOptions.length === 0}
+      >
+        <SelectTrigger id={triggerId}>
+          <SelectValue
+            placeholder={
+              !externalOptions && isLoading
+                ? "Carregando empresas…"
+                : allOptions.length === 0
+                  ? "Nenhuma empresa ativa cadastrada"
+                  : placeholder
+            }
+          />
+        </SelectTrigger>
+        <SelectContent>
+          {allOptions.map((e) => {
+            const cnpj = formatCnpjDisplay(e.cnpj);
+            return (
+              <SelectItem key={e.id} value={e.id}>
+                {e.name}
+                {cnpj ? ` · ${cnpj}` : ""}
+                {e.is_default ? " (padrão)" : ""}
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+      {readOnlyReason ? (
+        <p className="text-xs text-muted-foreground">
+          {selected
+            ? `${selected.name}${formatCnpjDisplay(selected.cnpj) ? ` · ${formatCnpjDisplay(selected.cnpj)}` : ""} — `
+            : ""}
+          {readOnlyReason}
+        </p>
+      ) : hint ? (
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      ) : null}
+    </div>
   );
 }

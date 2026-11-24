@@ -396,16 +396,21 @@ export const listContractTemplateSources = createServerFn({ method: "POST" })
       .limit(200);
     if (data.companyId) query = query.eq("company_id", data.companyId);
     if (data.dealId) query = query.eq("deal_id", data.dealId);
-    const [proposals, entities] = await Promise.all([
+    const [proposals, entitiesRes] = await Promise.all([
       query,
-      supabase
-        .from("legal_entities")
-        .select("id, name, cnpj")
-        .eq("workspace_id", workspaceId)
-        .eq("active", true)
-        .order("name"),
+      (supabase as any).rpc("finance_reference_list", { _resource: "legal_entities" }),
     ]);
     if (proposals.error) throw proposals.error;
-    if (entities.error) throw entities.error;
-    return { proposals: proposals.data ?? [], entities: entities.data ?? [] };
+    if (entitiesRes.error) throw entitiesRes.error;
+    const entities = (
+      (entitiesRes.data ?? []) as Array<{
+        id: string;
+        name: string;
+        cnpj?: string | null;
+        active?: boolean;
+      }>
+    )
+      .filter((e) => e.active !== false)
+      .map((e) => ({ id: e.id, name: e.name, cnpj: e.cnpj ?? null }));
+    return { proposals: proposals.data ?? [], entities };
   });

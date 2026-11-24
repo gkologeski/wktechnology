@@ -274,3 +274,91 @@ it("renders the preserved proposal body and prices even if an upstream writer ch
   expect(from).toHaveBeenCalledTimes(1);
   expect(select.mock.calls[0][0]).not.toContain("public_token");
 });
+
+it("fills contracting party from RPC resolvedLegalEntity when direct legal_entities read returns null (Sabrina Brooks regression)", async () => {
+  const { buildMergeContext } = await import("./template-merge.server");
+  const makeChain = (data: unknown) => {
+    const chain: Record<string, unknown> = {
+      select: () => chain,
+      eq: () => chain,
+      order: () => chain,
+      limit: () => chain,
+      maybeSingle: async () => ({ data, error: null }),
+      single: async () => ({ data, error: null }),
+    };
+    return chain;
+  };
+  const rpc = vi.fn().mockResolvedValue({
+    data: {
+      workspace_id: "W1",
+      proposal: {
+        id: "P1",
+        title: "CT/Brooks/Sergio/Suporte 18 horas",
+        body: "Escopo de suporte",
+        version: 1,
+        total_amount: 3600,
+        currency: "BRL",
+        deal_id: "D1",
+        quote_id: null,
+      },
+      items: [],
+      company: {
+        id: "C1",
+        name: "Brooks Ltda",
+        legal_name: "Brooks Tecnologia Ltda",
+        cnpj: "11222333000181",
+      },
+      contact: { id: "CT1", first_name: "Sérgio", last_name: "Silva", email: "sergio@brooks.test" },
+      agent: "Sabrina Maciel",
+    },
+    error: null,
+  });
+  const from = vi.fn((table: string) => {
+    if (table === "legal_entities") return makeChain(null);
+    if (table === "deals")
+      return makeChain({ id: "D1", name: "Brooks Suporte", amount: 3600, currency: "BRL" });
+    if (table === "proposals")
+      return makeChain({
+        id: "P1",
+        legal_entity_id: "LE-GM",
+        quote_id: null,
+        installment_count: 1,
+        installment_due_day: 10,
+        validity_days: 90,
+        payment_method: null,
+        payment_notes: null,
+        payment_terms: null,
+      });
+    if (table === "companies")
+      return makeChain({
+        id: "C1",
+        name: "Brooks Ltda",
+        legal_name: "Brooks Tecnologia Ltda",
+        cnpj: "11222333000181",
+      });
+    return makeChain(null);
+  });
+  const { ctx } = await buildMergeContext(
+    { from, rpc } as never,
+    "W1",
+    "U1",
+    {
+      templateId: "T1",
+      proposalId: "P1",
+      contractingLegalEntityId: "LE-GM",
+      resolvedLegalEntity: {
+        id: "LE-GM",
+        name: "GM Kologeski & Cia Ltda ME",
+        cnpj: "19133530000136",
+        address_json: { city: "Florianópolis", state: "SC" },
+      },
+    },
+    {
+      body_html: "<p>{{contracting.name}} - {{contracting.cnpj}}</p>",
+      defaults: {},
+    },
+  );
+  expect(ctx.contracting.name).toBe("GM Kologeski & Cia Ltda ME");
+  expect(ctx.contracting.cnpj).toBe("19133530000136");
+  expect(ctx.contracting.address).toContain("Florianópolis");
+});

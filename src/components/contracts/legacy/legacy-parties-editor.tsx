@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { LegalEntityField } from "@/components/finance/legal-entity-select";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { updateContract } from "@/lib/contracts.functions";
 
@@ -77,23 +78,13 @@ export function LegacyPartiesEditor({
           triggerClassName="w-full"
         />
       </div>
-      <div className="space-y-1">
-        <Label>Entidade legal WK</Label>
-        <EntityCombobox
-          entity="legal_entities"
-          select="id,name,cnpj"
-          filters={{ workspace_id: workspaceId, active: true }}
-          searchColumns={["name", "cnpj"]}
-          labelFrom={(r) => String(r.name ?? "")}
-          hintFrom={(r) => (r.cnpj as string | null) ?? null}
-          value={entity}
-          onChange={setEntity}
-          placeholder="Selecionar CNPJ WK"
-          disabled={busy}
-          clearable={false}
-          triggerClassName="w-full"
-        />
-      </div>
+      <LegalEntityField
+        id="legacy-legal-entity"
+        label="Empresa prestadora (CNPJ WK)"
+        value={entity}
+        onChange={setEntity}
+        disabled={busy}
+      />
       <Button
         size="sm"
         variant="outline"

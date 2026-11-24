@@ -17,6 +17,7 @@ import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import type { ContractFieldDef } from "@/lib/contracts/contract-field-catalog";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { LegalEntityField } from "@/components/finance/legal-entity-select";
 const NONE = "__none__";
 
 function asString(v: unknown): string {
@@ -145,17 +146,12 @@ export function ContractFieldInput({
         );
       case "legal_entity":
         return (
-          <EntityCombobox
-            entity="legal_entities"
-            filters={{ active: true }}
-            select="id, name, cnpj"
-            searchColumns={["name", "cnpj"]}
-            labelFrom={(r) => String((r as { name?: string }).name ?? "")}
-            hintFrom={(r) => (r as { cnpj?: string | null }).cnpj ?? null}
+          <LegalEntityField
+            id={id}
+            label=""
             value={(value as string | null) ?? null}
             onChange={(v) => onChange(v)}
-            placeholder="Selecione a empresa contratante"
-            emptyLabel="Nenhuma empresa cadastrada"
+            placeholder="Selecione a empresa prestadora"
           />
         );
       case "deal":

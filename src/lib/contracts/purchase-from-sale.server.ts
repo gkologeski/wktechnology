@@ -26,6 +26,7 @@ type Sale = {
   quote_id: string | null;
   deal_id: string | null;
   contracting_legal_entity_id: string | null;
+  legal_entity_id?: string | null;
   currency: string | null;
   starts_at: string | null;
   ends_at: string | null;
@@ -54,7 +55,7 @@ export async function purchaseFromSale(
   const { data: saleRow, error } = await supabase
     .from("contracts")
     .select(
-      "id,title,number,role,document_kind,workspace_id,proposal_id,quote_id,deal_id,contracting_legal_entity_id,currency,starts_at,ends_at",
+      "id,title,number,role,document_kind,workspace_id,proposal_id,quote_id,deal_id,contracting_legal_entity_id,legal_entity_id,currency,starts_at,ends_at",
     )
     .eq("id", input.saleContractId)
     .eq("workspace_id", workspaceId)
@@ -109,7 +110,8 @@ export async function purchaseFromSale(
       .in("id", extraIds);
     if (ee) throw new Error(ee.message);
     const ok = (ex ?? []).filter((r: { role: string | null }) => r.role === "provider");
-    if (ok.length !== extraIds.length) throw new Error("Uma das vendas adicionais não foi encontrada.");
+    if (ok.length !== extraIds.length)
+      throw new Error("Uma das vendas adicionais não foi encontrada.");
     extras = ok as typeof extras;
   }
 
@@ -161,7 +163,7 @@ export async function purchaseFromSale(
       proposal_id: sale.proposal_id,
       quote_id: sale.quote_id,
       deal_id: sale.deal_id,
-      contracting_legal_entity_id: sale.contracting_legal_entity_id,
+      contracting_legal_entity_id: sale.contracting_legal_entity_id ?? sale.legal_entity_id ?? null,
       currency: sale.currency ?? "BRL",
       total_value: 0,
       starts_at: term.starts_at,
@@ -196,7 +198,7 @@ export async function fillPurchaseBody(
   const { data: c, error } = await sb
     .from("contracts")
     .select(
-      "id,role,status,title,starts_at,counterparty_kind,counterparty_company_id,counterparty_contact_id,contracting_legal_entity_id,metadata",
+      "id,role,status,title,starts_at,counterparty_kind,counterparty_company_id,counterparty_contact_id,contracting_legal_entity_id,legal_entity_id,metadata",
     )
     .eq("id", input.contractId)
     .eq("workspace_id", workspaceId)
@@ -233,8 +235,8 @@ export async function fillPurchaseBody(
         : {}),
       ...(!person && c.counterparty_company_id ? { companyId: c.counterparty_company_id } : {}),
       ...(!person && c.counterparty_contact_id ? { contactId: c.counterparty_contact_id } : {}),
-      ...(c.contracting_legal_entity_id
-        ? { contractingLegalEntityId: c.contracting_legal_entity_id }
+      ...((c.contracting_legal_entity_id ?? c.legal_entity_id)
+        ? { contractingLegalEntityId: c.contracting_legal_entity_id ?? c.legal_entity_id }
         : {}),
     },
     t,
@@ -293,11 +295,16 @@ export type PurchaseSaleRow = {
   primary: boolean;
 };
 
-const COLS = "id,number,title,status,total_value,currency,starts_at,ends_at,deal_id,role,parent_contract_id";
+const COLS =
+  "id,number,title,status,total_value,currency,starts_at,ends_at,deal_id,role,parent_contract_id";
 
 export async function listPurchaseSalesFor(supabase: SupabaseClient, contractId: string) {
   const sb = supabase as any;
-  const { data: c, error } = await sb.from("contracts").select(COLS).eq("id", contractId).maybeSingle();
+  const { data: c, error } = await sb
+    .from("contracts")
+    .select(COLS)
+    .eq("id", contractId)
+    .maybeSingle();
   if (error) throw new Error(error.message);
   if (!c) throw new Error("Contrato não encontrado.");
   let ids: string[] = [];
@@ -329,20 +336,22 @@ export async function listPurchaseSalesFor(supabase: SupabaseClient, contractId:
   }
   return {
     role: c.role as string,
-    rows: (rows ?? []).map(
-      (r: any): PurchaseSaleRow => ({
-        id: r.id,
-        number: r.number,
-        title: r.title,
-        status: r.status,
-        total_value: Number(r.total_value ?? 0),
-        currency: r.currency ?? "BRL",
-        starts_at: r.starts_at,
-        ends_at: r.ends_at,
-        deal_id: r.deal_id,
-        deal_title: r.deal_id ? (deals.get(r.deal_id) ?? null) : null,
-        primary: r.id === primaryId,
-      }),
-    ).sort((a: PurchaseSaleRow, b: PurchaseSaleRow) => Number(b.primary) - Number(a.primary)),
+    rows: (rows ?? [])
+      .map(
+        (r: any): PurchaseSaleRow => ({
+          id: r.id,
+          number: r.number,
+          title: r.title,
+          status: r.status,
+          total_value: Number(r.total_value ?? 0),
+          currency: r.currency ?? "BRL",
+          starts_at: r.starts_at,
+          ends_at: r.ends_at,
+          deal_id: r.deal_id,
+          deal_title: r.deal_id ? (deals.get(r.deal_id) ?? null) : null,
+          primary: r.id === primaryId,
+        }),
+      )
+      .sort((a: PurchaseSaleRow, b: PurchaseSaleRow) => Number(b.primary) - Number(a.primary)),
   };
 }

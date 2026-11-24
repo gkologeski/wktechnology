@@ -48,7 +48,7 @@ export async function loadDealContractingJourney(
     ),
     read(
       "contract_drafts",
-      "id,title,status,proposal_id,revision,client_decided_at,client_note,missing_template,prepared_terms,created_at,updated_at",
+      "id,title,status,proposal_id,legal_entity_id,revision,client_decided_at,client_note,missing_template,prepared_terms,created_at,updated_at",
       drafts,
     ),
     read(

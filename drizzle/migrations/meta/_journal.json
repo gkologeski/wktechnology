@@ -3291,6 +3291,20 @@
       "when": 1795511596259,
       "tag": "0469_signature_context_is_purchase",
       "breakpoints": true
+    },
+    {
+      "idx": 470,
+      "version": "7",
+      "when": 1795542564750,
+      "tag": "0470_legal_entity_merge_and_edit_everywhere",
+      "breakpoints": true
+    },
+    {
+      "idx": 471,
+      "version": "7",
+      "when": 1795543308841,
+      "tag": "0471_contract_draft_open_and_proposal_entity_guard",
+      "breakpoints": true
     }
   ]
 }

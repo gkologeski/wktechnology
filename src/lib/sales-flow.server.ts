@@ -281,10 +281,11 @@ export async function contractFromSales(
   // Não regenerar o texto a partir de um modelo que pode ter mudado após o aceite.
   let acceptedDraftBody: string | null = null;
   let acceptedDraftTerms: { number?: string; starts_at?: string; ends_at?: string | null } = {};
+  let acceptedDraftEntityId: string | null = null;
   if (source && !input.mainContractId) {
     const { data: draft, error: draftError } = await (supabase as any)
       .from("contract_drafts")
-      .select("body_html,client_decided_at,decided_at,prepared_terms")
+      .select("body_html,client_decided_at,decided_at,prepared_terms,legal_entity_id")
       .eq("workspace_id", workspaceId)
       .eq("proposal_id", input.proposalId!)
       .eq("status", "accepted")
@@ -295,6 +296,7 @@ export async function contractFromSales(
     if (!draft?.client_decided_at || !draft.decided_at)
       throw new Error("Aguarde a aprovação jurídica e o aceite da minuta pelo cliente.");
     acceptedDraftBody = draft.body_html;
+    acceptedDraftEntityId = (draft.legal_entity_id as string | null) ?? null;
     acceptedDraftTerms = (draft.prepared_terms ?? {}) as {
       starts_at?: string;
       ends_at?: string | null;
@@ -357,7 +359,7 @@ export async function contractFromSales(
     currency: proposal?.currency ?? quote?.currency ?? null,
     assigned_to: proposal?.assigned_to ?? quote?.assigned_to ?? null,
     service_type: serviceLineLabel(loaded?.line) ?? null,
-    contracting_legal_entity_id: input.contractingLegalEntityId ?? null,
+    contracting_legal_entity_id: acceptedDraftEntityId ?? input.contractingLegalEntityId ?? null,
     proposal_id: proposal?.id ?? null,
     quote_id: quoteId,
   };
@@ -408,7 +410,7 @@ export async function contractFromSales(
   const template = await findTemplateForServices(supabase, loaded?.serviceIds ?? []);
   let bodyHtml: string | null = null;
   let mergedNumber: string | undefined;
-  let entityId: string | null = input.contractingLegalEntityId ?? null;
+  let entityId: string | null = acceptedDraftEntityId ?? input.contractingLegalEntityId ?? null;
   let startsAt: string | null = null;
   let endsAt: string | null = null;
   if (template) {
@@ -421,7 +423,7 @@ export async function contractFromSales(
       {
         templateId: template.id,
         proposalId: proposal?.id,
-        contractingLegalEntityId: input.contractingLegalEntityId,
+        contractingLegalEntityId: acceptedDraftEntityId ?? input.contractingLegalEntityId,
         dealId: dealId ?? undefined,
         companyId: companyId ?? undefined,
         serviceCatalogId: loaded?.serviceIds[0],

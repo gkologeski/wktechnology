@@ -11815,7 +11815,7 @@
         "techcontracts.contract_drafts.approve.workspace",
         "techcontracts.contract_draft_approvers.manage.workspace"
       ],
-      "rationale": "ACEITE-MINUTA Entrega 2. New catalogue keys granted to no role. Tables contract_drafts/contract_draft_approvers/contract_draft_events: SELECT-only grants for authenticated under RLS (active member + effective key; approvers must be listed), writes only via SECURITY DEFINER RPCs. contract_draft_open is service_role only (workflow engine, after authorizeWorkflowStep). contract_draft_review/template_body/templates require contract_draft_is_approver (listed + active member + effective approve key, deny removed by user_effective_permissions); review is CAS by revision. contract_draft_set_approvers requires the manage key in work_access_context and active members. UI gates (menu + screen) mirror the keys only. 0311_0334 file is an accidental no-op (DO block) migration with no effect. Entrega 3: issue_link/mark_sent require contract_draft_is_approver and an approved draft; deal substatus move is best-effort under the caller's own row guard. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | 15/11/2026: same guarded approver/handoff screen moved into /contracts/contracting-flow; no grants, tables, RPCs or saved settings change. Legacy /settings/contract-draft-approvers only redirects with history replacement. Menu requires the same manage key; handoff panel still independently requires handoffs.manage. Inbox package2: the existing authenticated email action adds a local scoped attempt UUID and coarse email-create visibility. Retry retains its UUID; confirmed email acceptance clears it before the existing independent seal/mark phase. Approval/row/source gates and document permissions are unchanged; this UUID is not authorization or provider acceptance.",
+      "rationale": "ACEITE-MINUTA Entrega 2. New catalogue keys granted to no role. Tables contract_drafts/contract_draft_approvers/contract_draft_events: SELECT-only grants for authenticated under RLS (active member + effective key; approvers must be listed), writes only via SECURITY DEFINER RPCs. contract_draft_open is service_role only (workflow engine, after authorizeWorkflowStep). contract_draft_review/template_body/templates require contract_draft_is_approver (listed + active member + effective approve key, deny removed by user_effective_permissions); review is CAS by revision. contract_draft_set_approvers requires the manage key in work_access_context and active members. UI gates (menu + screen) mirror the keys only. 0311_0334 file is an accidental no-op (DO block) migration with no effect. Entrega 3: issue_link/mark_sent require contract_draft_is_approver and an approved draft; deal substatus move is best-effort under the caller's own row guard. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | 15/11/2026: same guarded approver/handoff screen moved into /contracts/contracting-flow; no grants, tables, RPCs or saved settings change. Legacy /settings/contract-draft-approvers only redirects with history replacement. Menu requires the same manage key; handoff panel still independently requires handoffs.manage. Inbox package2: the existing authenticated email action adds a local scoped attempt UUID and coarse email-create visibility. Retry retains its UUID; confirmed email acceptance clears it before the existing independent seal/mark phase. Approval/row/source gates and document permissions are unchanged; this UUID is not authorization or provider acceptance. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "controls": [
         {
           "file": "src/integrations/supabase/auth-middleware.ts",
@@ -11926,8 +11926,8 @@
         "drizzle/migrations/0311_0334_contract_draft_legal_review.sql": "34b15156ef6dd6be975fd1d42cfa7b47ef5fc1db73ab35486abe755b8a36a427",
         "drizzle/migrations/0312_contract_draft_legal_review.sql": "13ce7aa0ddad44bc26c81cccd662b1fb5a12f6cf606e87554beea542faed7e82",
         "src/components/contracts/contract-draft-approvers-page.tsx": "fd9f5b3f844bd1c641ae8f5cc67ee45bd354f9ef06ea3200e27f4027a7007376",
-        "src/components/contracts/contract-draft-review-page.tsx": "6e50ced18fcec1473898b2afe75999a4426da846bd83d3823892b21186283dc1",
-        "src/lib/contracts/contract-drafts.functions.ts": "52c43453e317f42bb173e510b062212a88b706bfdfc6be04a12b9a9b0fefc741",
+        "src/components/contracts/contract-draft-review-page.tsx": "0f2e58a45551de246ee03fab3c8c376c0ded9644d809fd719cfd3a79a76b222b",
+        "src/lib/contracts/contract-drafts.functions.ts": "9a2d4f45035a1da8a2b7af3ffd5c6dd0c4e7f6e69acdd67e5a1edd5ed0329f7c",
         "src/lib/workflows/engine/actions-contracts.server.ts": "ce77a960a2356639cd80d3245608044a2dabe2ef8d0dcd2dffa33f22ffb0c1d2",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
         "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "da7a3d3851d63c0e4409355465670d75feea86c2da22708494bc3851962b6d08",
@@ -11940,18 +11940,18 @@
     {
       "id": "contract-draft-status-labels",
       "kind": "presentation",
-      "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável.",
+      "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "files": {
-        "src/lib/contracts/contract-draft-status.ts": "9380dc38f4d977d49d7c12fa51f30fba71f3c4442352856e331c04ade26a10da",
+        "src/lib/contracts/contract-draft-status.ts": "137f514e28ba87ad8a0a991be53566e3719507af37440ff3ab21902bbf7a0299",
         "src/lib/contracts/contract-draft-public-rules.ts": "b0ba0ea6350890b9262061980ec7b66a72bd69ba0f97d254fab02a53c58a50b8"
       }
     },
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: generated types add only the contract_purchase_payables_generate RPC signature; no table/grant change. 23/11/2026: regenerated for contract_purchase_sales table and contract_purchase_sale_set RPC (no new grants).",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: generated types add only the contract_purchase_payables_generate RPC signature; no table/grant change. 23/11/2026: regenerated for contract_purchase_sales table and contract_purchase_sale_set RPC (no new grants). | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "files": {
-        "src/integrations/supabase/types.ts": "65a450f41cea3e2940bb85237ffb18397418dc2c3e1ae258c7c4cf286e99c08b",
+        "src/integrations/supabase/types.ts": "456f001d1a12c41416b60b125001ae752b0dd087aa194edac164b1f6a681b0a3",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -12220,7 +12220,7 @@
         "techcontracts.links.manage.workspace",
         "techcontracts.legacy_contracts.create.workspace"
       ],
-      "rationale": "Existing import endpoints enforce requireWorkPermission and assertAnyPermission; original file signing reads contract under user RLS first. Type options only changed in presentation and AI schema; legal-entity picker filters new assignments, label hydration retains saved value. Template editing retains WorkAction and HrScreenAccess; no grants changed. Merge review: the import UI checks its catalogue workspace key and fails closed while permissions load/fail; server middleware, creation scope checks, signed-file record access and active CNPJ assignment rules from main are preserved. Five import-boundary scenarios invoke the real work middleware. FORMATO-ORIGINAL: .docx formatting is parsed client-side (pure) and sent to the same authenticated template-import route, which keeps bearer auth, active workspace and assertAnyPermission(TEMPLATE_IMPORT_PERMISSIONS); the AI only returns variable suggestions applied to sanitized HTML. No new action, data or grant. The shared template body editor keeps its DOMPurify sanitizeRichHtml on load/update and only gains paragraph spacing attributes for imported formatting; editing and saving remain behind the template page WorkAction/HrScreenAccess and server update checks. ROLAGEM-CONTRATO: editor gains optional maxHeight with internal scroll; presentation only. ACOES-MODELO: list/detail share ContractTemplateActionsMenu (edit, duplicate, publish/draft/archive/reactivate, delete with confirmation); items are enabled only from usePermissions keys plus per-record work capabilities, disabled with a hint otherwise, and every action calls the existing server functions (contract_template_save_checked / assertAnyPermission + deleteByIdGuarded). No new action, key or grant. The status CHECK now also accepts 'archived' (value already offered by the UI/server schema); no grant or RLS change. CORPO-PDF: parseContractPdf keeps its middleware and permission checks and now also returns the PDF body read server-side (unpdf); control characters are stripped before insert. New reloadContractBodyFromSource requires requireWorkPermission(techcontracts.contracts, update), assertWorkRecord(update) and assertAnyPermission(update own/team/workspace), reads the row under user RLS, acts only on drafts without body and with source_file_path, uses the admin client only to download the stored object and writes through the user's contract_mutate RPC. The UI button is disabled without per-record can_update. No new key, grant or policy. Batch import now fails closed in the UI with usePermissions(techcontracts.imports.manage.workspace), same key as the single import; the body reload button also requires a techcontracts.contracts.update key plus per-record can_update. LEGACY-NULL-KEYS: atomic legacy payload omits active signature columns entirely, including null-valued keys. Extracted references remain documentary metadata; draft mode retains existing fields. No SQL allowlist, permission or grant is relaxed.",
+      "rationale": "Existing import endpoints enforce requireWorkPermission and assertAnyPermission; original file signing reads contract under user RLS first. Type options only changed in presentation and AI schema; legal-entity picker filters new assignments, label hydration retains saved value. Template editing retains WorkAction and HrScreenAccess; no grants changed. Merge review: the import UI checks its catalogue workspace key and fails closed while permissions load/fail; server middleware, creation scope checks, signed-file record access and active CNPJ assignment rules from main are preserved. Five import-boundary scenarios invoke the real work middleware. FORMATO-ORIGINAL: .docx formatting is parsed client-side (pure) and sent to the same authenticated template-import route, which keeps bearer auth, active workspace and assertAnyPermission(TEMPLATE_IMPORT_PERMISSIONS); the AI only returns variable suggestions applied to sanitized HTML. No new action, data or grant. The shared template body editor keeps its DOMPurify sanitizeRichHtml on load/update and only gains paragraph spacing attributes for imported formatting; editing and saving remain behind the template page WorkAction/HrScreenAccess and server update checks. ROLAGEM-CONTRATO: editor gains optional maxHeight with internal scroll; presentation only. ACOES-MODELO: list/detail share ContractTemplateActionsMenu (edit, duplicate, publish/draft/archive/reactivate, delete with confirmation); items are enabled only from usePermissions keys plus per-record work capabilities, disabled with a hint otherwise, and every action calls the existing server functions (contract_template_save_checked / assertAnyPermission + deleteByIdGuarded). No new action, key or grant. The status CHECK now also accepts 'archived' (value already offered by the UI/server schema); no grant or RLS change. CORPO-PDF: parseContractPdf keeps its middleware and permission checks and now also returns the PDF body read server-side (unpdf); control characters are stripped before insert. New reloadContractBodyFromSource requires requireWorkPermission(techcontracts.contracts, update), assertWorkRecord(update) and assertAnyPermission(update own/team/workspace), reads the row under user RLS, acts only on drafts without body and with source_file_path, uses the admin client only to download the stored object and writes through the user's contract_mutate RPC. The UI button is disabled without per-record can_update. No new key, grant or policy. Batch import now fails closed in the UI with usePermissions(techcontracts.imports.manage.workspace), same key as the single import; the body reload button also requires a techcontracts.contracts.update key plus per-record can_update. LEGACY-NULL-KEYS: atomic legacy payload omits active signature columns entirely, including null-valued keys. Extracted references remain documentary metadata; draft mode retains existing fields. No SQL allowlist, permission or grant is relaxed. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "controls": [
         {
           "file": "src/lib/access-control/work-permission.middleware.ts",
@@ -12316,7 +12316,7 @@
         }
       },
       "files": {
-        "src/components/contracts/contract-form/contract-field-input.tsx": "5dfdf300f65db113dbae568d5e052d571495c348a48c9d7711960056f94d8aa4",
+        "src/components/contracts/contract-form/contract-field-input.tsx": "c20c744b4055d35a15d2399af2b87ffc8d99d73846aab3d9cb58245dffe07051",
         "src/components/contracts/import-contract-file-dialog.tsx": "dfbb96b66a1393e62f39c29856365251e3ed02211f3fb9eeb62a78cdfa6a0168",
         "src/components/contracts/import-contract-template-dialog.tsx": "7df6975f4edea9277cdc7630c2e2e6ff9dbb8548443f51d56269d27f98f66aae",
         "src/lib/contracts/import.functions.ts": "d7b6d45c0514f74c01098b78c2e6f6c790499ad3a290c9aad9b0bfc1c663f004",
@@ -12361,7 +12361,7 @@
         "techcontracts.contracts.update.team",
         "techcontracts.contracts.update.workspace"
       ],
-      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access. Reviewed concurrent ENDERECO-ATUAL change: cep added to the same workspace-filtered user/RLS company projection, pure party merge retains commercial snapshot values. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. TERMOS-MODELO 16/11/2026: template contracts copy payment_terms from the accepted proposal already read with the user client (RLS) under the existing create check; no access change. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 Fase 1 contratos unificados: contrato de compra (role client) pode referenciar a proposta aceita da venda como anexo técnico (mesmo workspace, negócio e cotação; empresa do fornecedor livre); venda mantém empresa igual. Nova contraparte PF/PJ (counterparty_kind, counterparty_contact_id) validada no mesmo workspace/empresa. Sem novas chaves ou grants; RLS de contracts inalterada. | COMPRA-VENDA 23/11/2026: 'Contratar fornecedor' on a sale contract creates a draft purchase contract (PJ company or PF contact) nested under the sale, reusing the sale's accepted proposal as technical annex. Server fn requires techcontracts.contracts create + view of the sale record; helper re-asserts create, reads sale/company/contact under user RLS filtered by active workspace; DB triggers (0461) validate contact workspace/company and proposal origin. Counterparty search is create-gated, user-RLS, workspace-filtered, limited to 20 rows. No new grants or keys. COMPRA-MODELO: purchase draft body fill (fillPurchaseContractBody) requires techcontracts.contracts update middleware plus assertWorkRecord update on the record and assertAnyPermission; reads contract/template/company/contact under user RLS filtered by active workspace, only role=client drafts and published client templates; update is user-RLS guarded by status=draft. PF counterparty must be a contact without company. UI hides the control without update permission. 0462 grants column SELECT on non-sensitive counterparty_kind/counterparty_contact_id to authenticated (row access still by RLS); writes go through contract_mutate.",
+      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access. Reviewed concurrent ENDERECO-ATUAL change: cep added to the same workspace-filtered user/RLS company projection, pure party merge retains commercial snapshot values. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. TERMOS-MODELO 16/11/2026: template contracts copy payment_terms from the accepted proposal already read with the user client (RLS) under the existing create check; no access change. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 Fase 1 contratos unificados: contrato de compra (role client) pode referenciar a proposta aceita da venda como anexo técnico (mesmo workspace, negócio e cotação; empresa do fornecedor livre); venda mantém empresa igual. Nova contraparte PF/PJ (counterparty_kind, counterparty_contact_id) validada no mesmo workspace/empresa. Sem novas chaves ou grants; RLS de contracts inalterada. | COMPRA-VENDA 23/11/2026: 'Contratar fornecedor' on a sale contract creates a draft purchase contract (PJ company or PF contact) nested under the sale, reusing the sale's accepted proposal as technical annex. Server fn requires techcontracts.contracts create + view of the sale record; helper re-asserts create, reads sale/company/contact under user RLS filtered by active workspace; DB triggers (0461) validate contact workspace/company and proposal origin. Counterparty search is create-gated, user-RLS, workspace-filtered, limited to 20 rows. No new grants or keys. COMPRA-MODELO: purchase draft body fill (fillPurchaseContractBody) requires techcontracts.contracts update middleware plus assertWorkRecord update on the record and assertAnyPermission; reads contract/template/company/contact under user RLS filtered by active workspace, only role=client drafts and published client templates; update is user-RLS guarded by status=draft. PF counterparty must be a contact without company. UI hides the control without update permission. 0462 grants column SELECT on non-sensitive counterparty_kind/counterparty_contact_id to authenticated (row access still by RLS); writes go through contract_mutate. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -12471,10 +12471,10 @@
       "files": {
         "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
         "src/lib/contracts/contract-create.server.ts": "773a356a646938842dcd1ab4d34984d5c64143bd0e77bb68b0f0032155bb84a3",
-        "src/lib/contracts/template-merge.server.ts": "8fbdec9be8320303eb6de27687f7ad5551d2e26d13cb3bb066a420d48d559148",
-        "src/lib/contracts/templates.functions.ts": "8125d98ec0b5e7a17cae0edc250ab28a3f335789774b52d5d7790ec09d0586bf",
+        "src/lib/contracts/template-merge.server.ts": "732fa6eba5cdf2c462b59692f65ad725ff630b28e7fc64df094639562fac0feb",
+        "src/lib/contracts/templates.functions.ts": "56ec7226789a5aff861cd6354e4102cc1d5c94189c47bd6caf86a534fbcda4ec",
         "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
-        "src/lib/sales-flow.server.ts": "c9eaa4d789a9a9501d5401e97e44ad8b63068e21f0a2ba96642f3be77d0ac6ac",
+        "src/lib/sales-flow.server.ts": "8ebf5fd499ad7e5e6c4439bf32739e9dd46d0ea920e7f9363439bf8f04da3526",
         "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "acb9e2e990a5f17064c2756374f46aa20af8dfcac0473af85261ec2182625ca7",
@@ -12488,7 +12488,7 @@
         "src/components/contracts/contract-parent-link.tsx": "761bc707792aab5eec1ccae6aac4bf36ab5c6bba440630a4b61306bebf12dadf",
         "src/components/contracts/purchase-from-sale-dialog.tsx": "ede44c2ea768183cfb098f83a6d5e0784cfbb3a185bd219255eac53c821dfc5c",
         "src/lib/contracts/purchase-from-sale.functions.ts": "9ae9589066947a54f7119e04089ed4017e5b5e20c7866c24bca1a508f46e20f6",
-        "src/lib/contracts/purchase-from-sale.server.ts": "005572acb7155354eb8c2ea1776c51fa2dc76d6d6a975fb1de09477dfb4f726a",
+        "src/lib/contracts/purchase-from-sale.server.ts": "72cf8885fd7f3718d269e3f6a5d370a39128371ffd8d2c2af192ed650770fad6",
         "src/components/contracts/purchase-template-fill.tsx": "18393841c20a3011f962e702cda8a0a2eb7c16a6c9994ca695f7c1ac3b22ed15",
         "drizzle/migrations/0462_contracts_counterparty_columns_select.sql": "d8ec6e27b68cbeb9ba2bfa442683698b3f501a8650190f36fb4a8c9e7c7da61c",
         "src/routes/_authenticated/contracts.index.tsx": "5a84b74dc475090c09d0f61c48d36aa7516c0d71ba31e3b85b0a6df9dfc1d992"
@@ -12957,7 +12957,7 @@
         "techsales.quotes.update.team",
         "techsales.quotes.update.workspace"
       ],
-      "rationale": "CONDICOES-PAGAMENTO: a cotação passa a guardar entrada e saldo (mensal, parcelas ou marcos). A gravação é uma server function autenticada que exige techsales.quotes update, confere a linha com assertSalesRecord e só escreve na própria cotação; o total lido é o da própria linha (RLS), e números que não fecham são recusados antes de gravar. Coluna nova com padrão {} e preenchimento das propostas antigas a partir das parcelas existentes: nenhuma coluna, política ou grant existente foi alterado. 0326: as colunas novas de cotações e propostas recebem GRANT por coluna a authenticated (a tabela usa grants por coluna); as políticas RLS de update continuam decidindo quem grava. 24/11/2026: entrada de 100% (ou igual ao total) passa a exigir plan.kind='none' sem saldo configurado, validado no schema zod e em validatePaymentTerms no servidor e bloqueado na UI.",
+      "rationale": "CONDICOES-PAGAMENTO: a cotação passa a guardar entrada e saldo (mensal, parcelas ou marcos). A gravação é uma server function autenticada que exige techsales.quotes update, confere a linha com assertSalesRecord e só escreve na própria cotação; o total lido é o da própria linha (RLS), e números que não fecham são recusados antes de gravar. Coluna nova com padrão {} e preenchimento das propostas antigas a partir das parcelas existentes: nenhuma coluna, política ou grant existente foi alterado. 0326: as colunas novas de cotações e propostas recebem GRANT por coluna a authenticated (a tabela usa grants por coluna); as políticas RLS de update continuam decidindo quem grava. 24/11/2026: entrada de 100% (ou igual ao total) passa a exigir plan.kind='none' sem saldo configurado, validado no schema zod e em validatePaymentTerms no servidor e bloqueado na UI. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -13034,7 +13034,7 @@
         "src/lib/sales/quote-payment-terms.write.ts": "53bd243aa624ab155416251f9977ef77dcdc801851d2be2443034f4924cfe836",
         "src/lib/sales/quote-payment-terms.functions.ts": "5d76c67e6afe9903722e51c0948844e8db097c5b5ef3cf5be8bbf2eeddade7b3",
         "src/components/sales/payment-terms-editor.tsx": "ab07015d236a02bf3e2239146e6b473195cf4c1d1828966aea52f2f7184d1dfa",
-        "src/components/deals/quote-wizard.tsx": "8ae23a5d321b35b2ae33898a7c813ba256bbaa9af8de01771aeedad2d29664ae",
+        "src/components/deals/quote-wizard.tsx": "da0feb11f841615e5a0b7d3339b5e89bd4245deda9b055417cc0d2b143e8ecfc",
         "drizzle/migrations/0326_grant_payment_terms_columns.sql": "fcc41e114bbb3c0bd713ff8a256e30913f4cf72904a756800aea7e499b1701ec"
       }
     },
@@ -14473,7 +14473,7 @@
         "techcontracts.contract_drafts.approve.workspace",
         "techcontracts.signature_evidence.view.workspace"
       ],
-      "rationale": "Ficha aprovada: resumo somente de negócio autorizado, consultas opcionais precedidas por gate de cada área e filtradas por workspace/negócio sob RLS. Não retorna corpos, tokens ou arquivos. Uma origem explícita por jornada. Abertura de minuta manual exige create próprio, membro ativo e proposta/negócio visíveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concessão automática. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveniência e proíbe alterações posteriores. Contratos históricos preservados. Assinatura real via hiring_contract_signature_context; status ativo não basta. Ações existentes mantêm seus gates (sales/work capabilities, send/share/approve/esign/serviços); readonly nega novas ações. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir histórico; carregamento de um corpo por vez. Revisão jurídica continua exigindo aprovador listado, CAS e nova aprovação do cliente; chamadas diretas sujeitas às mesmas invariantes. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant.",
+      "rationale": "Ficha aprovada: resumo somente de negócio autorizado, consultas opcionais precedidas por gate de cada área e filtradas por workspace/negócio sob RLS. Não retorna corpos, tokens ou arquivos. Uma origem explícita por jornada. Abertura de minuta manual exige create próprio, membro ativo e proposta/negócio visíveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concessão automática. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveniência e proíbe alterações posteriores. Contratos históricos preservados. Assinatura real via hiring_contract_signature_context; status ativo não basta. Ações existentes mantêm seus gates (sales/work capabilities, send/share/approve/esign/serviços); readonly nega novas ações. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir histórico; carregamento de um corpo por vez. Revisão jurídica continua exigindo aprovador listado, CAS e nova aprovação do cliente; chamadas diretas sujeitas às mesmas invariantes. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "controls": [
         {
           "file": "src/lib/deals/contracting-journey.server.ts",
@@ -14554,9 +14554,9 @@
       },
       "files": {
         "drizzle/migrations/0356_deal_contracting_journey.sql": "8fc0fa2805b2c5ae3f9508242532cb01fe3bf62cb0411d3f78eded6ac6bd5f6f",
-        "src/components/deals/deal-contracting-journey.tsx": "511869c6f0f35e3d9e3798e226db96a72052ce6b2944f6618d8b3c46dee22e9f",
+        "src/components/deals/deal-contracting-journey.tsx": "a3fe7d707dc23406a770561fc0b0879f6e416f5f40b404ac18362c38fb2987f5",
         "src/lib/deals/contracting-journey.functions.ts": "20e51a0e73599b7462b188572d108e1a28cf23256a11e7dd78a68b9584a7897d",
-        "src/lib/deals/contracting-journey.server.ts": "240a1ce451c963852ab4d0f78b0def572f30a80337d1d5be3edb40e01bc28e4a",
+        "src/lib/deals/contracting-journey.server.ts": "05f66246a079641b91bef1254a23b9bc02951ec06b41f2ac4af77e3d2a16fff4",
         "src/routes/_authenticated/deals.$id.tsx": "4a86b9805a7a53ae6cbf992dc059fa86fcefc8460d25cd5b0e0b1ee65ad98839",
         "src/components/contracts/deal-contracts.tsx": "798d83688f028c055dd9fa1553079663f29b088746855fb5afd3efd75c96b4ac",
         "src/components/services/contract-services.tsx": "4955f2c4e631f47e3b94592c4b0713562874ef9c17a1f17048325ccbb412ed9a",
@@ -14567,9 +14567,9 @@
     {
       "id": "deal-contracting-journey-display-model",
       "kind": "presentation",
-      "rationale": "Pure types, lineage selection and display stage derivation; no I/O, permission grants or mutation. Backend/RLS remains authoritative. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant.",
+      "rationale": "Pure types, lineage selection and display stage derivation; no I/O, permission grants or mutation. Backend/RLS remains authoritative. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "files": {
-        "src/lib/deals/contracting-journey.ts": "0e5c7486a16169907bb4eb5e63a1dc31654148b927795891cfb2ac027dc3234e"
+        "src/lib/deals/contracting-journey.ts": "63b126a40c8669b926f7b7bfb7b5f5f6483afe85d123bcc614ec8cd4526afa2d"
       }
     },
     {
@@ -18273,7 +18273,7 @@
         "techcontracts.contracts.update.team",
         "techcontracts.contracts.update.workspace"
       ],
-      "rationale": "Expose the existing canonical updateContract/contract_mutate action for counterpart/WK entity within the private eligible/pending/stale legacy panel. Both pickers use the shared EntityCombobox, explicit active workspace filters, user RLS and existing reference read permissions; no new data grants. Only the two canonical party IDs are submitted, no status/body/document/origin change. Requires real can_update; regularized/denied/unknown panels never expose the editor. Pending term edits invalidate evidence and require explicit rebase. No new endpoint, RPC, migration or action permission.",
+      "rationale": "Expose the existing canonical updateContract/contract_mutate action for counterpart/WK entity within the private eligible/pending/stale legacy panel. Both pickers use the shared EntityCombobox, explicit active workspace filters, user RLS and existing reference read permissions; no new data grants. Only the two canonical party IDs are submitted, no status/body/document/origin change. Requires real can_update; regularized/denied/unknown panels never expose the editor. Pending term edits invalidate evidence and require explicit rebase. No new endpoint, RPC, migration or action permission. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "controls": [
         {
           "file": "src/lib/contracts.functions.ts",
@@ -18325,7 +18325,7 @@
         }
       },
       "files": {
-        "src/components/contracts/legacy/legacy-parties-editor.tsx": "67611ca7ce983353033504f025407499d10ffd79534e4af12490944cde041b71"
+        "src/components/contracts/legacy/legacy-parties-editor.tsx": "bc3818ac50c8618356d7bcd744eb242ae144c7dc79b7f36e5aa6ff46379681cc"
       }
     },
     {
@@ -26507,7 +26507,7 @@
         "techcontracts.contracts.delete.workspace",
         "techcontracts.contracts.delete.own"
       ],
-      "rationale": "DESCARTA-LEGADO: administrative soft-discard is equivalent to removing a pending contract from use, so canonical contract delete is reused (not a new broader permission), additionally requiring contract view/update and private legacy-view. All previous actions in the touched legacy/contract files retain their user/RLS gates. No role grants, physical deletion, legal status change, billing release or source/evidence deletion. An immutable private receipt binds actor, workspace, confirmed reason, revision, fingerprint and stable operation id. Only pending draft legacies with no governed origin or operational FK are eligible. Current FK child writes serialize on the parent and reject discarded records. Canonical mutations/regularization are blocked afterwards. List returns only authorized discarded ids, never reasons or private paths. Current generated types only describe this additive schema. New dialog requires explicit confirmation and has no side effect on cancel. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: contract detail overview renders PurchasePayablesPanel (purchase contracts only); generation gated by usePermissions techfinance.entries.create and enforced again in the SQL RPC; no change to legacy discard.",
+      "rationale": "DESCARTA-LEGADO: administrative soft-discard is equivalent to removing a pending contract from use, so canonical contract delete is reused (not a new broader permission), additionally requiring contract view/update and private legacy-view. All previous actions in the touched legacy/contract files retain their user/RLS gates. No role grants, physical deletion, legal status change, billing release or source/evidence deletion. An immutable private receipt binds actor, workspace, confirmed reason, revision, fingerprint and stable operation id. Only pending draft legacies with no governed origin or operational FK are eligible. Current FK child writes serialize on the parent and reject discarded records. Canonical mutations/regularization are blocked afterwards. List returns only authorized discarded ids, never reasons or private paths. Current generated types only describe this additive schema. New dialog requires explicit confirmation and has no side effect on cancel. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: contract detail overview renders PurchasePayablesPanel (purchase contracts only); generation gated by usePermissions techfinance.entries.create and enforced again in the SQL RPC; no change to legacy discard. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "controls": [
         {
           "file": "src/integrations/supabase/auth-middleware.ts",
@@ -26627,7 +26627,7 @@
         "src/components/contracts/legacy/contract-legacy-panel.tsx": "c434e08ea45d5f0f37678bb05e87e9053df7e09f2ea23b9b516b119e1f666b0a",
         "src/lib/contracts/legacy.functions.ts": "29e306393c0daf2590d88a720bfd89bbe5683e9400af3efc0ebd85f04c3736a6",
         "src/lib/contracts/legacy.server.ts": "fdb7b015d3ccd7f3a081bb38900b362ab097d65a118d20420a4ea1a274dc5f47",
-        "src/routes/_authenticated/contracts.$id.tsx": "84f8efe8fadbdf5d50370a2840eff70fd30f9daf880130b0d6a1c75981513ae6",
+        "src/routes/_authenticated/contracts.$id.tsx": "8daeb079649441c438c7b16ca2d594314b68d6fae6453a621499774c717dee47",
         "drizzle/migrations/0454_contract_legacy_discard_pending.sql": "7ee86112069b893634b01b4babc64a3339947bf9b02524cbc8152a35ad8fbe72",
         "drizzle/migrations/0455_contract_legacy_discard_list_batch.sql": "255ab07053c066122545fc1c0a1f856a52241d543f95e055b3c90213a17621ab"
       }
@@ -26733,9 +26733,9 @@
     {
       "id": "contract-list-and-bulk-permission-completion",
       "kind": "business",
-      "rationale": "Completes three previously unreviewed current-main sources before releasing reusable model configuration. All sixteen server handlers now use the canonical exact-action work permission middleware before any query; existing per-record, field, transition, linking and RLS gates remain intact. The middleware delegates to work_area_authorize, whose context validates active membership, active workspace and effective keys with deny precedence. Bulk and inline UI default to denied until useWorkCapabilities confirms each selected row; assign additionally requires can_assign, export additionally requires the export key, and discarded legacy rows cannot mutate. No grants, members, roles or business records are changed. Unit tests execute the real middleware and server handler against allowed/denied RPC responses and assert no data access on denial; existing PostgreSQL RBAC/RLS suites remain mandatory in full verify. 23/11/2026: getContract (view gate unchanged) also returns read-only consolidated terms of active amendments (pure effective-terms.ts) and hour line items of the caller-visible deals via user RLS; no new action.",
+      "rationale": "Completes three previously unreviewed current-main sources before releasing reusable model configuration. All sixteen server handlers now use the canonical exact-action work permission middleware before any query; existing per-record, field, transition, linking and RLS gates remain intact. The middleware delegates to work_area_authorize, whose context validates active membership, active workspace and effective keys with deny precedence. Bulk and inline UI default to denied until useWorkCapabilities confirms each selected row; assign additionally requires can_assign, export additionally requires the export key, and discarded legacy rows cannot mutate. No grants, members, roles or business records are changed. Unit tests execute the real middleware and server handler against allowed/denied RPC responses and assert no data access on denial; existing PostgreSQL RBAC/RLS suites remain mandatory in full verify. 23/11/2026: getContract (view gate unchanged) also returns read-only consolidated terms of active amendments (pure effective-terms.ts) and hour line items of the caller-visible deals via user RLS; no new action. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "files": {
-        "src/lib/contracts.functions.ts": "e08c89e7d4d6dcdd49a5d4525ff9f86cb1b21334fb5e9158dc545216a6f5c5f9",
+        "src/lib/contracts.functions.ts": "f1dd1200a22acb8442897b306231f08589f896a11e83ec01cf055836e72081f9",
         "src/components/contracts/contracts-bulk-bar.tsx": "f733ab87754b4a9432a06450da1f5cd8d57a495c9eebebda9f31b1bb7c56fe20",
         "src/components/contracts/contracts-grouped-list.tsx": "32e88c99298ff76506805e4dc7f6791c7938f6f3792df9de7925ed8aff034ec6"
       },
@@ -27056,6 +27056,150 @@
       "files": {
         "src/lib/contracts/effective-terms.ts": "fddebd7d0f427907f722e428109d7b59cbe62d045d6dc0bcde58ff05c8b10baa",
         "src/components/contracts/effective-terms-card.tsx": "65be6fcfca9ab7ce742b25e5a912b8aea07a3328a9574f3fede40fc491c5f38f"
+      }
+    },
+    {
+      "id": "legal-entity-merge-and-edit-everywhere",
+      "kind": "business",
+      "resources": [
+        "techcontracts.contract_drafts",
+        "techcontracts.contracts",
+        "techsales.quotes",
+        "techsales.proposals"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "approve"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.contract_drafts.view.workspace",
+        "techcontracts.contract_drafts.approve.workspace",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.update.own",
+        "techcontracts.contracts.update.team",
+        "techcontracts.contracts.update.workspace",
+        "techsales.quotes.create.workspace",
+        "techsales.quotes.update.workspace",
+        "techsales.proposals.update.workspace"
+      ],
+      "rationale": "EMPRESA-PRESTADORA 24/11/2026: fixes Sabrina Brooks merge error by returning resolved legal_entity_id/legal_entity from contract_draft_merge_source (draft->supplier->proposal->quote->workspace default) and inheriting proposal/quote legal_entity_id in contract_draft_open. Allows authorized editors to change active workspace legal entity across quotes, unlocked proposals, editable drafts, and editable contracts via user/RLS or SECURITY DEFINER RPCs (contract_draft_set_legal_entity checks active member, workspace, listed approver, read-only view, pending_legal/changes_requested; contract_set_legal_entity checks work_area_authorize update, active member, workspace, read-only view, draft/in_review/in_negotiation, unsigned, no accepted_contract_draft). Audit triggers log legal_entity_changed. Accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts stay immutable. No new permission keys or automatic role grants; REVOKE ALL FROM PUBLIC, anon on new RPCs.",
+      "controls": [
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/finance-records.server.ts",
+          "symbol": "financeRpc"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/proposals/proposal-pdf-rules.ts",
+          "symbol": "isValidProposalToken"
+        },
+        {
+          "file": "src/lib/finance-references.functions.ts",
+          "symbol": "listEntityReferences"
+        },
+        {
+          "file": "src/components/finance/legal-entity-select.tsx",
+          "symbol": "useLegalEntities"
+        },
+        {
+          "file": "src/lib/contracts.functions.ts",
+          "symbol": "listContractLinkEvents"
+        },
+        {
+          "file": "src/lib/contracts/contract-drafts.functions.ts",
+          "symbol": "setContractDraftLegalEntity"
+        },
+        {
+          "file": "src/lib/contracts.functions.ts",
+          "symbol": "setContractLegalEntity"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0470_legal_entity_merge_and_edit_everywhere.sql",
+          "symbol": "finance_reference_list"
+        },
+        {
+          "file": "drizzle/migrations/0470_legal_entity_merge_and_edit_everywhere.sql",
+          "symbol": "contract_draft_merge_source"
+        },
+        {
+          "file": "drizzle/migrations/0470_legal_entity_merge_and_edit_everywhere.sql",
+          "symbol": "contract_draft_set_legal_entity"
+        },
+        {
+          "file": "drizzle/migrations/0470_legal_entity_merge_and_edit_everywhere.sql",
+          "symbol": "contract_set_legal_entity"
+        },
+        {
+          "file": "drizzle/migrations/0470_legal_entity_merge_and_edit_everywhere.sql",
+          "symbol": "contract_change_audit"
+        },
+        {
+          "file": "drizzle/migrations/0470_legal_entity_merge_and_edit_everywhere.sql",
+          "symbol": "contract_accepted_draft_guard"
+        },
+        {
+          "file": "drizzle/migrations/0470_legal_entity_merge_and_edit_everywhere.sql",
+          "symbol": "sales_quote_process_guard"
+        },
+        {
+          "file": "drizzle/migrations/0471_contract_draft_open_and_proposal_entity_guard.sql",
+          "symbol": "contract_draft_open"
+        },
+        {
+          "file": "drizzle/migrations/0471_contract_draft_open_and_proposal_entity_guard.sql",
+          "symbol": "sales_proposal_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/legal-entity-change.test.ts",
+          "name": "legal entity change allows authorized active member in same workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/legal-entity-change.test.ts",
+          "name": "legal entity change rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/legal-entity-change.test.ts",
+          "name": "legal entity change respects explicit deny (key absent from effective set)"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/legal-entity-change.test.ts",
+          "name": "legal entity change rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/legal-entity-change.test.ts",
+          "name": "legal entity change rejects inactive membership and read-only view"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0470_legal_entity_merge_and_edit_everywhere.sql": "8639bbcd2c0f99b9174ad01833ee873d74b70ab81b1c206b6ec9d7b8a7cb5324",
+        "drizzle/migrations/0471_contract_draft_open_and_proposal_entity_guard.sql": "db48f076a6b9533c4d9c5a4a66183c8ad123e2013541ff0b8282fbde2ef25675",
+        "src/components/contracts/contract-form/use-contract-form.ts": "4146cb6f52a6badcf15b6ecc573821a86f1d4d59ca1bba0f0dca7a3a9c87f4e4",
+        "src/components/finance/legal-entity-select.tsx": "fbed075385de5611b2b9bd32380d8f27eae6dd8cbac6630993bd6e75b3906f22",
+        "src/lib/finance-references.functions.ts": "c92bbbdfd38e7dadb918e6fc8e439266c7b1d5ed89307dc2103bc692204b3448",
+        "src/lib/quotes.functions.ts": "cb0f10ac0e6bdb0a6b2a1b52e90f27ec316333db8265d449844421f4e5bd2904",
+        "src/components/contracts/contract-links-history-card.tsx": "fb96a36c0d4ccd7b64f8bdc9d276c40ca7acf882cd70e6c522eb28277ad1d65f"
       }
     }
   ],

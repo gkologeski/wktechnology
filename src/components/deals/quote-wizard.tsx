@@ -42,6 +42,7 @@ import { formatCurrency } from "@/lib/crm";
 import { cn } from "@/lib/utils";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { LegalEntityField, useLegalEntities } from "@/components/finance/legal-entity-select";
 const NO_TEMPLATE = "__none__";
 
 type Deal = {
@@ -70,6 +71,7 @@ type QuoteRow = {
   total: number | string | null;
   payment_terms?: unknown;
   service_line?: string | null;
+  legal_entity_id?: string | null;
 };
 
 type Props = {
@@ -134,7 +136,10 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     notes: existingQuote?.notes ?? "",
     terms: existingQuote?.terms ?? "",
     templateId: existingQuote?.template_id ?? "",
+    legalEntityId: existingQuote?.legal_entity_id ?? "",
   });
+  const { data: legalEntities = [] } = useLegalEntities();
+  const quoteAccepted = existingQuote?.status === "accepted";
 
   // Condições de pagamento: o que está gravado vence; sem isso, a sugestão vem dos itens.
   const [storedTerms, setStoredTerms] = useState<PaymentTerms | null>(() =>
@@ -154,6 +159,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
       notes: existingQuote?.notes ?? "",
       terms: existingQuote?.terms ?? "",
       templateId: existingQuote?.template_id ?? "",
+      legalEntityId: existingQuote?.legal_entity_id ?? "",
     });
     setStoredTerms(parsePaymentTerms(existingQuote?.payment_terms));
     setTotals(
@@ -167,6 +173,14 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
         : null,
     );
   }, [open, existingQuote]);
+
+  // Pré-seleciona a empresa padrão ativa do workspace ao criar nova cotação.
+  useEffect(() => {
+    if (!open || draft.legalEntityId) return;
+    const active = legalEntities.filter((e) => e.active !== false);
+    const def = active.find((e) => e.is_default) ?? active[0];
+    if (def) setDraft((cur) => (cur.legalEntityId ? cur : { ...cur, legalEntityId: def.id }));
+  }, [open, draft.legalEntityId, legalEntities]);
 
   const { data: deal } = useQuery({
     queryKey: ["deal-basics", dealId],
@@ -274,6 +288,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
             notes: draft.notes || undefined,
             terms: draft.terms || undefined,
             templateId: draft.templateId ? draft.templateId : null,
+            legalEntityId: draft.legalEntityId || undefined,
           },
         });
         return { created: true, quote: q as QuoteRow };
@@ -285,6 +300,9 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
             title: draft.title || null,
             valid_until: draft.validUntil || null,
             template_id: draft.templateId ? draft.templateId : null,
+            ...(!quoteAccepted && draft.legalEntityId
+              ? { legal_entity_id: draft.legalEntityId }
+              : {}),
           },
         },
       });
@@ -578,6 +596,17 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
                   placeholder={deal?.name ?? "(usar nome do negócio)"}
                 />
               </div>
+              <LegalEntityField
+                id="quote-legal-entity"
+                value={draft.legalEntityId}
+                onChange={(v) => setDraft({ ...draft, legalEntityId: v })}
+                disabled={quoteAccepted || isBusy}
+                readOnlyReason={
+                  quoteAccepted
+                    ? "Cotação aceita pelo cliente: não é possível alterar a empresa prestadora."
+                    : null
+                }
+              />
               <div className="space-y-1.5">
                 <Label>Válida até</Label>
                 <IsoDatePicker

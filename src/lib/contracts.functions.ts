@@ -225,8 +225,12 @@ export const getContract = createServerFn({ method: "POST" })
       .order("amendment_effective_at", { ascending: true });
 
     // Horas contratadas por negócio (itens em hora), para consolidar com os aditivos.
-    const amendRows = (amendments ?? []) as unknown as (AmendmentRow & { deal_id?: string | null })[];
-    const dealIds = [row.deal_id, ...amendRows.map((a) => a.deal_id)].filter((v): v is string => !!v);
+    const amendRows = (amendments ?? []) as unknown as (AmendmentRow & {
+      deal_id?: string | null;
+    })[];
+    const dealIds = [row.deal_id, ...amendRows.map((a) => a.deal_id)].filter(
+      (v): v is string => !!v,
+    );
     const hoursByDeal = new Map<string, number>();
     if (dealIds.length) {
       const { data: items } = await supabase
@@ -240,7 +244,10 @@ export const getContract = createServerFn({ method: "POST" })
     const hoursOf = (d?: string | null) => (d && hoursByDeal.has(d) ? hoursByDeal.get(d)! : null);
     const { effectiveTerms } = await import("@/lib/contracts/effective-terms");
     const effective = effectiveTerms(
-      { ...(row as unknown as import("@/lib/contracts/effective-terms").TermsRow), contracted_hours: hoursOf(row.deal_id) },
+      {
+        ...(row as unknown as import("@/lib/contracts/effective-terms").TermsRow),
+        contracted_hours: hoursOf(row.deal_id),
+      },
       amendRows.map((a) => ({ ...a, contracted_hours: hoursOf(a.deal_id) })),
     );
 
@@ -530,6 +537,7 @@ export const listContractLinkEvents = createServerFn({ method: "POST" })
         "amendment_linked",
         "amendment_unlinked",
         "role_recalculated",
+        "legal_entity_changed",
       ])
 
       .order("created_at", { ascending: false })
@@ -982,6 +990,25 @@ export const updateContract = createServerFn({ method: "POST" })
     return workRpc<
       import("@/integrations/supabase/types").Database["public"]["Tables"]["contracts"]["Row"]
     >(supabase, "contract_mutate", { p_contract: data.id, p_patch: data.patch });
+  });
+
+export const setContractLegalEntity = createServerFn({ method: "POST" })
+  .middleware([requireWorkPermission("techcontracts.contracts", "update")])
+  .inputValidator((input) =>
+    z.object({ contractId: z.string().uuid(), legalEntityId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<{
+      id: string;
+      legal_entity_id: string;
+      from_name?: string | null;
+      to_name?: string | null;
+      changed: boolean;
+    }>(context.supabase, "contract_set_legal_entity", {
+      p_contract: data.contractId,
+      p_legal_entity: data.legalEntityId,
+    });
   });
 
 // ============= DELETE =============

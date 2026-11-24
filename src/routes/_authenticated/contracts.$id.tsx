@@ -56,7 +56,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getContract, updateContract, deleteContract } from "@/lib/contracts.functions";
+import {
+  getContract,
+  updateContract,
+  deleteContract,
+  setContractLegalEntity,
+} from "@/lib/contracts.functions";
 import { ContractServices } from "@/components/services/contract-services";
 import { ContractApprovalsPanel } from "@/components/contracts/contract-approvals-panel";
 import { ContractParentLink } from "@/components/contracts/contract-parent-link";
@@ -83,6 +88,7 @@ import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
 import { LinkedProjectsCard } from "@/components/projects/linked-projects-card";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { LegalEntityField } from "@/components/finance/legal-entity-select";
 import { EffectiveTermsCard } from "@/components/contracts/effective-terms-card";
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
   head: () => ({
@@ -234,6 +240,7 @@ function ContractDetail() {
   const get = useServerFn(getContract);
   const upd = useServerFn(updateContract);
   const del = useServerFn(deleteContract);
+  const setEntityFn = useServerFn(setContractLegalEntity);
 
   const { data: contract, isLoading } = useQuery({
     queryKey: ["contract", id],
@@ -258,6 +265,8 @@ function ContractDetail() {
   const [autoRenew, setAutoRenew] = useState(false);
   const [noticeDays, setNoticeDays] = useState<number>(30);
   const [bodyHtml, setBodyHtml] = useState("");
+  const [legalEntityId, setLegalEntityId] = useState<string>("");
+  const [entityChangedNotice, setEntityChangedNotice] = useState(false);
   const [saving, setSaving] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [tab, setTab] = useState<ContractDetailTab>("overview");
@@ -287,7 +296,38 @@ function ContractDetail() {
     setAutoRenew(Boolean(contract.auto_renew));
     setNoticeDays(Number(contract.notice_days ?? 30));
     setBodyHtml(contract.body_html ?? "");
+    const savedLe =
+      contract.contracting_legal_entity_id ??
+      (contract as { legal_entity_id?: string | null }).legal_entity_id ??
+      "";
+    setLegalEntityId(savedLe);
   }, [contract]);
+
+  const savedLegalEntityId =
+    contract?.contracting_legal_entity_id ??
+    (contract as { legal_entity_id?: string | null } | null)?.legal_entity_id ??
+    "";
+  const hasAcceptedDraft = Boolean(
+    contract?.metadata &&
+    typeof contract.metadata === "object" &&
+    "accepted_contract_draft" in contract.metadata,
+  );
+  const canEditLegalEntity = Boolean(
+    canUpdateContract &&
+    legacy.gate !== "discarded" &&
+    !hasAcceptedDraft &&
+    !contract?.signed_at &&
+    ["draft", "in_review", "in_negotiation"].includes(status),
+  );
+  const legalEntityReadOnlyReason = !canEditLegalEntity
+    ? hasAcceptedDraft
+      ? "Definida pela minuta aceita. Alterações exigem termo aditivo."
+      : contract?.signed_at || !["draft", "in_review", "in_negotiation"].includes(status)
+        ? "Após envio para assinatura ou ativação, altere a empresa prestadora por termo aditivo."
+        : !canUpdateContract
+          ? "Sem permissão para alterar este contrato."
+          : null
+    : null;
 
   const amendmentMissingParent = documentKind === "amendment" && !mainContract;
 
@@ -309,6 +349,11 @@ function ContractDetail() {
     }
     setSaving(true);
     try {
+      let changedEntity = false;
+      if (canEditLegalEntity && legalEntityId && legalEntityId !== savedLegalEntityId) {
+        const res = await setEntityFn({ data: { contractId: id, legalEntityId } });
+        changedEntity = Boolean(res.changed);
+      }
       await upd({
         data: {
           id,
@@ -328,8 +373,16 @@ function ContractDetail() {
         },
       });
 
-      toast.success("Contrato atualizado.");
+      if (changedEntity) {
+        setEntityChangedNotice(true);
+        toast.success(
+          "Contrato e empresa prestadora atualizados. Revise o texto na aba Documento se já houver cláusulas preenchidas.",
+        );
+      } else {
+        toast.success("Contrato atualizado.");
+      }
       qc.invalidateQueries({ queryKey: ["contract", id] });
+      qc.invalidateQueries({ queryKey: ["contract-link-events", id] });
       qc.invalidateQueries({ queryKey: ["contracts"] });
     } catch (e) {
       toast.error((e as Error).message);
@@ -370,7 +423,8 @@ function ContractDetail() {
   const nextStep = contractNextStep({
     status,
     startsAt: startsAt || null,
-    endsAt: (contract?.effective?.applied.length ? contract.effective.ends_at : null) ?? (endsAt || null),
+    endsAt:
+      (contract?.effective?.applied.length ? contract.effective.ends_at : null) ?? (endsAt || null),
     totalValue,
     hasBody: bodyHtml.trim().length > 0,
     canUpdate: canUpdateContract,
@@ -524,6 +578,19 @@ function ContractDetail() {
                     onChange={(e) => setTitle(e.target.value)}
                   />
                 </div>
+                <LegalEntityField
+                  id="contract-legal-entity"
+                  value={legalEntityId}
+                  onChange={(v) => setLegalEntityId(v)}
+                  disabled={!canEditLegalEntity || saving}
+                  readOnlyReason={legalEntityReadOnlyReason}
+                  hint={
+                    canEditLegalEntity &&
+                    (legalEntityId !== savedLegalEntityId || entityChangedNotice)
+                      ? "Ao alterar a empresa prestadora, revise e preencha novamente o texto na aba Documento."
+                      : null
+                  }
+                />
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Tipo</Label>
