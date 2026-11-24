@@ -27201,6 +27201,84 @@
         "src/lib/quotes.functions.ts": "cb0f10ac0e6bdb0a6b2a1b52e90f27ec316333db8265d449844421f4e5bd2904",
         "src/components/contracts/contract-links-history-card.tsx": "fb96a36c0d4ccd7b64f8bdc9d276c40ca7acf882cd70e6c522eb28277ad1d65f"
       }
+    },
+    {
+      "id": "mcp-list-deals-protected-read",
+      "kind": "business",
+      "resources": [
+        "techsales.deals"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.deals.view.own",
+        "techsales.deals.view.team",
+        "techsales.deals.view.workspace"
+      ],
+      "rationale": "HOTFIX MCP list_deals: switches deal listing from direct public.deals (where authenticated lacks SELECT on value/hs_raw per migration 0230) to the official protectSalesClient boundary (public.shared_fields_deals with security_barrier=true and owner techerp_shared_fields without superuser/BYPASSRLS). Enforces active workspace/membership via work_access_context and techsales.deals.view (own/team/workspace, respecting explicit deny) via sales_area_authorize before querying; preserves projection, workspace_id/deleted_at/stage/company_id filters, updated_at DESC ordering and max limit 50. No schema, RLS, grant, role or service_role changes.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-client-projection.ts",
+          "symbol": "protectSalesClient"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/mcp/supabase.ts",
+          "symbol": "supabaseForUser"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0228_order5_fields_prepare.sql",
+          "symbol": "shared_fields_deals"
+        },
+        {
+          "file": "drizzle/migrations/0228_order5_fields_prepare.sql",
+          "symbol": "shared_field_context"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0216_work_core_prepare.sql",
+          "symbol": "work_access_context"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/mcp/tools/list-deals.test.ts",
+          "name": "mcp list_deals SQL allows authorized active member across workspace, team and own scopes"
+        },
+        "missing_permission": {
+          "file": "src/lib/mcp/tools/list-deals.test.ts",
+          "name": "mcp list_deals SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/mcp/tools/list-deals.test.ts",
+          "name": "mcp list_deals SQL respects explicit deny override"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/mcp/tools/list-deals.test.ts",
+          "name": "mcp list_deals SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/mcp/tools/list-deals.test.ts",
+          "name": "mcp list_deals SQL rejects inactive workspace member"
+        }
+      },
+      "files": {
+        "src/lib/mcp/tools/list-deals.ts": "9067e998329109e32dae6d26f9a96bdad429883f3d69424876f835b6b26ced38"
+      }
     }
   ],
   "retired": {
