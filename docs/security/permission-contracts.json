@@ -12487,7 +12487,7 @@
         "drizzle/migrations/0461_purchase_contracts_from_sale_proposal.sql": "07ef5c297daf5a092c0e38b9fae2e2eec0c5b92be83ca9d461fc2cef310d93c2",
         "src/components/contracts/contract-parent-link.tsx": "761bc707792aab5eec1ccae6aac4bf36ab5c6bba440630a4b61306bebf12dadf",
         "src/components/contracts/purchase-from-sale-dialog.tsx": "ede44c2ea768183cfb098f83a6d5e0784cfbb3a185bd219255eac53c821dfc5c",
-        "src/lib/contracts/purchase-from-sale.functions.ts": "9ae9589066947a54f7119e04089ed4017e5b5e20c7866c24bca1a508f46e20f6",
+        "src/lib/contracts/purchase-from-sale.functions.ts": "03b795c590946a6915db8c0a14e389c752c055ce1992cdd04900f2aba2787f64",
         "src/lib/contracts/purchase-from-sale.server.ts": "72cf8885fd7f3718d269e3f6a5d370a39128371ffd8d2c2af192ed650770fad6",
         "src/components/contracts/purchase-template-fill.tsx": "18393841c20a3011f962e702cda8a0a2eb7c16a6c9994ca695f7c1ac3b22ed15",
         "drizzle/migrations/0462_contracts_counterparty_columns_select.sql": "d8ec6e27b68cbeb9ba2bfa442683698b3f501a8650190f36fb4a8c9e7c7da61c",
@@ -12678,7 +12678,7 @@
         "src/lib/contracts/payment-schedule-text.ts": "c5c25669c1678812bee6b8a4194cac1962265f97659eb784f9fa0195795ada59",
         "src/lib/proposals/proposal-legal-entity.ts": "9f165dbb22552ece4dc4c0bd0fc88e0aaed4ebc7b3f821a02fbbbbff5bc7ca7a",
         "src/lib/contracts/purchase-payables.ts": "c7b456b840d8ab1fb1719e6f07eedf60e7a6c122e093d02bdb757973459643af",
-        "src/lib/contracts/purchase-term.ts": "50e6dd6cf0805e516eb23948cb667498246a465cb14b9fd6ea4b0a39e8a42393"
+        "src/lib/contracts/purchase-term.ts": "f5fa2d4c7b396e8d8c21fae270a911650e5d3e37269a024d24a58054186307ea"
       }
     },
     {
@@ -26908,7 +26908,7 @@
       "rationale": "23/11/2026 COMPRA-VARIAS-VENDAS: a purchase contract (role client) may serve several sale contracts/amendments (role provider), each with its own deal. Primary sale stays parent_contract_id; extra sales live in contract_purchase_sales (SELECT only to authenticated, RLS requires work_record_access view on both contracts; no direct writes). Link/unlink only through SECURITY DEFINER RPC contract_purchase_sale_set (EXECUTE to authenticated only): purchase update via work_context_access (active membership, workspace, deny), sale view in the same workspace, roles checked. Read via requireWorkPermission(view)+assertWorkRecord; write via requireWorkPermission(update)+assertWorkRecord+workRpc. No new permission key.",
       "files": {
         "drizzle/migrations/0464_purchase_contract_sales.sql": "5cc39efe8db972d858aa25a4804b83fcc16b49bcaf9019a1502bf5cf5a0f0697",
-        "src/components/contracts/purchase-sales-panel.tsx": "ea37422d8b01ff07897de6f55827afc16a0e80386cdfa6b5182d394ffdd6e554"
+        "src/components/contracts/purchase-sales-panel.tsx": "660b1fda5886a29a58cebca90b1a59f41eeb0cbe9b72324aac32294e5c8f3fe1"
       },
       "resources": [
         "techcontracts.contracts"
@@ -27054,8 +27054,8 @@
       "kind": "presentation",
       "rationale": "Pure consolidation of a main contract with its active amendments and a read-only card. No database client, server function, action or authorization; data comes from getContract under its existing view gate.",
       "files": {
-        "src/lib/contracts/effective-terms.ts": "fddebd7d0f427907f722e428109d7b59cbe62d045d6dc0bcde58ff05c8b10baa",
-        "src/components/contracts/effective-terms-card.tsx": "65be6fcfca9ab7ce742b25e5a912b8aea07a3328a9574f3fede40fc491c5f38f"
+        "src/lib/contracts/effective-terms.ts": "809d8959133b20ea6493e1a0e9529ed0b561712c5ee14e307c03308b3a0bbea9",
+        "src/components/contracts/effective-terms-card.tsx": "35c7ea78e079a083f15ca93ad11a6d68e12ad99fe62920a2142518f88d7814ed"
       }
     },
     {

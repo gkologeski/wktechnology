@@ -119,7 +119,12 @@ beforeAll(async () => {
   await db.unsafe(`CREATE TABLE contract_drafts(id uuid PRIMARY KEY);
     CREATE TABLE hiring_formalizations(request_id uuid PRIMARY KEY,workspace_id uuid NOT NULL,contract_id uuid REFERENCES contracts(id),draft_id uuid REFERENCES contract_drafts(id),status text NOT NULL,legal_at timestamptz,accepted_at timestamptz,finance_at timestamptz);
     CREATE TABLE hiring_formalization_events(request_id uuid);CREATE TABLE hiring_formalization_notes(request_id uuid);CREATE TABLE hiring_draft_capabilities(request_id uuid);`);
-  await db.unsafe(sourceFunction("drizzle/migrations/0467_release_draft_formalization_archive.sql", "contract_release_draft_formalization"));
+  await db.unsafe(
+    sourceFunction(
+      "drizzle/migrations/0467_release_draft_formalization_archive.sql",
+      "contract_release_draft_formalization",
+    ),
+  );
   await db`insert into workspaces(id) values(${W}),(${B})`;
   await db`insert into profiles(id,active_workspace_id) values(${U},${W})`;
   await db`insert into workspace_members(workspace_id,user_id) values(${W},${U})`;
@@ -180,7 +185,9 @@ it("release formalization SQL isolates foreign workspace", async () => {
   await expect(subject(async (tx) => void (await release(tx)), { workspace: B })).rejects.toThrow();
 });
 it("release formalization SQL rejects inactive membership", async () => {
-  await expect(subject(async (tx) => void (await release(tx)), { inactive: true })).rejects.toThrow();
+  await expect(
+    subject(async (tx) => void (await release(tx)), { inactive: true }),
+  ).rejects.toThrow();
 });
 it("release formalization SQL keeps non-draft contracts protected", async () => {
   await expect(subject(async (tx) => void (await release(tx, S)))).rejects.toThrow(/andamento/);

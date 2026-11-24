@@ -53,7 +53,10 @@ export const searchPurchaseCounterparty = createServerFn({ method: "POST" })
         .eq("workspace_id", ws)
         .eq("role", "provider");
       // Vendas adicionais podem ser aditivos com negócio próprio (ex.: horas extras).
-      q = data.entity === "sale" ? q.eq("document_kind", "main") : q.in("document_kind", ["main", "amendment"]);
+      q =
+        data.entity === "sale"
+          ? q.eq("document_kind", "main")
+          : q.in("document_kind", ["main", "amendment"]);
       if (data.selected) q = q.eq("id", data.selected);
       else if (term) q = q.or(`title.ilike.%${term}%,number.ilike.%${term}%`);
       const { data: rows, error } = await q.order("created_at", { ascending: false }).limit(20);
@@ -156,9 +159,13 @@ export const setPurchaseSale = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertWorkRecord(context.supabase, "techcontracts.contracts", data.purchaseId, "update");
     const { workRpc } = await import("@/lib/access-control/work-core.server");
-    return workRpc<{ linked: boolean; primary?: boolean }>(context.supabase, "contract_purchase_sale_set", {
-      p_purchase: data.purchaseId,
-      p_sale: data.saleId,
-      p_link: data.link,
-    });
+    return workRpc<{ linked: boolean; primary?: boolean }>(
+      context.supabase,
+      "contract_purchase_sale_set",
+      {
+        p_purchase: data.purchaseId,
+        p_sale: data.saleId,
+        p_link: data.link,
+      },
+    );
   });

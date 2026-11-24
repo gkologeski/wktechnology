@@ -119,7 +119,12 @@ beforeAll(async () => {
   await db.unsafe(`ALTER TABLE contracts ADD COLUMN IF NOT EXISTS role text,ADD COLUMN IF NOT EXISTS parent_contract_id uuid;
     CREATE TABLE contract_purchase_sales(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid NOT NULL,purchase_contract_id uuid NOT NULL,sale_contract_id uuid NOT NULL,created_by uuid,created_at timestamptz NOT NULL DEFAULT now(),UNIQUE(purchase_contract_id,sale_contract_id));
     GRANT SELECT,INSERT,DELETE ON contract_purchase_sales TO authenticated;`);
-  await db.unsafe(sourceFunction("drizzle/migrations/0464_purchase_contract_sales.sql", "contract_purchase_sale_set"));
+  await db.unsafe(
+    sourceFunction(
+      "drizzle/migrations/0464_purchase_contract_sales.sql",
+      "contract_purchase_sale_set",
+    ),
+  );
   await db`insert into workspaces(id) values(${W}),(${B})`;
   await db`insert into profiles(id,active_workspace_id) values(${U},${W})`;
   await db`insert into workspace_members(workspace_id,user_id) values(${W},${U})`;
@@ -160,7 +165,8 @@ async function subject(
   }
 }
 async function link(tx: postgres.TransactionSql, purchase = C, sale = S) {
-  const [r] = await tx`select contract_purchase_sale_set(${purchase}::uuid, ${sale}::uuid, true) as r`;
+  const [r] =
+    await tx`select contract_purchase_sale_set(${purchase}::uuid, ${sale}::uuid, true) as r`;
   return r.r as { linked: boolean; primary: boolean };
 }
 it("purchase sales SQL allows an authorized active member", async () => {

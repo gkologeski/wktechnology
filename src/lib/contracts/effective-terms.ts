@@ -17,12 +17,30 @@ export type TermsRow = {
   amendment_effective_at?: string | null;
 };
 
-export type TermField = "starts_at" | "ends_at" | "monthly_value" | "hours_per_month" | "notice_days" | "service_scope";
-export type TermChange = { field: TermField; from: string | number | null; to: string | number | null; amendmentId: string; amendmentNumber: string | null };
+export type TermField =
+  | "starts_at"
+  | "ends_at"
+  | "monthly_value"
+  | "hours_per_month"
+  | "notice_days"
+  | "service_scope";
+export type TermChange = {
+  field: TermField;
+  from: string | number | null;
+  to: string | number | null;
+  amendmentId: string;
+  amendmentNumber: string | null;
+};
 
 export const EFFECTIVE_AMENDMENT_STATUSES = ["active", "renewing", "ended"];
 // O início do aditivo é a data em que ele passa a valer, não um novo início do contrato.
-const REPLACED: TermField[] = ["ends_at", "monthly_value", "hours_per_month", "notice_days", "service_scope"];
+const REPLACED: TermField[] = [
+  "ends_at",
+  "monthly_value",
+  "hours_per_month",
+  "notice_days",
+  "service_scope",
+];
 
 const norm = (f: TermField, v: unknown): string | number | null => {
   if (v == null || v === "") return null;
@@ -49,7 +67,13 @@ export function effectiveTerms(main: TermsRow, amendments: TermsRow[]) {
     for (const f of REPLACED) {
       const v = norm(f, a[f]);
       if (v != null && v !== current[f]) {
-        changes.push({ field: f, from: current[f], to: v, amendmentId: a.id, amendmentNumber: a.number ?? null });
+        changes.push({
+          field: f,
+          from: current[f],
+          to: v,
+          amendmentId: a.id,
+          amendmentNumber: a.number ?? null,
+        });
         current[f] = v;
       }
     }
