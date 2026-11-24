@@ -6,3 +6,4 @@
 - Teste unitário da regra do rascunho (gravar, restaurar, limpar após sucesso, manter após falha).
 - Ajuda: atualizar artigo de itens de linha do negócio (bump de `version`).
 - Validação: `permissions:check`, `tsgo`, testes, build e Playwright (digitar, fechar pelo X, reabrir, clicar Concluído).
+- Entrada 100%: em `src/lib/sales/payment-terms.ts` permitir plano `{ kind: "none" }` (ou equivalente) quando `entry >= total`, normalizar ao salvar e validar no schema zod; `payment-terms-editor.tsx` desativa o bloco Saldo; testes da regra (100% → sem saldo; 99% → saldo obrigatório).
