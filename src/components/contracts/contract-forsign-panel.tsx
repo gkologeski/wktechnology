@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ContractSignersEditor, type ParticipantSelection } from "./contract-signers-editor";
-import { contractSignersSchema } from "@/lib/contracts/signers";
+import { applySignerSuggestions, contractSignersSchema } from "@/lib/contracts/signers";
+import { getSuggestedContractSigners } from "@/lib/contracts/signer-contacts.functions";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -49,6 +50,7 @@ export function ContractForsignPanel({
   const send = useServerFn(sendContractForsign);
   const refresh = useServerFn(refreshContractForsign);
   const cancel = useServerFn(cancelContractForsign);
+  const suggest = useServerFn(getSuggestedContractSigners);
   const qc = useQueryClient();
   const { can } = usePermissions();
   canManage = canManage && can("techcontracts.forsign.manage.workspace");
@@ -60,12 +62,32 @@ export function ContractForsignPanel({
   });
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [signers, setSigners] = useState<ParticipantSelection[]>([
+  const initialSigners = (): ParticipantSelection[] => [
     { role: "CONTRATANTE", contact: null },
     { role: "CONTRATADO", contact: null },
-  ]);
+  ];
+  const [signers, setSigners] = useState<ParticipantSelection[]>(initialSigners);
+  const [dirty, setDirty] = useState(false);
   const [cancelMsg, setCancelMsg] = useState("");
   const [cancelId, setCancelId] = useState<string | null>(null);
+  const suggestions = useQuery({
+    queryKey: ["contract-signer-suggestions", contractId, hash],
+    queryFn: () => suggest({ data: { contractId } }),
+    enabled: canManage,
+    staleTime: 30_000,
+    retry: false,
+  });
+  useEffect(() => {
+    if (!open || dirty || !suggestions.data) return;
+    setSigners((prev) => applySignerSuggestions(prev, suggestions.data, true));
+  }, [open, dirty, suggestions.data]);
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) {
+      setDirty(false);
+      setSigners(initialSigners());
+    }
+  };
 
   const act = async (fn: () => Promise<unknown>, ok: string) => {
     setBusy(true);
@@ -208,7 +230,7 @@ export function ContractForsignPanel({
         </ul>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Enviar pelo ForSign</DialogTitle>
@@ -219,16 +241,38 @@ export function ContractForsignPanel({
           </DialogHeader>
           <div className="space-y-4">
             <SignatureAttachmentsSummary contractId={contractId} />
+            {suggestions.isLoading && (
+              <p role="status" className="text-xs text-muted-foreground">
+                Carregando representantes do contrato…
+              </p>
+            )}
+            {suggestions.isError && (
+              <p role="status" className="text-xs text-muted-foreground">
+                Não foi possível sugerir os representantes automaticamente; selecione manualmente
+                abaixo.
+              </p>
+            )}
             <ContractSignersEditor
               value={signers}
-              onChange={setSigners}
+              onChange={(next) => {
+                setDirty(true);
+                setSigners(next);
+              }}
               disabled={busy}
               witnessesDetected={witnessesDetected}
               max={10}
               showCpf
+              partyHints={
+                suggestions.data
+                  ? {
+                      CONTRATANTE: suggestions.data.contratante,
+                      CONTRATADO: suggestions.data.contratado,
+                    }
+                  : undefined
+              }
             />
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setOpen(false)}>
+              <Button variant="ghost" onClick={() => handleOpenChange(false)}>
                 Voltar
               </Button>
               <Button
@@ -245,7 +289,7 @@ export function ContractForsignPanel({
                       }),
                     "Contrato enviado ao ForSign.",
                   );
-                  if (ok) setOpen(false);
+                  if (ok) handleOpenChange(false);
                 }}
               >
                 Enviar

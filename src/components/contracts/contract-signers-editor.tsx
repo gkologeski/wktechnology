@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SignerContactPicker } from "./signer-contact-picker";
-import type { SignerContact } from "@/lib/contracts/signers";
+import type { SignerContact, SignerPartyHint } from "@/lib/contracts/signers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ export function ContractSignersEditor({
   witnessesDetected = false,
   max = 20,
   showCpf = false,
+  partyHints,
 }: {
   value: ParticipantSelection[];
   onChange: (v: ParticipantSelection[]) => void;
@@ -19,14 +20,16 @@ export function ContractSignersEditor({
   witnessesDetected?: boolean;
   max?: number;
   showCpf?: boolean;
+  partyHints?: Partial<Record<string, SignerPartyHint>>;
 }) {
   const [extraRole, setExtraRole] = useState("");
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        CONTRATANTE e CONTRATADO são obrigatórios. Testemunhas são opcionais; ao incluir uma, a
-        assinatura dela será exigida para concluir o documento. Cada participante recebe seu próprio
-        link.
+        Quem assina eletronicamente é sempre uma pessoa física (representante legal de cada empresa
+        ou o próprio contratado PF) — razão social e CNPJ já constam no contrato. CONTRATANTE e
+        CONTRATADO são obrigatórios; testemunhas são opcionais e, ao incluir uma, a assinatura dela
+        será exigida para concluir o documento. Cada participante recebe seu próprio link.
       </p>
       {witnessesDetected && (
         <p role="note" className="text-sm">
@@ -34,40 +37,47 @@ export function ContractSignersEditor({
           antes de preparar.
         </p>
       )}
-      {value.map((p, i) => (
-        <div key={p.role} className="space-y-1">
-          <SignerContactPicker
-            role={p.role}
-            value={p.contact}
-            disabled={disabled}
-            onChange={(contact) => onChange(value.map((r, n) => (n === i ? { ...r, contact } : r)))}
-          />
-          {showCpf && (
-            <div className="space-y-1">
-              <Label>CPF (opcional)</Label>
-              <Input
-                aria-label={`CPF de ${p.role}`}
-                disabled={disabled}
-                value={p.cpf ?? ""}
-                maxLength={20}
-                onChange={(e) =>
-                  onChange(value.map((r, n) => (n === i ? { ...r, cpf: e.target.value } : r)))
-                }
-              />
-            </div>
-          )}
-          {i > 1 && (
-            <Button
-              variant="ghost"
-              size="sm"
+      {value.map((p, i) => {
+        const hint = partyHints?.[p.role];
+        return (
+          <div key={p.role} className="space-y-1">
+            <SignerContactPicker
+              role={p.role}
+              value={p.contact}
               disabled={disabled}
-              onClick={() => onChange(value.filter((_, n) => n !== i))}
-            >
-              Não incluir {p.role}
-            </Button>
-          )}
-        </div>
-      ))}
+              partyName={hint?.partyName ?? null}
+              partyKind={hint?.partyKind}
+              onChange={(contact) =>
+                onChange(value.map((r, n) => (n === i ? { ...r, contact } : r)))
+              }
+            />
+            {showCpf && (
+              <div className="space-y-1">
+                <Label>CPF (opcional)</Label>
+                <Input
+                  aria-label={`CPF de ${p.role}`}
+                  disabled={disabled}
+                  value={p.cpf ?? ""}
+                  maxLength={20}
+                  onChange={(e) =>
+                    onChange(value.map((r, n) => (n === i ? { ...r, cpf: e.target.value } : r)))
+                  }
+                />
+              </div>
+            )}
+            {i > 1 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={disabled}
+                onClick={() => onChange(value.filter((_, n) => n !== i))}
+              >
+                Não incluir {p.role}
+              </Button>
+            )}
+          </div>
+        );
+      })}
       <div className="flex flex-wrap gap-2">
         {["TESTEMUNHA 1", "TESTEMUNHA 2"]
           .filter((r) => !value.some((p) => p.role === r))

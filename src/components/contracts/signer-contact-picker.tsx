@@ -19,11 +19,15 @@ export function SignerContactPicker({
   value,
   onChange,
   disabled,
+  partyName,
+  partyKind,
 }: {
   role: string;
   value: SignerContact | null;
   onChange: (v: SignerContact | null) => void;
   disabled?: boolean;
+  partyName?: string | null;
+  partyKind?: "company" | "person";
 }) {
   const p = usePermissions(),
     search = useServerFn(searchSignerContacts),
@@ -57,7 +61,17 @@ export function SignerContactPicker({
   });
   return (
     <div className="space-y-2 rounded-md border p-3">
-      <Label>{role}</Label>
+      <div className="space-y-0.5">
+        <Label>{role}</Label>
+        {partyName && partyKind !== "person" && (
+          <p className="text-xs text-muted-foreground">
+            Representante legal de <span className="font-medium text-foreground">{partyName}</span>
+          </p>
+        )}
+        {partyKind === "person" && (
+          <p className="text-xs text-muted-foreground">Assinatura por pessoa física</p>
+        )}
+      </div>
       {value ? (
         <div className="flex items-start justify-between gap-2">
           <div>

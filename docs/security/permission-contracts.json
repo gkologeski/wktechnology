@@ -9815,7 +9815,7 @@
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
-        "src/components/hiring/contract-signature-card.tsx": "c9b50d73ef60ec52976ac0ef55ad1c5e1f0f1a8434cf3083c666889fb895d3f1",
+        "src/components/hiring/contract-signature-card.tsx": "19e72fe6581cf1ef7f40cdd60c8542a96adc3ac59f75fa9f486bf7fc30cd5289",
         "src/components/hiring/recruitment-authorization-panel.tsx": "63999fab8527aaba7d5bce74450e4c9730b86a54a45104f9952d28de00ad4f8d",
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
@@ -14863,7 +14863,7 @@
       },
       "files": {
         "drizzle/migrations/0359_forsign_integration.sql": "f299acdcbeeac81ca34b101e936070eb15e7b8adb28eaa5262d670fd780d688b",
-        "src/components/contracts/contract-forsign-panel.tsx": "3af5aa9d2c67ae0ae05cb1314010f2c10d7961071684d59ea6adf6f42fe5aaad",
+        "src/components/contracts/contract-forsign-panel.tsx": "ab302e862caadfb3d6a4bb81928a82d9a567f7330bd3fd31bb29fdc54d3fbc79",
         "src/components/integrations/forsign-settings-page.tsx": "91258abbf7bb58f8b9bfa3d98238f13af33b8a100fab4ed0c412185231e0e8dd",
         "src/lib/integrations/forsign/forsign-service.server.ts": "1fc1e01e41c2c6b0a62f2cd461a3e34a9f7da8d8f3d78a4226412bbe099ce8bd",
         "src/lib/integrations/forsign/forsign.functions.ts": "d09d853289a03754e5180a570f9bfcf5399ee9c1fb5991b109d9388850e320ca",
@@ -14985,7 +14985,7 @@
         "techsales.contacts.create.team",
         "techsales.contacts.create.workspace"
       ],
-      "rationale": "Contact-backed contract participants; optional witnesses become mandatory when included. User/RLS contact search and creation, source-bound SQL preparation, immutable participant snapshots and legacy helper no longer callable by authenticated clients. No role grants; existing documents unchanged. ForSign uses the same contact resolver and an immutable requested roster; remote completion requires all requested members, including optional witnesses once included.",
+      "rationale": "Contact-backed contract participants; optional witnesses become mandatory when included. User/RLS contact search, creation and automatic representative suggestion (getSuggestedContractSigners / suggestContractSigners gated by active workspace, techcontracts.signature_evidence.manage.workspace, hiring_contract_signature_context and caller RLS on contacts/companies/contracts), source-bound SQL preparation, immutable participant snapshots and legacy helper no longer callable by authenticated clients. No role grants; existing documents unchanged. ForSign uses the same contact resolver and an immutable requested roster; remote completion requires all requested members, including optional witnesses once included.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -15045,19 +15045,19 @@
         }
       },
       "files": {
-        "src/lib/contracts/signer-contacts.functions.ts": "f4012895b4c8ba11df9eed569ad6e440b4bab9bd73bfe1555bbdf761496689e5",
-        "src/components/contracts/signer-contact-picker.tsx": "0d70bd3e61582e9daf88d9b1e4c076a0d2235f4e447e40088994e925be8ce660",
+        "src/lib/contracts/signer-contacts.functions.ts": "092566673126d666187ac4970c6660951b2ce936dffb75524f21d5b9281e33c1",
+        "src/components/contracts/signer-contact-picker.tsx": "23f54670ff7b4db15c69e85dfd1464ef7e88f5e6b533862793756cf7d6465e61",
         "drizzle/migrations/0360_contract_signer_contacts.sql": "79618e3f5bf678fd362d8e0d64610e9a28073c586cea77801da303159369d84a",
-        "src/lib/contracts/signer-contacts.server.ts": "301632198163a84e393a2f1b1db70e3ec8ec147e68995ed2b1ed4410a53a6bc7",
-        "src/components/contracts/contract-signers-editor.tsx": "4568eea651f8f9ab689d0ed90b003e3ec5bb0e2d1d4e6c75c94b1df395369318"
+        "src/lib/contracts/signer-contacts.server.ts": "9ccc23fc659140733bec15bafa7b3b929b22d029dd7dce64e0243bbf63ba8c78",
+        "src/components/contracts/contract-signers-editor.tsx": "6fc4c9a4dc37a7a4f44f8cd34d252238aa1c5984e41326f1498e0b7aa74b291b"
       }
     },
     {
       "id": "contract-signer-input-schema",
       "kind": "presentation",
-      "rationale": "Pure input schema and contact DTO; no data reads, writes or permissions. Callers enforce workspace, contact access and signature preparation.",
+      "rationale": "Pure input schema, contact/suggestion DTOs and pure applySignerSuggestions merge helper; no data reads, writes or permissions. Callers enforce workspace, contact access and signature preparation.",
       "files": {
-        "src/lib/contracts/signers.ts": "3c53708810534c4f79533dd7954e691e689ddea54fdfcfd49cabec14f772e25a"
+        "src/lib/contracts/signers.ts": "ed50e6e04e82da64b6fa3e2d3827de4d5467cb9320d6d7e9239e2804238bfb82"
       }
     },
     {
