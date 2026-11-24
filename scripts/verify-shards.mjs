@@ -195,7 +195,7 @@ async function main() {
     const read = (path) => JSON.parse(readFileSync(path, "utf8"));
     const root = process.argv[2] ?? ".verification-parts";
     const dirs = readdirSync(root);
-    assert.equal(dirs.length, 2);
+    assert.equal(dirs.length, 4);
     const parts = dirs.map((dir) => ({
       verify: read(join(root, dir, "verify.json")),
       inventory: read(join(root, dir, "test-inventory.json")),

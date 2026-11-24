@@ -6,6 +6,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -13,10 +14,10 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { aggregate, currentCiCommit, discoverTestFiles, shardTestArgs } from "../verify-shards.mjs";
+import { sourceFingerprint } from "../perf/source-fingerprint.mjs";
 
-function fixture() {
-  const now = Date.now(),
-    root = "/ci/workspace";
+function fixture(root = "/ci/workspace") {
+  const now = Date.now();
   const inventory = Array.from({ length: 608 }, (_, index) => ({
     file: `${root}/src/synthetic-${index}.test.ts`,
     projectName: index === 607 ? "process-timezone" : "isolated",
@@ -107,6 +108,62 @@ test("four complete parts certify all 608 unique files and 6691 passed assertion
   assert.equal(result.test_files, 608);
   assert.equal(result.passed_assertions, 6691);
   assert.equal(result.duration_ms, 200000);
+});
+test("aggregate CLI loads all four artifact directories and rejects a missing directory", async () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "verify-aggregate-cli-")));
+  const put = (path, text) => {
+    mkdirSync(join(root, path, ".."), { recursive: true });
+    writeFileSync(join(root, path), text, { mode: 0o700 });
+  };
+  try {
+    put("package.json", '{"type":"module"}');
+    for (const path of [
+      "scripts/verify-shards.mjs",
+      "scripts/perf/source-fingerprint.mjs",
+      "src/lib/performance/budgets.ts",
+    ])
+      put(path, readFileSync(path, "utf8"));
+    const { parts, expected } = fixture(root);
+    for (const item of expected.inventory) writeFileSync(item.file, "// synthetic test inventory");
+    put("bin/git", `#!${process.execPath}\nprocess.stdout.write('${expected.commit}')`);
+    const hash = sourceFingerprint(root);
+    put(".verification/test-inventory.json", JSON.stringify(expected.inventory));
+    for (const part of parts) {
+      part.verify.source_hash = hash;
+      const directory = `.verification-parts/shard-${part.verify.shard.index}`;
+      put(`${directory}/verify.json`, JSON.stringify(part.verify));
+      put(`${directory}/test-inventory.json`, JSON.stringify(part.inventory));
+      put(`${directory}/test-results.json`, JSON.stringify(part.tests));
+    }
+    const run = () =>
+      new Promise((resolve, reject) => {
+        const child = spawn(process.execPath, ["scripts/verify-shards.mjs"], {
+          cwd: root,
+          env: {
+            ...process.env,
+            PATH: `${join(root, "bin")}:${process.env.PATH}`,
+            GITHUB_SHA: expected.commit,
+            GITHUB_RUN_ID: expected.runId,
+            GITHUB_RUN_ATTEMPT: expected.runAttempt,
+            SHARD_JOB_RESULT: "success",
+            VERIFY_PREVIOUS_STEPS_OK: "true",
+          },
+          stdio: "ignore",
+        });
+        child.once("error", reject);
+        child.once("close", resolve);
+      });
+    assert.equal(await run(), 0, readFileSync(join(root, ".verification/verify.json"), "utf8"));
+    const report = () => JSON.parse(readFileSync(join(root, ".verification/verify.json"), "utf8"));
+    assert.equal(report().complete, true);
+    assert.equal(report().shard_count, 4);
+    assert.equal(report().test_files, 608);
+    rmSync(join(root, ".verification-parts/shard-4"), { recursive: true });
+    assert.equal(await run(), 1);
+    assert.equal(report().complete, false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 test("legitimate new files/cases are accepted without a manual count baseline", () => {
   const { parts, expected } = fixture();
