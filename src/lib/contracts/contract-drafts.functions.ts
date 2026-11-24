@@ -275,7 +275,8 @@ export const prepareContractDraftText = createServerFn({ method: "POST" })
     ]);
     const template = { ...source.template, body_html: data.body };
     const entityId = source.legal_entity_id ?? source.supplier?.legal_entity_id ?? undefined;
-    const { ctx, contract } = await buildMergeContext(
+    const isPurchase = Boolean(source.supplier?.company_id);
+    const { ctx, contract, company, deal, entity } = await buildMergeContext(
       context.supabase,
       source.workspace_id,
       context.userId,
@@ -304,12 +305,23 @@ export const prepareContractDraftText = createServerFn({ method: "POST" })
         : (contract.ends_at ?? null),
     };
     const mergedContext = { ...ctx, contract: { ...contract, ...preparedTerms } };
+    const missingEntries = templateFieldStatus(data.body, mergedContext).filter((f) => f.missing);
     return {
       body: mergeTemplateBody(data.body, mergedContext, { keepUnknown: true }),
       preparedTerms,
-      missing: templateFieldStatus(data.body, mergedContext)
-        .filter((f) => f.missing)
-        .map((f) => f.label),
+      missing: missingEntries.map((f) => f.label),
+      missingFields: missingEntries.map((f) => ({
+        key: f.key,
+        label: f.label,
+        group: f.group ?? "Outros",
+      })),
+      sources: {
+        legalEntityId: (entity?.id as string | undefined) ?? entityId ?? null,
+        companyId: (company?.id as string | undefined) ?? source.supplier?.company_id ?? null,
+        proposalId: source.proposal_id ?? null,
+        dealId: (deal?.id as string | undefined) ?? source.deal_id ?? null,
+        isPurchase,
+      },
     };
   });
 

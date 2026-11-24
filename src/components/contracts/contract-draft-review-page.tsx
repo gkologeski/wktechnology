@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowLeft, Check, Loader2, Save, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, ExternalLink, Loader2, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,6 +48,12 @@ import {
 import { ContractDraftSendPanel } from "@/components/contracts/contract-draft-send-panel";
 import { ContractDraftBypassButton } from "@/components/contracts/contract-draft-bypass-button";
 import { usedTokens } from "@/lib/contracts/template-tokens";
+import {
+  groupMissingDraftFields,
+  type DraftMissingSources,
+  type MissingDraftField,
+  type MissingFieldDestination,
+} from "@/lib/contracts/missing-field-sources";
 import { sanitizeTemplateHtml } from "@/lib/contracts/template-html-format";
 import { IsoDatePicker } from "@/components/iso-date-picker";
 import { LegalEntityField } from "@/components/finance/legal-entity-select";
@@ -80,11 +86,13 @@ export function ContractDraftReviewPage({
 }
 
 function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
+  const permissions = usePermissions();
   const qc = useQueryClient();
   const getFn = useServerFn(getContractDraft);
   const bodyFn = useServerFn(getContractDraftTemplateBody);
   const fillFn = useServerFn(prepareContractDraftText);
-  const [missing, setMissing] = useState<string[]>([]);
+  const [missingFields, setMissingFields] = useState<MissingDraftField[]>([]);
+  const [missingSources, setMissingSources] = useState<DraftMissingSources | null>(null);
   const [preparedTerms, setPreparedTerms] = useState<{
     number?: string;
     starts_at: string;
@@ -156,7 +164,10 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
       const r = await fillFn({ data: { draftId: id, templateId, body } });
       setBody(r.body);
       setPreparedTerms(r.preparedTerms);
-      setMissing(r.missing);
+      setMissingFields(
+        r.missingFields ?? r.missing.map((label) => ({ key: label, label, group: "Outros" })),
+      );
+      setMissingSources(r.sources ?? null);
       setDirty(true);
       setEntityChangedNotice(false);
       toast.success(
@@ -177,6 +188,8 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
       const r = await setEntityFn({ data: { draftId: id, legalEntityId: nextId } });
       if (r.changed) {
         setEntityChangedNotice(true);
+        setMissingFields([]);
+        setMissingSources(null);
         toast.success(
           "Empresa prestadora alterada. Preencha os dados da proposta novamente para atualizar o texto.",
         );
@@ -197,6 +210,8 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
       const r = await bodyFn({ data: { draftId: id, templateId: next } });
       setTemplateId(next);
       setBody(r.body);
+      setMissingFields([]);
+      setMissingSources(null);
       setDirty(true);
       toast.success("Modelo trocado. Revise o texto antes de aprovar.");
     } catch (e) {
@@ -236,6 +251,9 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
   const reviewerWritable = canReview && !readViewAs()?.readOnly && readViewAs()?.mode !== "role";
   const editable = reviewerWritable && isContractDraftReviewable(status);
   const busy = review.isPending || loadingTpl || savingEntity;
+  const missingGroups = missingSources
+    ? groupMissingDraftFields(missingFields, missingSources)
+    : [];
 
   return (
     <div className={embedded ? "space-y-5" : "mx-auto max-w-6xl space-y-6 p-6"}>
@@ -339,10 +357,43 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
           <Button variant="outline" onClick={() => void fillFromProposal()} disabled={busy}>
             Preencher dados da proposta
           </Button>
-          {missing.length > 0 && (
-            <p role="alert" className="text-sm text-destructive">
-              Complete os dados no cadastro de origem e tente novamente: {missing.join(", ")}.
-            </p>
+          {missingGroups.length > 0 && (
+            <div role="alert" className="space-y-1.5 text-sm text-destructive">
+              <p>Complete os dados no cadastro de origem e tente novamente:</p>
+              <ul className="list-disc space-y-1 pl-5">
+                {missingGroups.map((group) => {
+                  const canOpen =
+                    group.destination.kind !== "none" &&
+                    (group.requiredPermissions.length === 0 ||
+                      permissions.canAny(group.requiredPermissions));
+                  return (
+                    <li key={group.id}>
+                      <span className="font-medium">{group.sourceLabel}:</span>{" "}
+                      {group.labels.join(", ")}
+                      {group.destination.kind !== "none" && (
+                        <>
+                          {" — "}
+                          {canOpen ? (
+                            <MissingSourceLink
+                              destination={group.destination}
+                              label={group.actionLabel}
+                            />
+                          ) : (
+                            <span
+                              className="text-muted-foreground"
+                              aria-disabled="true"
+                              title={group.deniedReason}
+                            >
+                              {group.actionLabel} ({group.deniedReason})
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
           {draft.proposal_id && (
             <Button variant="link" asChild>
@@ -622,5 +673,71 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+const MISSING_LINK_CLASS =
+  "inline-flex items-center gap-1 font-medium text-primary underline underline-offset-4 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm";
+
+function MissingSourceLink({
+  destination,
+  label,
+}: {
+  destination: Exclude<MissingFieldDestination, { kind: "none" }>;
+  label: string;
+}) {
+  if (destination.kind === "legal_entity") {
+    return (
+      <Link
+        to="/settings/legal-entities"
+        search={{ edit: destination.id }}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={MISSING_LINK_CLASS}
+      >
+        {label}
+        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+      </Link>
+    );
+  }
+  if (destination.kind === "company") {
+    return (
+      <Link
+        to="/companies/$id"
+        params={{ id: destination.id }}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={MISSING_LINK_CLASS}
+      >
+        {label}
+        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+      </Link>
+    );
+  }
+  if (destination.kind === "proposal") {
+    return (
+      <Link
+        to="/proposals/$id"
+        params={{ id: destination.id }}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={MISSING_LINK_CLASS}
+      >
+        {label}
+        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+      </Link>
+    );
+  }
+  return (
+    <Link
+      to="/deals/$id"
+      params={{ id: destination.id }}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={MISSING_LINK_CLASS}
+    >
+      {label}
+      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+    </Link>
   );
 }

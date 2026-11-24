@@ -11926,8 +11926,8 @@
         "drizzle/migrations/0311_0334_contract_draft_legal_review.sql": "34b15156ef6dd6be975fd1d42cfa7b47ef5fc1db73ab35486abe755b8a36a427",
         "drizzle/migrations/0312_contract_draft_legal_review.sql": "13ce7aa0ddad44bc26c81cccd662b1fb5a12f6cf606e87554beea542faed7e82",
         "src/components/contracts/contract-draft-approvers-page.tsx": "fd9f5b3f844bd1c641ae8f5cc67ee45bd354f9ef06ea3200e27f4027a7007376",
-        "src/components/contracts/contract-draft-review-page.tsx": "0f2e58a45551de246ee03fab3c8c376c0ded9644d809fd719cfd3a79a76b222b",
-        "src/lib/contracts/contract-drafts.functions.ts": "9a2d4f45035a1da8a2b7af3ffd5c6dd0c4e7f6e69acdd67e5a1edd5ed0329f7c",
+        "src/components/contracts/contract-draft-review-page.tsx": "008d413b299992ae178b18c8b409ffeacb03f4ecadce89d0eaf1e1b92edc48cc",
+        "src/lib/contracts/contract-drafts.functions.ts": "8cbb99af55cb9f9df4e35e7c432c4cc5c937bdb9ad3abbeae2d8a3d5496c035f",
         "src/lib/workflows/engine/actions-contracts.server.ts": "ce77a960a2356639cd80d3245608044a2dabe2ef8d0dcd2dffa33f22ffb0c1d2",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
         "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "da7a3d3851d63c0e4409355465670d75feea86c2da22708494bc3851962b6d08",
@@ -11940,10 +11940,11 @@
     {
       "id": "contract-draft-status-labels",
       "kind": "presentation",
-      "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
+      "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass). | 24/11/2026 LINKS-CADASTRO-ORIGEM: pure missing-field grouping helper (no I/O or grants); draft review links to origin registries open in a new tab gated by existing view permissions while destination screens enforce full RLS/RBAC.",
       "files": {
         "src/lib/contracts/contract-draft-status.ts": "137f514e28ba87ad8a0a991be53566e3719507af37440ff3ab21902bbf7a0299",
-        "src/lib/contracts/contract-draft-public-rules.ts": "b0ba0ea6350890b9262061980ec7b66a72bd69ba0f97d254fab02a53c58a50b8"
+        "src/lib/contracts/contract-draft-public-rules.ts": "b0ba0ea6350890b9262061980ec7b66a72bd69ba0f97d254fab02a53c58a50b8",
+        "src/lib/contracts/missing-field-sources.ts": "cbb571ef4c305db857faa289ae54adcaeb0542c3c3ab68c07036b7bbd7fe0685"
       }
     },
     {
@@ -12160,10 +12161,10 @@
         }
       },
       "files": {
-        "src/components/finance/legal-entities-page.tsx": "aee0f89b818db062abde25e420ec517349b9a6fbf9598f13bda7cec60ab57a35",
+        "src/components/finance/legal-entities-page.tsx": "3571c54cc1486df745a814e2996358a1ab638186697ec227f3329e51c7fd3910",
         "src/lib/legal-entities.functions.ts": "4ae1688e21ab98419a58ecb6bd14c82869d8d142d03d88a6aaaf784f7f7045d0",
         "src/routes/_authenticated/finance.legal-entities.tsx": "c6db2c99bb89c7fc5261c1bcddce9dd2eb9c68b86a9180c479c477a0d99479fa",
-        "src/routes/_authenticated/settings.legal-entities.tsx": "1d148643b1e5845f2ed552ac156f3aeb9773902ab8079a1cdc0f539e7e32d8d6",
+        "src/routes/_authenticated/settings.legal-entities.tsx": "a08ec73ed922c796e60f4c5b19b28a659aefc3489b31605358b79c690b76b28e",
         "src/routes/_authenticated/finance.bank-accounts.tsx": "7a5cc9a70366f0ff55126f8b199408dffd680a1b5555edd9536546ad2dd6a27e",
         "src/routes/_authenticated/finance.categories.tsx": "d4d194671c4135213fd5a3e55cebfe276785351deb56298fcaec271f790f0a3e",
         "src/components/finance/quick-create-entry-dialog.tsx": "85b6da26ac474b1c850a8931d3fc0b80a4d277b983b4d841118f0b4d48cf6fdd",
@@ -12563,7 +12564,7 @@
         "review_by": "2027-03-01"
       },
       "files": {
-        "src/lib/contracts/template-tokens.ts": "c2a59e2d5acdb1b7e6aa0eed7e8bf5553f904fdaa0e56e2bab7e0379b0ed55e0"
+        "src/lib/contracts/template-tokens.ts": "8a11f15b4f79735057eb1fc303f713f9b47bdf950357b8c582d5bf151539b590"
       }
     },
     {

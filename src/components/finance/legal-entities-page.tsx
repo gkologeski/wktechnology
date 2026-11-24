@@ -2,7 +2,7 @@ import { useFinanceBusinessCapabilities } from "@/lib/access-control/use-finance
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus, Star, Trash2, Pencil, Wand2, Power, PowerOff } from "lucide-react";
 import { toast } from "sonner";
 
@@ -44,7 +44,7 @@ type LE = {
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-export function LegalEntitiesPage() {
+export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
   const financePermissions = usePermissions();
   const qc = useQueryClient();
   const list = useServerFn(listLegalEntitiesSummary);
@@ -91,6 +91,7 @@ export function LegalEntitiesPage() {
   const [saving, setSaving] = useState(false);
   const [cnpjFillOpen, setCnpjFillOpen] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState<string | null>(null);
+  const autoOpenedEditRef = useRef<string | null>(null);
   const [form, setForm] = useState<{
     id?: string;
     code: string;
@@ -130,6 +131,23 @@ export function LegalEntitiesPage() {
       setLoadingEdit(null);
     }
   }
+
+  useEffect(() => {
+    if (!editId || isLoading || isError || recordAccess.isLoading) return;
+    if (autoOpenedEditRef.current === editId) return;
+    const target = allRows.find((r) => r.id === editId);
+    if (!target) {
+      autoOpenedEditRef.current = editId;
+      return;
+    }
+    if (!recordAccess.isFetched) return;
+    autoOpenedEditRef.current = editId;
+    if (recordAccess.for(target.id).can_update) {
+      void openEdit(target);
+    } else {
+      toast.error("Você não tem permissão para editar esta empresa.");
+    }
+  }, [editId, isLoading, isError, allRows, recordAccess.isLoading, recordAccess.isFetched]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function submit() {
     if (saving) return;

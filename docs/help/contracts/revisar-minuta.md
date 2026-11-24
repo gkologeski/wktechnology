@@ -8,7 +8,7 @@ route_pattern: /contracts/drafts/$id
 min_permission: techcontracts.contract_drafts.view.workspace
 audience: internal
 sort_order: 40
-version: 5
+version: 6
 is_published: true
 ---
 # Revisar e aprovar a minuta de contrato
@@ -20,7 +20,7 @@ is_published: true
 ## Passo a passo
 1. Abra a notificação. A tela mostra o negócio, a situação da minuta e o histórico.
 2. Confira a **Empresa prestadora (CNPJ WK)** no topo da revisão. Ela nasce herdada da proposta e pode ser trocada enquanto a minuta estiver em revisão jurídica ou aguardando ajustes (toda troca fica registrada no histórico).
-3. Em "Modelo de contrato", mantenha o modelo padrão ou escolha outro e clique em **Preencher dados da proposta** para inserir razão social, CNPJ, endereço, valores e prazos no texto. Se trocar a empresa prestadora, clique novamente em **Preencher dados da proposta** para atualizar o texto antes de aprovar.
+3. Em "Modelo de contrato", mantenha o modelo padrão ou escolha outro e clique em **Preencher dados da proposta** para inserir razão social, CNPJ, endereço, valores e prazos no texto. Se trocar a empresa prestadora, clique novamente em **Preencher dados da proposta** para atualizar o texto antes de aprovar. Quando faltar algum dado obrigatório, o alerta agrupa as pendências por origem (**Empresa prestadora**, **Cliente/signatário** ou **Fornecedor/signatário**, **Proposta comercial** e **Negócio**) com o link **Abrir cadastro** em nova aba para corrigir sem perder edições da minuta; depois basta voltar e clicar novamente em **Preencher dados da proposta**.
 4. Ajuste o texto no editor e clique em "Salvar edição" para guardar sem aprovar.
 5. Clique em "Aprovar envio" para liberar a minuta. Para não enviar, use "Recusar" e informe o motivo.
 6. Com a minuta aprovada, use "Enviar ao cliente por e-mail" (sai da sua conta Gmail conectada) ou "Copiar link para o cliente".

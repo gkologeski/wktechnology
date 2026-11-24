@@ -148,6 +148,7 @@ export function mergeTemplateBody(
 export type TemplateFieldStatus = {
   key: string;
   label: string;
+  group?: string;
   value: string | null;
   missing: boolean;
 };
@@ -173,8 +174,10 @@ export function templateFieldStatus(
     const raw = getPath(ctx, key);
     const value = raw == null || String(raw).trim() === "" ? null : String(raw);
     const known = TEMPLATE_TOKEN_KEYS.includes(key);
-    const label = CONTRACT_TEMPLATE_TOKENS.find((t) => t.token === `{{${key}}}`)?.label ?? key;
-    return { key, label, value, missing: !known || value == null };
+    const def = CONTRACT_TEMPLATE_TOKENS.find((t) => t.token === `{{${key}}}`);
+    const label = def?.label ?? key;
+    const group = def?.group ?? "Outros";
+    return { key, label, group, value, missing: !known || value == null };
   });
 }
 
