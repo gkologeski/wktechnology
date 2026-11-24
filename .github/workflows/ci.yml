@@ -16,8 +16,8 @@ permissions:
 jobs:
   verification_shards:
     name: Verification shard ${{ matrix.shard }}/2
-    # Native Linux ARM64 matches the pinned database images validated locally.
-    runs-on: ubuntu-24.04-arm
+    # The pinned images support native amd64 and arm64; use the standard x86 pool.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -91,7 +91,7 @@ jobs:
 
   unit:
     name: Full verification and performance
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     needs: verification_shards
     if: ${{ always() }}
