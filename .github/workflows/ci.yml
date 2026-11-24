@@ -61,6 +61,7 @@ jobs:
         run: |
           docker pull postgres@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
           docker pull postgrest/postgrest@sha256:e9490aa503a5fb07d8e8c80da46e5c0c193894e583b59ed9077e74c4101ffae2
+          docker pull supabase/gotrue@sha256:1f378d415f670d59c7c2e52e244da6f0d486321998c6a6485e109efaeaba51ac
       - name: Report verification resources
         run: node -e 'const os=require("node:os"); console.log(JSON.stringify({cpus:os.availableParallelism(),arch:os.arch(),memoryMiB:Math.round(os.totalmem()/1048576)}))'
       - name: Inventory the complete configured test set (no test execution)

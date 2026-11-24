@@ -32,7 +32,8 @@ let endpoint = "",
   networkStarted = false,
   apiStarted = false,
   httpBase = "",
-  jwtSecret = "";
+  jwtSecret = "",
+  ownedDatabasePassword = "";
 let db: ReturnType<typeof postgres>;
 let concurrencyPreparationRequested = false;
 
@@ -154,6 +155,7 @@ beforeAll(async () => {
     "POSTGRES_DB=techerp_notification_ci\nPOSTGRES_PASSWORD=" + password + "\n",
     { mode: 0o600 },
   );
+  ownedDatabasePassword = password;
   // A dedicated bridge is required: Docker suppresses host port publishing on
   // --internal-only networks. Both published endpoints remain loopback-only.
   dockerRun("network", "create", network);
@@ -776,3 +778,11 @@ export async function request(
   return { status: response.status, payload: await response.json() };
 }
 export { db, W, B, A, U, C, D, N, F, ROLE, X, WF, RUN, EVENT };
+
+/** Test-only credentials for an auth service attached to this owned Docker copy. */
+export function ownedAuthServiceConfiguration() {
+  fixtureHttpBase();
+  if (!started || !networkStarted || !ownedDatabasePassword || !jwtSecret)
+    throw new Error("Owned disposable backend is not ready");
+  return { network, databaseContainer: container, password: ownedDatabasePassword, jwtSecret };
+}

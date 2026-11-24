@@ -47,3 +47,24 @@ Os dez arquivos de testes: `inbox-backend-regression`, `gmail-reply`, `inbox/cha
 Backend dos três pontos está implementado. A **prova positiva executada de root→child no worker após 0447/0448 permanece pendente**, assim como payload forjado, revogação e cutoff desse novo ciclo na cópia CI; os seis testes concretos estão em `inbox-resume-postgres.test.ts`. No draft bloqueado, a negação de parent forjado 42501/atomicidade foi executada, mas nenhum workflow foi ativado para fabricar um positivo.
 
 Próximo passo recomendado: Codex executar esses seis testes com o harness local já corrigido, preservar team-only negado e fechar contratos/gates. Validar a Inbox com `conversation_id` e request_id estável nos compositores reservados ao Codex, provando mesma thread, retry sem reenvio e nova tentativa explícita independente. Não executar envio real nem retirar o lock antes dessa revisão. Nada dessa próxima etapa foi iniciado automaticamente.
+
+## Execução autossuficiente na CI — 24/11/2026
+
+`inbox-backend-regression.test.ts` executa os mesmos 17 casos por padrão, sem
+`skip`: a fixture cria PostgreSQL/PostgREST e um GoTrue 2.180.0 descartáveis,
+com imagem fixada por digest, portas somente em loopback, credenciais aleatórias
+e limpeza ao terminar. O GoTrue mantém sua base de autenticação separada da
+base de autorização da fixture e emite os JWTs reais dos sete usuários de teste.
+Não usa credenciais, URLs, contas ou dados de produção.
+
+A preparação mantém `inbox_runtime_release_guard` ativo; não habilita workflows.
+As escritas que são objeto do teste continuam pelo cliente autenticado e RLS.
+A criação das conversas sintéticas pertence somente à preparação SQL da cópia.
+A opção `INBOX_BACKEND_REGRESSIONS=1` preserva o caminho anterior do draft
+instalado, ainda sujeito às verificações explícitas de destino descartável.
+
+Comando autossuficiente: `bunx vitest run src/lib/inbox-backend-regression.test.ts`.
+Validação dirigida: **17/17 executados e aprovados**, com login GoTrue real,
+permissões own/workspace, recusa de create.team, deny, outro workspace, membro
+inativo e bloqueio de retomada forjada. A CI integral e seu agregador continuam
+exigindo zero casos pendentes, falhos ou não executados; nenhum limite foi relaxado.
