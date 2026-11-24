@@ -8,8 +8,22 @@ import {
 } from "@/lib/access-control/enforce.server";
 import { assertNotReadOnlyView } from "@/lib/view-as-guard.server";
 import { emailSchema } from "@/lib/email-schema";
+import { suggestContractSigners } from "./signer-contacts.server";
 const keys = (action: string) =>
   ["own", "team", "workspace"].map((s) => `techsales.contacts.${action}.${s}`);
+export const getSuggestedContractSigners = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ contractId: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const w = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertPermission(
+      context.supabase,
+      context.userId,
+      w,
+      "techcontracts.signature_evidence.manage.workspace",
+    );
+    return suggestContractSigners(context.supabase, context.userId, data.contractId, w);
+  });
 export const searchSignerContacts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ query: z.string().trim().min(2).max(100) }))

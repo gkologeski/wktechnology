@@ -1,5 +1,5 @@
 import { ContractHandoffs } from "@/components/contracts/contract-handoffs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ContractSignatureDelivery } from "@/components/contracts/contract-signature-delivery";
 import { ContractForsignPanel } from "@/components/contracts/contract-forsign-panel";
 import { SignatureAttachmentsSummary } from "@/components/contracts/signature-attachments-summary";
@@ -12,7 +12,12 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ContractSignersEditor } from "@/components/contracts/contract-signers-editor";
-import { contractSignersSchema, type SignerContact } from "@/lib/contracts/signers";
+import {
+  applySignerSuggestions,
+  contractSignersSchema,
+  type SignerContact,
+} from "@/lib/contracts/signers";
+import { getSuggestedContractSigners } from "@/lib/contracts/signer-contacts.functions";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -102,17 +107,30 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
     revoke = useServerFn(revokeContractEvidence),
     source = useServerFn(selectCommercialContract),
     origin = useServerFn(saveContractHiringOrigin),
-    url = useServerFn(getSignedContractEvidenceUrl);
+    url = useServerFn(getSignedContractEvidenceUrl),
+    suggest = useServerFn(getSuggestedContractSigners);
   const [busy, setBusy] = useState(false),
     [mode, setMode] = useState<"native" | "external" | "revoke" | null>(null);
   const [deal, setDeal] = useState(c.deal_id),
     [entity, setEntity] = useState(c.entity_id ?? "");
-  const [participants, setParticipants] = useState<
-    { role: string; contact: SignerContact | null }[]
-  >([
+  const initialParticipants = (): { role: string; contact: SignerContact | null }[] => [
     { role: "CONTRATANTE", contact: null },
     { role: "CONTRATADO", contact: null },
-  ]);
+  ];
+  const [participants, setParticipants] =
+    useState<{ role: string; contact: SignerContact | null }[]>(initialParticipants);
+  const [participantsDirty, setParticipantsDirty] = useState(false);
+  const suggestions = useQuery({
+    queryKey: ["contract-signer-suggestions", contractId, c.hash],
+    queryFn: () => suggest({ data: { contractId } }),
+    enabled: manage,
+    staleTime: 30_000,
+    retry: false,
+  });
+  useEffect(() => {
+    if (mode !== "native" || participantsDirty || !suggestions.data) return;
+    setParticipants((prev) => applySignerSuggestions(prev, suggestions.data, false));
+  }, [mode, participantsDirty, suggestions.data]);
   const signerPayload = participants.map((p) => ({ role: p.role, contactId: p.contact?.id ?? "" }));
   const [pdf, setPdf] = useState<File | null>(null),
     [signedOn, setSignedOn] = useState(""),
@@ -321,7 +339,11 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
       <Dialog
         open={mode !== null}
         onOpenChange={(open) => {
-          if (!open && !busy) setMode(null);
+          if (!open && !busy) {
+            setMode(null);
+            setParticipantsDirty(false);
+            setParticipants(initialParticipants());
+          }
         }}
       >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
@@ -341,11 +363,33 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
                 Depois, confira os signatários e envie os convites por e-mail neste mesmo painel.
               </p>
               <SignatureAttachmentsSummary contractId={contractId} />
+              {suggestions.isLoading && (
+                <p role="status" className="text-xs text-muted-foreground">
+                  Carregando representantes do contrato…
+                </p>
+              )}
+              {suggestions.isError && (
+                <p role="status" className="text-xs text-muted-foreground">
+                  Não foi possível sugerir os representantes automaticamente; selecione manualmente
+                  abaixo.
+                </p>
+              )}
               <ContractSignersEditor
                 value={participants}
-                onChange={setParticipants}
+                onChange={(next) => {
+                  setParticipantsDirty(true);
+                  setParticipants(next);
+                }}
                 disabled={busy}
                 witnessesDetected={c.witnesses_detected}
+                partyHints={
+                  suggestions.data
+                    ? {
+                        CONTRATANTE: suggestions.data.contratante,
+                        CONTRATADO: suggestions.data.contratado,
+                      }
+                    : undefined
+                }
               />
               <Button
                 disabled={

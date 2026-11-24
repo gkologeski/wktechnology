@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/forsign
 min_permission: techcontracts.forsign_settings.manage.workspace
 audience: internal
 sort_order: 97
-version: 8
+version: 9
 is_published: true
 ---
 # Enviar contratos para assinatura pelo ForSign
@@ -27,7 +27,7 @@ is_published: true
 ## Passo a passo — enviar um contrato
 1. Abra o contrato e vá até "Assinaturas do contrato".
 2. No quadro ForSign, clique em "Enviar pelo ForSign".
-3. Informe nome, e-mail, CPF (opcional) e papel do signatário do cliente e do signatário da WK. Adicione testemunhas se precisar.
+3. Confira os representantes sugeridos automaticamente para CONTRATANTE e CONTRATADO (com a razão social de cada empresa no cabeçalho) e ajuste com "Trocar" se necessário. Informe CPF (opcional) e adicione testemunhas se precisar.
 4. Clique em "Enviar". O TechERP gera o PDF da versão atual do contrato e o ForSign envia os convites por e-mail.
 5. Acompanhe a situação de cada assinante no quadro. "Atualizar situação" consulta o ForSign na hora.
 6. Para desistir, use "Cancelar envio" e informe o motivo (os créditos só voltam se ninguém tiver assinado).
@@ -53,7 +53,7 @@ Quando todos assinam, o PDF final do ForSign (com a trilha de auditoria) é guar
 - Registrar assinatura externa de um contrato
 
 ## Seleção dos signatários
-Escolha contatos para CONTRATANTE e CONTRATADO. A pesquisa por nome/e-mail permite cadastrar um contato no mesmo contexto, com os acessos de contatos. Testemunhas são opcionais antes do envio; todas as incluídas precisam assinar. Inclua outros papéis quando necessário. O TechERP conserva a lista enviada e só registra a evidência quando o ForSign comprova todos os participantes dessa lista, sem omissões. Máximo de dez participantes no ForSign.
+Quem assina eletronicamente é sempre uma pessoa física (representante legal de cada empresa ou o próprio contratado PF); a razão social e o CNPJ das empresas já constam no contrato. Ao abrir o envio pelo ForSign ou a assinatura no TechERP, o sistema exibe a razão social no cabeçalho de cada papel e sugere automaticamente os contatos representantes conforme o tipo do contrato (em compras, CONTRATANTE é a entidade da empresa e CONTRATADO é o fornecedor; em vendas, o inverso), usando os contatos visíveis no seu acesso. Use "Trocar" para selecionar outra pessoa ou pesquise por nome/e-mail (com opção de cadastrar contato no mesmo contexto, respeitando os acessos de contatos). Testemunhas são opcionais antes do envio; todas as incluídas precisam assinar. Inclua outros papéis quando necessário. O TechERP conserva a lista enviada e só registra a evidência quando o ForSign comprova todos os participantes dessa lista, sem omissões. Máximo de dez participantes no ForSign.
 
 ## Envio para todos ao mesmo tempo
 

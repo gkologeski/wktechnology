@@ -93,3 +93,38 @@ it("prevents edits in readonly sessions", async () => {
   expect(host.querySelector("input")?.disabled).toBe(true);
   expect(m.create).not.toHaveBeenCalled();
 });
+it("shows the company legal name header for legal representatives and person label for PF", async () => {
+  await act(async () =>
+    root.render(
+      createElement(
+        QueryClientProvider,
+        { client: q },
+        createElement(SignerContactPicker, {
+          role: "CONTRATANTE",
+          partyName: "GM Kologeski & Cia Ltda ME",
+          partyKind: "company",
+          value: { id: "c", name: "Guilherme Kologeski", email: "guilherme@wk.test" },
+          onChange: vi.fn(),
+        }),
+      ),
+    ),
+  );
+  expect(host.textContent).toContain("Representante legal de GM Kologeski & Cia Ltda ME");
+  expect(host.textContent).toContain("Guilherme Kologeski");
+
+  await act(async () =>
+    root.render(
+      createElement(
+        QueryClientProvider,
+        { client: q },
+        createElement(SignerContactPicker, {
+          role: "CONTRATADO",
+          partyKind: "person",
+          value: null,
+          onChange: vi.fn(),
+        }),
+      ),
+    ),
+  );
+  expect(host.textContent).toContain("Assinatura por pessoa física");
+});
