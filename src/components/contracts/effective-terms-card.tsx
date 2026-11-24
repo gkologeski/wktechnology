@@ -27,7 +27,13 @@ export function EffectiveTermsCard({
   currency: string;
 }) {
   const fmt = (f: TermField, v: unknown) =>
-    v == null ? "—" : f === "starts_at" || f === "ends_at" ? date(v) : f === "monthly_value" ? formatCurrency(Number(v), currency) : String(v);
+    v == null
+      ? "—"
+      : f === "starts_at" || f === "ends_at"
+        ? date(v)
+        : f === "monthly_value"
+          ? formatCurrency(Number(v), currency)
+          : String(v);
   const nameOf = (id: string) => amendments.find((a) => a.id === id);
   return (
     <Card>
@@ -42,7 +48,9 @@ export function EffectiveTermsCard({
         <dl className="grid gap-3 sm:grid-cols-4">
           <div>
             <dt className="text-xs text-muted-foreground">Vigência</dt>
-            <dd className="font-medium">{date(effective.starts_at)} → {date(effective.ends_at)}</dd>
+            <dd className="font-medium">
+              {date(effective.starts_at)} → {date(effective.ends_at)}
+            </dd>
             {effective.ends_at !== (original.ends_at?.slice(0, 10) ?? null) && (
               <dd className="text-xs text-muted-foreground">Original: {date(original.ends_at)}</dd>
             )}
@@ -50,11 +58,15 @@ export function EffectiveTermsCard({
           <div>
             <dt className="text-xs text-muted-foreground">Valor total acumulado</dt>
             <dd className="font-medium">{formatCurrency(effective.total_value, currency)}</dd>
-            <dd className="text-xs text-muted-foreground">Original: {formatCurrency(original.total_value, currency)}</dd>
+            <dd className="text-xs text-muted-foreground">
+              Original: {formatCurrency(original.total_value, currency)}
+            </dd>
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">Horas contratadas</dt>
-            <dd className="font-medium">{effective.contracted_hours != null ? `${effective.contracted_hours} h` : "—"}</dd>
+            <dd className="font-medium">
+              {effective.contracted_hours != null ? `${effective.contracted_hours} h` : "—"}
+            </dd>
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">Aditivos considerados</dt>
@@ -68,10 +80,16 @@ export function EffectiveTermsCard({
               return (
                 <li key={i} className="flex flex-wrap items-center gap-x-2 px-3 py-2">
                   <span className="font-medium">{LABEL[c.field]}:</span>
-                  <span className="text-muted-foreground line-clamp-1 max-w-[40%]">{fmt(c.field, c.from)}</span>
+                  <span className="text-muted-foreground line-clamp-1 max-w-[40%]">
+                    {fmt(c.field, c.from)}
+                  </span>
                   <span aria-hidden>→</span>
                   <span className="line-clamp-1 max-w-[40%]">{fmt(c.field, c.to)}</span>
-                  <Link to="/contracts/$id" params={{ id: c.amendmentId }} className="ml-auto text-xs text-primary hover:underline">
+                  <Link
+                    to="/contracts/$id"
+                    params={{ id: c.amendmentId }}
+                    className="ml-auto text-xs text-primary hover:underline"
+                  >
                     {a?.number ?? a?.title ?? "Aditivo"}
                   </Link>
                 </li>

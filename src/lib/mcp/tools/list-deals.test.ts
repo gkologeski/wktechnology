@@ -236,7 +236,9 @@ async function startDisposablePostgres(): Promise<ReturnType<typeof postgres>> {
     });
   }
   const docker =
-    process.platform === "darwin" ? "/Applications/Docker.app/Contents/Resources/docker" : "docker";
+    process.platform === "darwin"
+      ? "/Applications/Docker.app/Contents/Resources/bin/docker"
+      : "docker";
   const host = execFileSync(
     docker,
     ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"],

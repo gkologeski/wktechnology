@@ -71,7 +71,7 @@ export async function withInboxAvailabilityLock(
  * notification fixture. Never call this against PG*, Supabase or a draft URL. */
 export async function setupInboxExecutionCopy(
   db: postgres.Sql,
-  options: { supabaseTableDefaults?: boolean } = {},
+  options: { supabaseTableDefaults?: boolean; keepAvailabilityLock?: boolean } = {},
 ) {
   // Identity, not a configurable URL: only the connection created by the
   // dedicated Docker fixture may ever reach the lock-free preparation.
@@ -348,7 +348,8 @@ export async function setupInboxExecutionCopy(
     await db.unsafe(
       readFileSync("drizzle/migrations/0452_inbox_channel_runtime_release.sql", "utf8"),
     );
-  else await db.unsafe("DROP TRIGGER inbox_runtime_release_guard ON public.workflows");
+  else if (!options.keepAvailabilityLock)
+    await db.unsafe("DROP TRIGGER inbox_runtime_release_guard ON public.workflows");
   assert.deepEqual(await authorizationSnapshot(db), before);
   // The regression fixture first measures the real pre-0459 exposure. Every
   // normal runtime fixture uses the final reviewed ACL before its tests run.

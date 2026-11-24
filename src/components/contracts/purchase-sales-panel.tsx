@@ -104,7 +104,11 @@ export function PurchaseSalesPanel({
                     {r.deal_id ? (
                       <>
                         {" · Negócio: "}
-                        <Link to="/deals/$id" params={{ id: r.deal_id }} className="hover:underline">
+                        <Link
+                          to="/deals/$id"
+                          params={{ id: r.deal_id }}
+                          className="hover:underline"
+                        >
                           {r.deal_title ?? "abrir"}
                         </Link>
                       </>

@@ -21,12 +21,12 @@ const STEPS = [
 // Shards validate all standard steps; only the final aggregator may certify complete.
 const shardInput = process.env.VERIFY_SHARD;
 const aggregateInput = process.env.VERIFY_AGGREGATE;
-if (shardInput !== undefined && !/^[12]\/2$/.test(shardInput))
-  throw new Error("VERIFY_SHARD must be 1/2 or 2/2");
+if (shardInput !== undefined && !/^[1-4]\/4$/.test(shardInput))
+  throw new Error("VERIFY_SHARD must be 1/4, 2/4, 3/4 or 4/4");
 if (aggregateInput !== undefined && aggregateInput !== "1")
   throw new Error("VERIFY_AGGREGATE must be 1");
 if (shardInput && aggregateInput) throw new Error("Shard and aggregate modes are exclusive");
-const shard = shardInput ? { index: Number(shardInput[0]), count: 2 } : null;
+const shard = shardInput ? { index: Number(shardInput[0]), count: 4 } : null;
 const identity = shard
   ? {
       shard,

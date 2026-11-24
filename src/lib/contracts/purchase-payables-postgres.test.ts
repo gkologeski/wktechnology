@@ -158,13 +158,13 @@ async function subject(
     if (error !== rollback) throw error;
   }
 }
-const two = JSON.stringify([
+const two = [
   { label: "Parcela 1", amount: 400, due_on: "2026-12-10" },
   { label: "Parcela 2", amount: 600, due_on: "2027-01-10" },
-]);
+];
 async function gen(tx: postgres.TransactionSql, id = C, list = two) {
   const [r] =
-    await tx`select contract_purchase_payables_generate(${id}::uuid, ${list}::jsonb) as r`;
+    await tx`select contract_purchase_payables_generate(${id}::uuid, ${tx.json(list)}::jsonb) as r`;
   return r.r as { generated: number; duplicate: boolean };
 }
 it("purchase payables SQL allows an authorized active member", async () => {
@@ -188,6 +188,14 @@ it("purchase payables SQL rejects inactive membership", async () => {
 it("purchase payables SQL requires signature, purchase role and exact total", async () => {
   await expect(subject(async (tx) => void (await gen(tx, S)))).rejects.toThrow(/assinado/);
   await expect(subject(async (tx) => void (await gen(tx, V)))).rejects.toThrow(/compra/);
-  const short = JSON.stringify([{ label: "x", amount: 999, due_on: "2026-12-10" }]);
+  const short = [{ label: "x", amount: 999, due_on: "2026-12-10" }];
   await expect(subject(async (tx) => void (await gen(tx, C, short)))).rejects.toThrow(/soma/);
+});
+
+it("purchase payables SQL rejects double-encoded installment payloads", async () => {
+  await expect(
+    subject(async (tx) => {
+      await tx`select contract_purchase_payables_generate(${C}::uuid, ${tx.json(JSON.stringify(two))}::jsonb)`;
+    }),
+  ).rejects.toThrow("Parcelas inválidas.");
 });

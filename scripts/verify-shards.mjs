@@ -38,10 +38,10 @@ export function currentCiCommit(head, eventSha) {
   return eventSha;
 }
 export function shardTestArgs(index) {
-  assert([1, 2].includes(index), "Expected shard 1 or 2");
+  assert([1, 2, 3, 4].includes(index), "Expected shard 1, 2, 3 or 4");
   return [
     "run",
-    `--shard=${index}/2`,
+    `--shard=${index}/4`,
     "--reporter=default",
     "--reporter=json",
     "--outputFile=.verification/test-results.json",
@@ -62,7 +62,7 @@ export function discoverTestFiles(root) {
 export function aggregate(parts, expected) {
   assert.equal(expected.shardJobResult, "success", "Every matrix job must succeed");
   assert.equal(expected.priorStepsOk, "true", "Every preceding final-job gate must succeed");
-  assert.equal(parts.length, 2, "Need both shard artifacts");
+  assert.equal(parts.length, 4, "Need all four shard artifacts");
   assert(/^[a-f0-9]{40}$/.test(expected.commit));
   assert(/^[a-f0-9]{64}$/.test(expected.sourceHash));
   assert(
@@ -89,8 +89,8 @@ export function aggregate(parts, expected) {
     assert.equal(report.source_hash, expected.sourceHash, "Stale/different source hash");
     assert.equal(report.run_id, expected.runId);
     assert.equal(report.run_attempt, expected.runAttempt);
-    assert.equal(report.shard?.count, 2);
-    assert([1, 2].includes(report.shard?.index));
+    assert.equal(report.shard?.count, 4);
+    assert([1, 2, 3, 4].includes(report.shard?.index));
     assert(!seenShards.has(report.shard.index), "Duplicate shard");
     seenShards.add(report.shard.index);
     assert.deepEqual(inventory(report.root, part.inventory), expectedInventory);
@@ -152,7 +152,7 @@ export function aggregate(parts, expected) {
     assert.equal(result.numPassedTests, assertions.length);
     allAssertions.push(...assertions);
   }
-  assert.deepEqual([...seenShards].sort(), [1, 2]);
+  assert.deepEqual([...seenShards].sort(), [1, 2, 3, 4]);
   assert.deepEqual(
     [...seenFiles].sort(),
     expectedInventory.map((item) => item.file).sort(),
@@ -177,7 +177,7 @@ export function aggregate(parts, expected) {
     source_changed: false,
     run_id: expected.runId,
     run_attempt: expected.runAttempt,
-    shard_count: 2,
+    shard_count: 4,
     test_files: seenFiles.size,
     passed_assertions: allAssertions.length,
     steps: parts.flatMap((part) =>
@@ -195,7 +195,7 @@ async function main() {
     const read = (path) => JSON.parse(readFileSync(path, "utf8"));
     const root = process.argv[2] ?? ".verification-parts";
     const dirs = readdirSync(root);
-    assert.equal(dirs.length, 2);
+    assert.equal(dirs.length, 4);
     const parts = dirs.map((dir) => ({
       verify: read(join(root, dir, "verify.json")),
       inventory: read(join(root, dir, "test-inventory.json")),

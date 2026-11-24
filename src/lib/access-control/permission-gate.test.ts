@@ -389,7 +389,7 @@ describe("mandatory permission impact gate", () => {
     );
     f.write("vitest.config.ts", 'const config={test:{include:["src/**/*.test.ts"]}};');
     expect(assertCiWiring(f.root)).toEqual([]);
-    // Reviewed two-shard exception keeps the required final job unconditional
+    // Reviewed four-shard exception keeps the required final job unconditional
     // and fails closed; it must not legalize arbitrary skipped/optional gates.
     const sharded = readFileSync(".github/workflows/ci.yml", "utf8");
     f.write(".github/workflows/ci.yml", sharded);
@@ -402,7 +402,7 @@ describe("mandatory permission impact gate", () => {
           "\n  e2e:\n",
           "\n  alternate:\n    name: Full verification and performance\n    runs-on: ubuntu-latest\n    steps: []\n\n  e2e:\n",
         ),
-      (source: string) => source.replace("shard: [1, 2]", "shard: [1]"),
+      (source: string) => source.replace("shard: [1, 2, 3, 4]", "shard: [1]"),
       (source: string) => source.replace("fail-fast: false", "fail-fast: true"),
       (source: string) => source.replace("if: ${{ always() }}", "if: ${{ success() }}"),
       (source: string) => source.replace('VERIFY_AGGREGATE: "1"', 'VERIFY_AGGREGATE: "0"'),
@@ -417,7 +417,7 @@ describe("mandatory permission impact gate", () => {
           "SHARD_JOB_RESULT: success",
         ),
       (source: string) =>
-        source.replace("VERIFY_SHARD: ${{ matrix.shard }}/2", "VERIFY_SHARD: 1/2"),
+        source.replace("VERIFY_SHARD: ${{ matrix.shard }}/4", "VERIFY_SHARD: 1/4"),
       (source: string) =>
         source.replace("fetch-depth: 0", "fetch-depth: 0\n          ref: refs/heads/other"),
       (source: string) =>

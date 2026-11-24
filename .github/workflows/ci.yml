@@ -15,14 +15,14 @@ permissions:
 
 jobs:
   verification_shards:
-    name: Verification shard ${{ matrix.shard }}/2
-    # Native Linux ARM64 matches the pinned database images validated locally.
-    runs-on: ubuntu-24.04-arm
+    name: Verification shard ${{ matrix.shard }}/4
+    # The pinned images support native amd64 and arm64; use the standard x86 pool.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -61,6 +61,7 @@ jobs:
         run: |
           docker pull postgres@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
           docker pull postgrest/postgrest@sha256:e9490aa503a5fb07d8e8c80da46e5c0c193894e583b59ed9077e74c4101ffae2
+          docker pull supabase/gotrue@sha256:1f378d415f670d59c7c2e52e244da6f0d486321998c6a6485e109efaeaba51ac
       - name: Report verification resources
         run: node -e 'const os=require("node:os"); console.log(JSON.stringify({cpus:os.availableParallelism(),arch:os.arch(),memoryMiB:Math.round(os.totalmem()/1048576)}))'
       - name: Inventory the complete configured test set (no test execution)
@@ -70,8 +71,8 @@ jobs:
         # Bound both runtimes while native types and disposable SQL suites overlap.
         env:
           GOMAXPROCS: "2"
-          VITEST_MAX_WORKERS: "4"
-          VERIFY_SHARD: ${{ matrix.shard }}/2
+          VITEST_MAX_WORKERS: "2"
+          VERIFY_SHARD: ${{ matrix.shard }}/4
       # Verified lint data remains useful when a later build/performance check fails.
       # Never cache release evidence, test outcomes or build outputs.
       - name: Save verified content-based lint results
@@ -90,7 +91,7 @@ jobs:
 
   unit:
     name: Full verification and performance
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     needs: verification_shards
     if: ${{ always() }}
@@ -118,7 +119,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Permission contracts and denial evidence
         run: bun run permissions:check
-      - name: Download both current-run shard proofs
+      - name: Download all current-run shard proofs
         uses: actions/download-artifact@v4
         with:
           pattern: verification-shard-${{ github.run_id }}-${{ github.run_attempt }}-*

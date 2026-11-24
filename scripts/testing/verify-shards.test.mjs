@@ -6,6 +6,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -13,10 +14,10 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { aggregate, currentCiCommit, discoverTestFiles, shardTestArgs } from "../verify-shards.mjs";
+import { sourceFingerprint } from "../perf/source-fingerprint.mjs";
 
-function fixture() {
-  const now = Date.now(),
-    root = "/ci/workspace";
+function fixture(root = "/ci/workspace") {
+  const now = Date.now();
   const inventory = Array.from({ length: 608 }, (_, index) => ({
     file: `${root}/src/synthetic-${index}.test.ts`,
     projectName: index === 607 ? "process-timezone" : "isolated",
@@ -64,8 +65,8 @@ function fixture() {
       failureMessages: [],
     })),
   }));
-  const parts = [1, 2].map((index) => {
-    const testResults = files.slice((index - 1) * 304, index * 304);
+  const parts = [1, 2, 3, 4].map((index) => {
+    const testResults = files.slice((index - 1) * 152, index * 152);
     const count = testResults.reduce((sum, file) => sum + file.assertionResults.length, 0);
     return {
       inventory,
@@ -79,7 +80,7 @@ function fixture() {
         run_id: expected.runId,
         run_attempt: expected.runAttempt,
         root,
-        shard: { index, count: 2 },
+        shard: { index, count: 4 },
         started_at: iso(now - 210000),
         finished_at: iso(now - 1000),
         duration_ms: 209000,
@@ -100,13 +101,69 @@ function fixture() {
   });
   return { parts, expected };
 }
-test("two complete parts certify all 608 unique files and 6691 passed assertions within global wall time", () => {
+test("four complete parts certify all 608 unique files and 6691 passed assertions within global wall time", () => {
   const { parts, expected } = fixture();
   const result = aggregate(parts, expected);
   assert.equal(result.complete, true);
   assert.equal(result.test_files, 608);
   assert.equal(result.passed_assertions, 6691);
   assert.equal(result.duration_ms, 200000);
+});
+test("aggregate CLI loads all four artifact directories and rejects a missing directory", async () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "verify-aggregate-cli-")));
+  const put = (path, text) => {
+    mkdirSync(join(root, path, ".."), { recursive: true });
+    writeFileSync(join(root, path), text, { mode: 0o700 });
+  };
+  try {
+    put("package.json", '{"type":"module"}');
+    for (const path of [
+      "scripts/verify-shards.mjs",
+      "scripts/perf/source-fingerprint.mjs",
+      "src/lib/performance/budgets.ts",
+    ])
+      put(path, readFileSync(path, "utf8"));
+    const { parts, expected } = fixture(root);
+    for (const item of expected.inventory) writeFileSync(item.file, "// synthetic test inventory");
+    put("bin/git", `#!${process.execPath}\nprocess.stdout.write('${expected.commit}')`);
+    const hash = sourceFingerprint(root);
+    put(".verification/test-inventory.json", JSON.stringify(expected.inventory));
+    for (const part of parts) {
+      part.verify.source_hash = hash;
+      const directory = `.verification-parts/shard-${part.verify.shard.index}`;
+      put(`${directory}/verify.json`, JSON.stringify(part.verify));
+      put(`${directory}/test-inventory.json`, JSON.stringify(part.inventory));
+      put(`${directory}/test-results.json`, JSON.stringify(part.tests));
+    }
+    const run = () =>
+      new Promise((resolve, reject) => {
+        const child = spawn(process.execPath, ["scripts/verify-shards.mjs"], {
+          cwd: root,
+          env: {
+            ...process.env,
+            PATH: `${join(root, "bin")}:${process.env.PATH}`,
+            GITHUB_SHA: expected.commit,
+            GITHUB_RUN_ID: expected.runId,
+            GITHUB_RUN_ATTEMPT: expected.runAttempt,
+            SHARD_JOB_RESULT: "success",
+            VERIFY_PREVIOUS_STEPS_OK: "true",
+          },
+          stdio: "ignore",
+        });
+        child.once("error", reject);
+        child.once("close", resolve);
+      });
+    assert.equal(await run(), 0, readFileSync(join(root, ".verification/verify.json"), "utf8"));
+    const report = () => JSON.parse(readFileSync(join(root, ".verification/verify.json"), "utf8"));
+    assert.equal(report().complete, true);
+    assert.equal(report().shard_count, 4);
+    assert.equal(report().test_files, 608);
+    rmSync(join(root, ".verification-parts/shard-4"), { recursive: true });
+    assert.equal(await run(), 1);
+    assert.equal(report().complete, false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 test("legitimate new files/cases are accepted without a manual count baseline", () => {
   const { parts, expected } = fixture();
@@ -159,6 +216,10 @@ for (const extra of [
   });
 const negatives = {
   "missing shard": (p) => p.pop(),
+  "legacy two-part evidence": (p) => p.splice(2),
+  "extra shard": (p) => p.push(structuredClone(p[0])),
+  "legacy shard denominator": (p) => (p[0].verify.shard.count = 2),
+  "out-of-range shard": (p) => (p[3].verify.shard.index = 5),
   "duplicate shard": (p) => (p[1].verify.shard.index = 1),
   "duplicate executed file": (p) =>
     (p[1].tests.testResults[0].name = p[0].tests.testResults[0].name),
@@ -269,7 +330,7 @@ async function runVerify(mode) {
         ...process.env,
         PATH: `${join(root, "node_modules/.bin")}:${process.env.PATH}`,
         MODE: mode,
-        VERIFY_SHARD: "1/2",
+        VERIFY_SHARD: "1/4",
         VERIFY_AGGREGATE: undefined,
         GITHUB_SHA: "a".repeat(40),
         GITHUB_RUN_ID: "123456",
@@ -306,7 +367,7 @@ test("shard subprocess emits only partial proof, runs every step after permissio
   assert(
     result.events.every((event) => event.shard === undefined && event.aggregate === undefined),
   );
-  assert(result.events.find((event) => event.name === "vitest").args.includes("--shard=1/2"));
+  assert(result.events.find((event) => event.name === "vitest").args.includes("--shard=1/4"));
 });
 test("shard permission failure starts no downstream validators and leaves complete false", async () => {
   const result = await runVerify("permission-failure");
