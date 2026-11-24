@@ -15,7 +15,7 @@ const workflow = () => load(readFileSync(".github/workflows/ci.yml", "utf8"));
 describe("CI acceleration keeps the release gate", () => {
   it("prepares only locked database dependencies before full verification", () => {
     const job = workflow().jobs.verification_shards;
-    expect(job.strategy.matrix.shard).toEqual([1, 2]);
+    expect(job.strategy.matrix.shard).toEqual([1, 2, 3, 4]);
     expect(job.strategy["fail-fast"]).toBe(false);
     const steps = job.steps;
     const image = readFileSync("src/lib/contracts/legacy-postgres.test.ts", "utf8").match(

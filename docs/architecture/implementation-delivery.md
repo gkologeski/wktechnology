@@ -49,6 +49,7 @@ Comparação inicial com três execuções por comando: nativo sem cache 17,6–
 - Cache apenas de downloads Bun (sistema, arquitetura, versão e lock) e de lint por conteúdo (lock/configuração/regras e commit).
 - Instalação com lock congelado, permissões, checagem completa, todos os testes, build e limites de performance continuam incondicionais. Nenhum cache de resultado de autorização, `.verification/`, testes ou build é restaurado.
 - Token da CI somente com leitura de conteúdo e checkout sem persistir credenciais. Não foi criado token adicional.
+- A suíte integral é distribuída em quatro shards, com dois workers de testes por executor, junto da checagem completa de tipos. O agregador exige exatamente as quatro partes do mesmo commit, hash, execução e tentativa; compara todos os arquivos com o inventário independente e mantém zero casos pendentes e o limite global de 240 segundos, incluindo espera entre executores e transporte dos artefatos. Evidência antiga de duas partes não certifica a entrega.
 
 ### Transporte e comprovação da publicação (etapa 4)
 

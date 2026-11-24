@@ -665,13 +665,13 @@ export function assertCiWiring(root: string): Finding[] {
       shardJob.if !== undefined ||
       shardJob["continue-on-error"] ||
       strategy?.["fail-fast"] !== false ||
-      JSON.stringify(strategy.matrix) !== JSON.stringify({ shard: [1, 2] }) ||
+      JSON.stringify(strategy.matrix) !== JSON.stringify({ shard: [1, 2, 3, 4] }) ||
       shardVerify < 0 ||
       shardSteps.filter((step) => step.run === "bun run verify").length !== 1 ||
-      shardEnv?.VERIFY_SHARD !== "${{ matrix.shard }}/2" ||
+      shardEnv?.VERIFY_SHARD !== "${{ matrix.shard }}/4" ||
       shardEnv.VERIFY_AGGREGATE !== undefined ||
       shardEnv.GOMAXPROCS !== "2" ||
-      shardEnv.VITEST_MAX_WORKERS !== "4" ||
+      shardEnv.VITEST_MAX_WORKERS !== "2" ||
       !shardCheckout ||
       shardCheckoutWith?.["fetch-depth"] !== 0 ||
       [shardCheckoutWith, checkoutWith].some(

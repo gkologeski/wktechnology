@@ -64,8 +64,8 @@ function fixture() {
       failureMessages: [],
     })),
   }));
-  const parts = [1, 2].map((index) => {
-    const testResults = files.slice((index - 1) * 304, index * 304);
+  const parts = [1, 2, 3, 4].map((index) => {
+    const testResults = files.slice((index - 1) * 152, index * 152);
     const count = testResults.reduce((sum, file) => sum + file.assertionResults.length, 0);
     return {
       inventory,
@@ -79,7 +79,7 @@ function fixture() {
         run_id: expected.runId,
         run_attempt: expected.runAttempt,
         root,
-        shard: { index, count: 2 },
+        shard: { index, count: 4 },
         started_at: iso(now - 210000),
         finished_at: iso(now - 1000),
         duration_ms: 209000,
@@ -100,7 +100,7 @@ function fixture() {
   });
   return { parts, expected };
 }
-test("two complete parts certify all 608 unique files and 6691 passed assertions within global wall time", () => {
+test("four complete parts certify all 608 unique files and 6691 passed assertions within global wall time", () => {
   const { parts, expected } = fixture();
   const result = aggregate(parts, expected);
   assert.equal(result.complete, true);
@@ -159,6 +159,10 @@ for (const extra of [
   });
 const negatives = {
   "missing shard": (p) => p.pop(),
+  "legacy two-part evidence": (p) => p.splice(2),
+  "extra shard": (p) => p.push(structuredClone(p[0])),
+  "legacy shard denominator": (p) => (p[0].verify.shard.count = 2),
+  "out-of-range shard": (p) => (p[3].verify.shard.index = 5),
   "duplicate shard": (p) => (p[1].verify.shard.index = 1),
   "duplicate executed file": (p) =>
     (p[1].tests.testResults[0].name = p[0].tests.testResults[0].name),
@@ -269,7 +273,7 @@ async function runVerify(mode) {
         ...process.env,
         PATH: `${join(root, "node_modules/.bin")}:${process.env.PATH}`,
         MODE: mode,
-        VERIFY_SHARD: "1/2",
+        VERIFY_SHARD: "1/4",
         VERIFY_AGGREGATE: undefined,
         GITHUB_SHA: "a".repeat(40),
         GITHUB_RUN_ID: "123456",
@@ -306,7 +310,7 @@ test("shard subprocess emits only partial proof, runs every step after permissio
   assert(
     result.events.every((event) => event.shard === undefined && event.aggregate === undefined),
   );
-  assert(result.events.find((event) => event.name === "vitest").args.includes("--shard=1/2"));
+  assert(result.events.find((event) => event.name === "vitest").args.includes("--shard=1/4"));
 });
 test("shard permission failure starts no downstream validators and leaves complete false", async () => {
   const result = await runVerify("permission-failure");

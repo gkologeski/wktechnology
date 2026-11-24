@@ -15,14 +15,14 @@ permissions:
 
 jobs:
   verification_shards:
-    name: Verification shard ${{ matrix.shard }}/2
+    name: Verification shard ${{ matrix.shard }}/4
     # The pinned images support native amd64 and arm64; use the standard x86 pool.
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -71,8 +71,8 @@ jobs:
         # Bound both runtimes while native types and disposable SQL suites overlap.
         env:
           GOMAXPROCS: "2"
-          VITEST_MAX_WORKERS: "4"
-          VERIFY_SHARD: ${{ matrix.shard }}/2
+          VITEST_MAX_WORKERS: "2"
+          VERIFY_SHARD: ${{ matrix.shard }}/4
       # Verified lint data remains useful when a later build/performance check fails.
       # Never cache release evidence, test outcomes or build outputs.
       - name: Save verified content-based lint results
@@ -119,7 +119,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Permission contracts and denial evidence
         run: bun run permissions:check
-      - name: Download both current-run shard proofs
+      - name: Download all current-run shard proofs
         uses: actions/download-artifact@v4
         with:
           pattern: verification-shard-${{ github.run_id }}-${{ github.run_attempt }}-*
