@@ -26,12 +26,17 @@ describe("CI acceleration keeps the release gate", () => {
       /const postgrestImage\s*=\s*"([^"]+)"/,
     )?.[1];
     expect(gatewayImage).toMatch(/^postgrest\/postgrest@sha256:[a-f0-9]{64}$/);
+    const authImage = readFileSync("tests/fixtures/inbox/backend-regression.ts", "utf8").match(
+      /const image\s*=\s*"([^"]+)"/,
+    )?.[1];
+    expect(authImage).toMatch(/^supabase\/gotrue@sha256:[a-f0-9]{64}$/);
     const prepare = steps.find(
       (s: { name?: string }) => s.name === "Prepare pinned database test images",
     );
     expect(prepare.run.trim().split("\n")).toEqual([
       `docker pull ${image}`,
       `docker pull ${gatewayImage}`,
+      `docker pull ${authImage}`,
     ]);
     expect(prepare.if).toBeUndefined();
     expect(prepare["continue-on-error"]).toBeUndefined();
