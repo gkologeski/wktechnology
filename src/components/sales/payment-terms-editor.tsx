@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { SectionHeader } from "@/components/techhire/ui";
 import { Button } from "@/components/ui/button";
@@ -16,11 +16,15 @@ import {
 import {
   buildPaymentSchedule,
   CONTRACT_TERM_MONTH_SHORTCUTS,
+  coversFullTotal,
   DEFAULT_CONTRACT_TERM,
   recurringTotal,
   downPaymentAmount,
   downPaymentDueOf,
+  normalizePaymentTerms,
   validatePaymentTerms,
+  type DownPayment,
+  type InstallmentPlan,
   type PaymentTerms,
 } from "@/lib/sales/payment-terms";
 import { formatCurrency } from "@/lib/crm";
@@ -52,6 +56,11 @@ type Props = {
  * CONDICOES-PAGAMENTO: editor das condições de pagamento (entrada + saldo).
  * Componente controlado: não lê nem grava nada, só mostra as parcelas previstas.
  */
+const DEFAULT_BALANCE_PLAN: Exclude<InstallmentPlan, { kind: "none" }> = {
+  kind: "milestones",
+  milestones: [{ label: "Entrega final", percent: 100 }],
+};
+
 export function PaymentTermsEditor({
   terms,
   onChange,
@@ -62,6 +71,34 @@ export function PaymentTermsEditor({
 }: Props) {
   const plan = terms.plan;
   const dp = terms.downPayment;
+  const fullDownPayment = coversFullTotal(dp, total);
+  const lastBalancePlanRef = useRef<Exclude<InstallmentPlan, { kind: "none" }>>(
+    plan.kind !== "none" ? plan : DEFAULT_BALANCE_PLAN,
+  );
+  if (plan.kind !== "none") {
+    lastBalancePlanRef.current = plan;
+  }
+
+  useEffect(() => {
+    if (fullDownPayment && plan.kind !== "none") {
+      onChange(normalizePaymentTerms(terms, total));
+    } else if (!fullDownPayment && plan.kind === "none") {
+      onChange({ ...terms, plan: lastBalancePlanRef.current });
+    }
+  }, [fullDownPayment, plan.kind, terms, total, onChange]);
+
+  const updateDownPayment = (nextDp: DownPayment) => {
+    if (coversFullTotal(nextDp, total)) {
+      onChange(normalizePaymentTerms({ ...terms, downPayment: nextDp }, total));
+      return;
+    }
+    onChange({
+      ...terms,
+      downPayment: nextDp,
+      plan: plan.kind === "none" ? lastBalancePlanRef.current : plan,
+    });
+  };
+
   const errors = validatePaymentTerms(terms, total);
   const schedule = useMemo(
     () => (errors.length ? [] : buildPaymentSchedule(terms, total, new Date())),
@@ -106,13 +143,11 @@ export function PaymentTermsEditor({
             aria-label="Tipo de entrada"
             onValueChange={(k) =>
               k &&
-              onChange({
-                ...terms,
-                downPayment:
-                  k === "none"
-                    ? { kind: "none" }
-                    : { kind: k as "amount" | "percent", value: k === "percent" ? 30 : 10000 },
-              })
+              updateDownPayment(
+                k === "none"
+                  ? { kind: "none" }
+                  : { kind: k as "amount" | "percent", value: k === "percent" ? 30 : 10000 },
+              )
             }
           >
             <ToggleGroupItem value="none">Sem entrada</ToggleGroupItem>
@@ -127,9 +162,7 @@ export function PaymentTermsEditor({
                 type="number"
                 className="w-40"
                 value={dp.value}
-                onChange={(e) =>
-                  onChange({ ...terms, downPayment: { kind: dp.kind, value: num(e.target.value) } })
-                }
+                onChange={(e) => updateDownPayment({ kind: dp.kind, value: num(e.target.value) })}
               />
               <span className="text-sm text-muted-foreground">
                 {dp.kind === "percent"
@@ -179,16 +212,27 @@ export function PaymentTermsEditor({
             type="single"
             variant="outline"
             className="justify-start flex-wrap"
-            value={plan.kind}
+            value={fullDownPayment || plan.kind === "none" ? "" : plan.kind}
             aria-label="Forma do saldo"
-            onValueChange={setPlanKind}
+            disabled={fullDownPayment}
+            onValueChange={(k) => {
+              if (!fullDownPayment) setPlanKind(k);
+            }}
           >
             <ToggleGroupItem value="monthly">Mensal</ToggleGroupItem>
             <ToggleGroupItem value="periodic">Parcelas periódicas</ToggleGroupItem>
             <ToggleGroupItem value="milestones">Por entregas/marcos</ToggleGroupItem>
             <ToggleGroupItem value="fixed_date">Em uma data</ToggleGroupItem>
           </ToggleGroup>
-          {plan.kind === "fixed_date" && (
+          {fullDownPayment && (
+            <p
+              role="status"
+              className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground"
+            >
+              Sem saldo: a entrada cobre 100% do total.
+            </p>
+          )}
+          {!fullDownPayment && plan.kind === "fixed_date" && (
             <IsoDatePicker
               ariaLabel="Data de vencimento do saldo"
               className="w-48"
@@ -197,7 +241,7 @@ export function PaymentTermsEditor({
             />
           )}
 
-          {plan.kind === "monthly" && (
+          {!fullDownPayment && plan.kind === "monthly" && (
             <ContractTermBlock
               terms={terms}
               currency={currency}
@@ -209,7 +253,7 @@ export function PaymentTermsEditor({
               }}
             />
           )}
-          {plan.kind === "monthly" && (
+          {!fullDownPayment && plan.kind === "monthly" && (
             <div className="grid grid-cols-2 gap-3">
               <Field
                 label="Mensalidades"
@@ -228,7 +272,7 @@ export function PaymentTermsEditor({
               />
             </div>
           )}
-          {plan.kind === "periodic" && (
+          {!fullDownPayment && plan.kind === "periodic" && (
             <div className="grid grid-cols-3 gap-3">
               <Field
                 label="Parcelas"
@@ -247,7 +291,7 @@ export function PaymentTermsEditor({
               />
             </div>
           )}
-          {plan.kind === "milestones" && (
+          {!fullDownPayment && plan.kind === "milestones" && (
             <div className="flex flex-col gap-2">
               {plan.milestones.map((m, i) => (
                 <div key={i} className="flex items-center gap-2">

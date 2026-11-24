@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 205
-version: 4
+version: 5
 is_published: true
 ---
 # Definir as condições de pagamento da cotação
@@ -22,7 +22,7 @@ is_published: true
 2. Avance até a etapa "Condições de pagamento". A sugestão inicial vem do tipo dos itens: outsourcing fica mensal; consultoria e fábrica de software ficam com entrada e entrega final.
 3. Em "Entrada", escolha "Sem entrada", "% do total" ou "Valor em R$" e informe o número.
 4. Em "Vencimento da entrada", escolha "Na assinatura do contrato" ou "Em uma data" e selecione o dia.
-5. Em "Saldo", escolha "Mensal" (meses e dia de vencimento), "Parcelas periódicas" (quantidade, intervalo em meses e dia) ou "Por entregas/marcos" (nome e % de cada marco; os marcos somam 100% do saldo) ou "Em uma data" (o saldo inteiro vence em parcela única na data escolhida, que não pode ser anterior à entrada).
+5. Em "Saldo", escolha "Mensal" (meses e dia de vencimento), "Parcelas periódicas" (quantidade, intervalo em meses e dia) ou "Por entregas/marcos" (nome e % de cada marco; os marcos somam 100% do saldo) ou "Em uma data" (o saldo inteiro vence em parcela única na data escolhida, que não pode ser anterior à entrada). Quando a entrada for de 100% (ou igual ao total em R$), o bloco **Saldo** fica desativado sem saldo configurado.
 6. Confira a tabela "Parcelas previstas" e clique em "Avançar" para gravar.
 7. Ao gerar a proposta, o assistente já abre com as mesmas condições; ajuste se a negociação mudou. O bloco "Condições comerciais" do texto e o PDF mostram entrada, saldo e vencimentos.
 8. Ao gerar o contrato da proposta, a ficha mostra o cartão "Condições de pagamento" com o cronograma previsto.
@@ -32,6 +32,7 @@ is_published: true
 A cotação, a proposta e o contrato mostram as mesmas condições, e as contas a receber aparecem no TechFinance logo após ativar o serviço.
 
 ## Regras e limites
+- Entrada de 100% (ou valor igual ao total): não pode haver saldo configurado; apenas a parcela de entrada é gerada. Se reduzir a entrada abaixo de 100%, o bloco Saldo volta a ficar disponível.
 - Entrada na assinatura: antes de assinar, a conta nasce com a data de ativação e a observação "Vence na assinatura do contrato"; se o contrato já estiver assinado, usa a data da assinatura.
 - Marcos não têm data: a conta nasce com a data de ativação e a observação "Vence na entrega do marco"; ajuste a data no TechFinance quando o marco for entregue.
 - Mensalidades e parcelas começam no mês seguinte quando há entrada.
@@ -44,6 +45,7 @@ A cotação, a proposta e o contrato mostram as mesmas condições, e as contas 
 - "Escolha a data de vencimento do saldo.": selecione o dia do saldo.
 - "O saldo não pode vencer antes da entrada.": escolha uma data igual ou posterior à da entrada.
 - "Os marcos devem somar 100% do saldo.": ajuste os percentuais.
+- "Quando a entrada cobre 100% do total, não pode haver saldo configurado.": remova o saldo ou reduza a entrada.
 - "Todo marco precisa de nome.": preencha o nome do marco.
 - "As parcelas não fecham com o valor do contrato.": o valor do contrato mudou depois da proposta; ajuste o valor ou as condições.
 - "Sem permissão para gerar lançamentos financeiros.": peça a permissão de criar lançamentos no TechFinance.

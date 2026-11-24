@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { buildPaymentSchedule, suggestPaymentTerms, validatePaymentTerms } from "./payment-terms";
+import {
+  buildPaymentSchedule,
+  describePaymentTerms,
+  FULL_DOWN_PAYMENT_BALANCE_ERROR,
+  normalizePaymentTerms,
+  parsePaymentTerms,
+  paymentTermsSchema,
+  suggestPaymentTerms,
+  validatePaymentTerms,
+  type PaymentTerms,
+} from "./payment-terms";
 
 const start = new Date(Date.UTC(2026, 10, 10));
 
@@ -116,5 +126,60 @@ describe("SALDO-DATA-FIXA", () => {
     expect(
       validatePaymentTerms({ ...base, plan: { kind: "fixed_date", date: "2026-12-01" } }, 100),
     ).toContain("O saldo não pode vencer antes da entrada.");
+  });
+});
+
+describe("entrada 100% sem saldo", () => {
+  it("entrada de 100% com plan none é válida e gera apenas a parcela da entrada", () => {
+    const terms: PaymentTerms = {
+      downPayment: { kind: "percent", value: 100 },
+      plan: { kind: "none" },
+    };
+    expect(validatePaymentTerms(terms, 4500)).toEqual([]);
+    const schedule = buildPaymentSchedule(terms, 4500, start);
+    expect(schedule).toEqual([
+      { sequence: 1, label: "Entrada", amount: 4500, dueDate: null, dueEvent: "signature" },
+    ]);
+    expect(describePaymentTerms(terms)).toContain("sem saldo");
+  });
+
+  it("entrada de 100% recusa saldo configurado na validação e no schema", () => {
+    const invalid: PaymentTerms = {
+      downPayment: { kind: "percent", value: 100 },
+      plan: { kind: "milestones", milestones: [{ label: "Entrega final", percent: 100 }] },
+    };
+    expect(validatePaymentTerms(invalid, 4500)).toContain(FULL_DOWN_PAYMENT_BALANCE_ERROR);
+    expect(paymentTermsSchema.safeParse(invalid).success).toBe(false);
+  });
+
+  it("entrada em R$ igual ao total exige plan none e recusa saldo", () => {
+    const invalid: PaymentTerms = {
+      downPayment: { kind: "amount", value: 4500 },
+      plan: { kind: "periodic", count: 2, intervalMonths: 1, dueDay: 10 },
+    };
+    expect(validatePaymentTerms(invalid, 4500)).toContain(FULL_DOWN_PAYMENT_BALANCE_ERROR);
+    const normalized = normalizePaymentTerms(invalid, 4500);
+    expect(normalized.plan).toEqual({ kind: "none" });
+    expect(validatePaymentTerms(normalized, 4500)).toEqual([]);
+  });
+
+  it("entrada de 99% exige forma de saldo (recusa plan none)", () => {
+    expect(
+      validatePaymentTerms(
+        { downPayment: { kind: "percent", value: 99 }, plan: { kind: "none" } },
+        4500,
+      ),
+    ).toContain("Informe como o saldo será pago.");
+  });
+
+  it("leitura de registro antigo com entrada 100% e marcos normaliza para sem saldo", () => {
+    const parsed = parsePaymentTerms({
+      downPayment: { kind: "percent", value: 100 },
+      plan: { kind: "milestones", milestones: [{ label: "Entrega final", percent: 100 }] },
+    });
+    expect(parsed).toEqual({
+      downPayment: { kind: "percent", value: 100 },
+      plan: { kind: "none" },
+    });
   });
 });

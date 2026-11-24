@@ -17,21 +17,26 @@ import { lineTotal, n, type LineItem } from "./use-line-items";
 
 export function LineItemCard({
   item: li,
+  savedItem,
   currency,
   onUpdate,
   onRemove,
   onDirty,
+  onDraftChange,
   autoFocusPreset,
   onPresetFocused,
 }: {
   item: LineItem;
+  savedItem?: LineItem;
   currency: string;
   onUpdate: (patch: Partial<LineItem>) => void;
   onRemove: () => void;
   onDirty?: () => void;
+  onDraftChange?: (patch: Partial<LineItem>) => void;
   autoFocusPreset?: boolean;
   onPresetFocused?: () => void;
 }) {
+  const saved = savedItem ?? li;
   const model = isBillingModel(li.billing_model) ? li.billing_model : "per_unit";
   const quantityEnabled = usesQuantity(model);
   const priceLabel =
@@ -43,10 +48,12 @@ export function LineItemCard({
         <TextField
           className="flex-1"
           value={li.name ?? ""}
+          committedValue={saved.name ?? ""}
           placeholder="Nome do item"
           onDirty={onDirty}
+          onDraftChange={(v) => onDraftChange?.({ name: v })}
           onCommit={(v) => {
-            if (v !== (li.name ?? "")) onUpdate({ name: v });
+            if (v !== (saved.name ?? "")) onUpdate({ name: v });
           }}
         />
         <Button variant="ghost" size="icon" onClick={onRemove} aria-label="Remover item">
@@ -124,15 +131,24 @@ export function LineItemCard({
         </div>
       )}
 
-      <LineItemBillingFields item={li} currency={currency} onUpdate={onUpdate} onDirty={onDirty} />
+      <LineItemBillingFields
+        item={li}
+        savedItem={saved}
+        currency={currency}
+        onUpdate={onUpdate}
+        onDirty={onDirty}
+        onDraftChange={onDraftChange}
+      />
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <LabeledNumber
           label="Qtd"
           value={n(li.quantity)}
+          committedValue={n(saved.quantity)}
           step="0.01"
           disabled={!quantityEnabled}
           onDirty={onDirty}
+          onDraftChange={(v) => onDraftChange?.({ quantity: v })}
           onCommit={(v) => onUpdate({ quantity: v })}
         />
         <div className="space-y-1">
@@ -143,6 +159,11 @@ export function LineItemCard({
             aria-label={priceLabel}
             currency={currency}
             value={n(li.unit_price)}
+            committedValue={n(saved.unit_price)}
+            onDraftChange={(v) => {
+              onDirty?.();
+              onDraftChange?.({ unit_price: v ?? 0 });
+            }}
             onCommit={(v) => onUpdate({ unit_price: v ?? 0 })}
           />
         </div>
@@ -151,6 +172,11 @@ export function LineItemCard({
           discountType={(li.discount_type ?? "pct") as "pct" | "amount"}
           discountPct={n(li.discount_pct)}
           discountAmount={n(li.discount_amount)}
+          committedPct={n(saved.discount_pct)}
+          committedAmount={n(saved.discount_amount)}
+          onDirty={onDirty}
+          onDraftPct={(v) => onDraftChange?.({ discount_pct: v })}
+          onDraftAmount={(v) => onDraftChange?.({ discount_amount: v })}
           onChangeType={(type) =>
             onUpdate(
               type === "pct"
@@ -164,8 +190,10 @@ export function LineItemCard({
         <LabeledNumber
           label="Imp %"
           value={n(li.tax_rate)}
+          committedValue={n(saved.tax_rate)}
           step="0.01"
           onDirty={onDirty}
+          onDraftChange={(v) => onDraftChange?.({ tax_rate: v })}
           onCommit={(v) => onUpdate({ tax_rate: v })}
         />
       </div>

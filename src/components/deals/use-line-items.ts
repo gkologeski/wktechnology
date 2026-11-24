@@ -3,7 +3,7 @@ import { updateLineItemGuarded, type LineItemUpdateClient } from "@/lib/deals/li
 // Estado e persistência dos itens de linha do negócio: autosave por campo,
 // pilha de desfazer, indicador de "salvando/salvo/não salvo" e criação de itens
 // a partir do catálogo (com preset e modelo de cobrança).
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -25,6 +25,18 @@ import {
   pushHistory,
   type HistoryEntry,
 } from "./line-items-history";
+import {
+  clearItemDraft,
+  getBrowserStorage,
+  hasDraftEntries,
+  mergeItemWithDraft,
+  readLineItemDrafts,
+  reconcileDraftsWithItems,
+  setItemDraftField,
+  writeLineItemDrafts,
+  type LineItemDraftMap,
+  type LineItemDraftPatch,
+} from "@/lib/deals/line-item-draft";
 
 export type DiscountType = "pct" | "amount";
 
@@ -168,6 +180,40 @@ export function useLineItemsEditor(dealId: string) {
   const [history, setHistory] = useState<HistoryEntry<LineItem>[]>([]);
   const [status, setStatus] = useState<SaveStatus>("idle");
   const inflight = useRef(0);
+  const inflightPromises = useRef(new Set<Promise<boolean>>());
+  const [drafts, setDrafts] = useState<LineItemDraftMap>({});
+  const draftsRef = useRef<LineItemDraftMap>({});
+  const [restoredDraft, setRestoredDraft] = useState(false);
+  const hydratedKeyRef = useRef<string | null>(null);
+
+  const commitDraftState = useCallback(
+    (updater: (prev: LineItemDraftMap) => LineItemDraftMap) => {
+      const next = updater(draftsRef.current);
+      draftsRef.current = next;
+      setDrafts(next);
+      writeLineItemDrafts(getBrowserStorage(), currentUserId, dealId, next);
+      return next;
+    },
+    [currentUserId, dealId],
+  );
+
+  useEffect(() => {
+    if (!currentUserId || isLoading) return;
+    const key = `${currentUserId}:${dealId}`;
+    if (hydratedKeyRef.current === key) return;
+    hydratedKeyRef.current = key;
+    const stored = readLineItemDrafts(getBrowserStorage(), currentUserId, dealId);
+    const reconciled = reconcileDraftsWithItems(stored, items);
+    draftsRef.current = reconciled;
+    setDrafts(reconciled);
+    writeLineItemDrafts(getBrowserStorage(), currentUserId, dealId, reconciled);
+    if (hasDraftEntries(reconciled)) {
+      setRestoredDraft(true);
+      setStatus("dirty");
+    } else {
+      setRestoredDraft(false);
+    }
+  }, [currentUserId, dealId, isLoading, items]);
 
   const { data: dealScope } = useQuery({
     queryKey: ["deal_scope", dealId],
@@ -188,12 +234,30 @@ export function useLineItemsEditor(dealId: string) {
   }, []);
   const end = useCallback(() => {
     inflight.current = Math.max(0, inflight.current - 1);
-    if (inflight.current === 0) setStatus("saved");
+    if (inflight.current === 0) {
+      setStatus(hasDraftEntries(draftsRef.current) ? "dirty" : "saved");
+    }
   }, []);
 
   const markDirty = useCallback(() => {
     if (inflight.current === 0) setStatus("dirty");
   }, []);
+
+  const recordDraft = useCallback(
+    (id: string, patch: Partial<LineItem>) => {
+      commitDraftState((prev) => setItemDraftField(prev, id, patch as LineItemDraftPatch));
+      markDirty();
+    },
+    [commitDraftState, markDirty],
+  );
+
+  const discardDraft = useCallback(() => {
+    draftsRef.current = {};
+    setDrafts({});
+    setRestoredDraft(false);
+    writeLineItemDrafts(getBrowserStorage(), currentUserId, dealId, {});
+    if (inflight.current === 0) setStatus("idle");
+  }, [currentUserId, dealId]);
 
   function baseInsertScope() {
     if (!currentUserId) {
@@ -345,23 +409,33 @@ export function useLineItemsEditor(dealId: string) {
     const values = persistableFields(patch as Record<string, unknown>);
     if (Object.keys(values).length === 0) return true;
     begin();
-    try {
-      const result = await updateLineItemGuarded(
-        supabase as unknown as LineItemUpdateClient,
-        id,
-        values,
-      );
-      if (!result.ok) {
-        qc.setQueryData(lineItemsQueryKey(dealId), previous);
-        refreshItems();
-        toast.error(result.message);
-        return false;
+    const run = (async () => {
+      try {
+        const result = await updateLineItemGuarded(
+          supabase as unknown as LineItemUpdateClient,
+          id,
+          values,
+        );
+        if (!result.ok) {
+          qc.setQueryData(lineItemsQueryKey(dealId), previous);
+          refreshItems();
+          toast.error(result.message);
+          return false;
+        }
+        const nextDrafts = clearItemDraft(draftsRef.current, id, patch as LineItemDraftPatch);
+        draftsRef.current = nextDrafts;
+        setDrafts(nextDrafts);
+        writeLineItemDrafts(getBrowserStorage(), currentUserId, dealId, nextDrafts);
+        if (!hasDraftEntries(nextDrafts)) setRestoredDraft(false);
+        notifyDealsChanged();
+        return true;
+      } finally {
+        end();
       }
-      notifyDealsChanged();
-      return true;
-    } finally {
-      end();
-    }
+    })();
+    inflightPromises.current.add(run);
+    void run.finally(() => inflightPromises.current.delete(run));
+    return run;
   }
 
   /** Atualiza um campo (autosave) e registra a ação no histórico. */
@@ -381,6 +455,7 @@ export function useLineItemsEditor(dealId: string) {
         }),
       );
     }
+    return ok;
   }
 
   async function removeRow(id: string, record = true) {
@@ -413,6 +488,7 @@ export function useLineItemsEditor(dealId: string) {
           pushHistory(h, { kind: "delete", id, label: item.name || "item", row: item }),
         );
       }
+      commitDraftState((prev) => clearItemDraft(prev, id));
       notifyDealsChanged();
       return true;
     } finally {
@@ -455,41 +531,73 @@ export function useLineItemsEditor(dealId: string) {
     toast.success(`Desfeito: ${describeEntry(entry)}.`);
   }
 
-  /** Grava agora o que estiver pendente (confirma o campo em edição). */
-  async function saveNow() {
+  /** Grava tudo o que estiver pendente e informa se concluiu sem erro. */
+  async function flushPending(): Promise<boolean> {
     if (typeof document !== "undefined") {
       const el = document.activeElement as HTMLElement | null;
       if (el && typeof el.blur === "function") el.blur();
     }
-    await new Promise((r) => setTimeout(r, 60));
-    await qc.getQueryCache().find({ queryKey: lineItemsQueryKey(dealId) })?.promise;
+    await new Promise((r) => setTimeout(r, 40));
+    let allOk = true;
+    if (inflightPromises.current.size > 0) {
+      const settled = await Promise.all([...inflightPromises.current]);
+      if (settled.some((ok) => !ok)) allOk = false;
+    }
+    const pendingEntries = Object.entries(draftsRef.current);
+    const validIds = new Set(items.map((it) => it.id));
+    for (const [id, patch] of pendingEntries) {
+      if (!validIds.has(id) || Object.keys(patch).length === 0) continue;
+      const ok = await update(id, patch as Partial<LineItem>);
+      if (!ok) allOk = false;
+    }
+    if (inflightPromises.current.size > 0) {
+      const settled = await Promise.all([...inflightPromises.current]);
+      if (settled.some((ok) => !ok)) allOk = false;
+    }
+    if (!allOk) {
+      setStatus("dirty");
+      return false;
+    }
+    setRestoredDraft(false);
     if (inflight.current === 0) setStatus("saved");
     toast.success("Itens de linha salvos.");
+    return true;
   }
 
+  const displayItems = useMemo(
+    () => items.map((it) => mergeItemWithDraft(it, drafts)),
+    [items, drafts],
+  );
+
   const totals = useMemo(() => {
-    const subtotal = items.reduce((s, li) => s + lineGross(li), 0);
-    const discount = items.reduce((s, li) => s + lineDiscount(li), 0);
-    const tax = items.reduce(
+    const subtotal = displayItems.reduce((s, li) => s + lineGross(li), 0);
+    const discount = displayItems.reduce((s, li) => s + lineDiscount(li), 0);
+    const tax = displayItems.reduce(
       (s, li) => s + lineSubtotalAfterDiscount(li) * (n(li.tax_rate) / 100),
       0,
     );
-    const total = items.reduce((s, li) => s + lineTotal(li), 0);
+    const total = displayItems.reduce((s, li) => s + lineTotal(li), 0);
     return { subtotal, discount, tax, total };
-  }, [items]);
+  }, [displayItems]);
 
   return {
-    items,
+    items: displayItems,
+    savedItems: items,
     isLoading,
     totals,
     status,
     canUndo: history.length > 0,
+    hasDraft: hasDraftEntries(drafts),
+    restoredDraft,
     markDirty,
+    recordDraft,
+    discardDraft,
     addBlank,
     addFromCatalogService,
     update,
     remove: (id: string) => removeRow(id),
     undo,
-    saveNow,
+    flushPending,
+    saveNow: flushPending,
   };
 }

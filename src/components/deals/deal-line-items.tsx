@@ -1,9 +1,9 @@
 import { SalesAction } from "@/components/sales-access";
 // Itens de linha do negócio: resumo, contador e editor completo (autosave por
-// campo, botão de salvar e desfazer da última ação).
+// campo, rascunho local, botão Concluído e desfazer da última ação).
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, Undo2, Wrench, Pencil } from "lucide-react";
+import { Check, Plus, Undo2, Wrench, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
@@ -89,7 +89,15 @@ export function DealLineItemsEditor({
         <DialogHeader>
           <DialogTitle>Itens de linha</DialogTitle>
         </DialogHeader>
-        <LineItemsEditorBody dealId={dealId} ownerId={ownerId} currency={currency} />
+        <LineItemsEditorBody
+          dealId={dealId}
+          ownerId={ownerId}
+          currency={currency}
+          onDone={() => {
+            setOpen(false);
+            void qc.invalidateQueries({ queryKey: lineItemsQueryKey(dealId) });
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -113,30 +121,54 @@ export function LineItemsEditorBody({
   // mas o dono do item precisa ser o usuário autenticado (regras de acesso).
   ownerId: _ownerId,
   currency,
+  onDone,
 }: {
   dealId: string;
   ownerId: string;
   currency: string;
+  onDone?: () => void;
 }) {
   const {
     items,
+    savedItems,
     isLoading,
     totals,
     status,
     canUndo,
+    hasDraft,
+    restoredDraft,
     markDirty,
+    recordDraft,
+    discardDraft,
     addBlank,
     addFromCatalogService,
     update,
     remove,
     undo,
-    saveNow,
+    flushPending,
   } = useLineItemsEditor(dealId);
   const [productPickerKey, setProductPickerKey] = useState(0);
   const [focusItemId, setFocusItemId] = useState<string | null>(null);
+  const savedById = new Map(savedItems.map((it) => [it.id, it]));
+
+  async function handleDone() {
+    const ok = await flushPending();
+    if (ok) onDone?.();
+  }
 
   return (
     <div className="space-y-3">
+      {restoredDraft && hasDraft ? (
+        <div
+          role="status"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+        >
+          <span>Rascunho restaurado — alterações pendentes deste navegador.</span>
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={discardDraft}>
+            Descartar rascunho
+          </Button>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-[260px]">
           <EntityCombobox
@@ -183,8 +215,8 @@ export function LineItemsEditorBody({
           >
             <Undo2 className="h-4 w-4 mr-1" /> Desfazer
           </Button>
-          <Button size="sm" onClick={() => void saveNow()} disabled={status === "saving"}>
-            <Save className="h-4 w-4 mr-1" /> Salvar
+          <Button size="sm" onClick={() => void handleDone()} disabled={status === "saving"}>
+            <Check className="h-4 w-4 mr-1" /> Concluído
           </Button>
         </div>
       </div>
@@ -199,10 +231,12 @@ export function LineItemsEditorBody({
             <LineItemCard
               key={li.id}
               item={li}
+              savedItem={savedById.get(li.id) ?? li}
               currency={currency}
               autoFocusPreset={focusItemId === li.id}
               onPresetFocused={() => setFocusItemId(null)}
               onDirty={markDirty}
+              onDraftChange={(patch) => recordDraft(li.id, patch)}
               onUpdate={(patch) => {
                 if (patch.service_catalog_id && !li.service_catalog_id) setFocusItemId(li.id);
                 void update(li.id, patch);

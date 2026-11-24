@@ -14,6 +14,7 @@ export type DownPayment =
   | { kind: "percent"; value: number };
 
 export type InstallmentPlan =
+  | { kind: "none" }
   | { kind: "monthly"; months: number; dueDay: number }
   | { kind: "periodic"; count: number; intervalMonths: number; dueDay: number }
   | { kind: "milestones"; milestones: { label: string; percent: number }[] }
@@ -93,6 +94,26 @@ function split(total: number, n: number): number[] {
   return parts;
 }
 
+/** Indica se a entrada cobre integralmente o total (sem saldo restante). */
+export function coversFullTotal(dp: DownPayment, total: number): boolean {
+  if (dp.kind === "percent") return round2(dp.value) === 100;
+  if (dp.kind === "amount") return total > 0 && round2(dp.value) === round2(total);
+  return false;
+}
+
+/** Normaliza condições quando a entrada cobre 100%: remove plano de saldo e prazo recorrente. */
+export function normalizePaymentTerms(t: PaymentTerms, total: number): PaymentTerms {
+  if (!coversFullTotal(t.downPayment, total)) return t;
+  return {
+    downPayment: t.downPayment,
+    plan: { kind: "none" },
+    ...(t.downPaymentDue ? { downPaymentDue: t.downPaymentDue } : {}),
+  };
+}
+
+export const FULL_DOWN_PAYMENT_BALANCE_ERROR =
+  "Quando a entrada cobre 100% do total, não pode haver saldo configurado.";
+
 export function validatePaymentTerms(t: PaymentTerms, total: number): string[] {
   const errors: string[] = [];
   if (!(total >= 0)) errors.push("Total inválido.");
@@ -105,6 +126,15 @@ export function validatePaymentTerms(t: PaymentTerms, total: number): string[] {
   if (dp.kind !== "none" && due?.kind === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(due.date))
     errors.push("Escolha a data de vencimento da entrada.");
   const p = t.plan;
+  const fullDownPayment = coversFullTotal(dp, total);
+  if (fullDownPayment) {
+    if (p.kind !== "none") errors.push(FULL_DOWN_PAYMENT_BALANCE_ERROR);
+    return errors;
+  }
+  if (p.kind === "none") {
+    errors.push("Informe como o saldo será pago.");
+    return errors;
+  }
   if (p.kind === "monthly" && !(p.months >= 1 && p.months <= 120))
     errors.push("Meses devem estar entre 1 e 120.");
   if (t.term) {
@@ -186,7 +216,7 @@ export function buildPaymentSchedule(
     );
   } else if (p.kind === "fixed_date") {
     out.push({ sequence: out.length + 1, label: "Saldo", amount: balance, dueDate: p.date });
-  } else {
+  } else if (p.kind === "milestones") {
     let acc = 0;
     p.milestones.forEach((m, i) => {
       const last = i === p.milestones.length - 1;
@@ -245,6 +275,7 @@ export const downPaymentSchema = z.union([
 ]);
 
 export const installmentPlanSchema = z.union([
+  z.object({ kind: z.literal("none") }),
   z.object({
     kind: z.literal("monthly"),
     months: z.number().int().min(1).max(120),
@@ -277,17 +308,51 @@ export const contractTermSchema = z.object({
   autoRenew: z.boolean(),
 });
 
-export const paymentTermsSchema = z.object({
-  downPayment: downPaymentSchema,
-  plan: installmentPlanSchema,
-  downPaymentDue: downPaymentDueSchema.optional(),
-  term: contractTermSchema.optional(),
-  monthlyAmount: z.number().min(0).optional(),
-});
+export const paymentTermsSchema = z
+  .object({
+    downPayment: downPaymentSchema,
+    plan: installmentPlanSchema,
+    downPaymentDue: downPaymentDueSchema.optional(),
+    term: contractTermSchema.optional(),
+    monthlyAmount: z.number().min(0).optional(),
+  })
+  .superRefine((val, ctx) => {
+    if (
+      val.downPayment.kind === "percent" &&
+      round2(val.downPayment.value) === 100 &&
+      val.plan.kind !== "none"
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["plan"],
+        message: FULL_DOWN_PAYMENT_BALANCE_ERROR,
+      });
+    }
+  });
 
 /** null quando o valor guardado não é uma condição de pagamento válida. */
 export function parsePaymentTerms(raw: unknown): PaymentTerms | null {
-  const parsed = paymentTermsSchema.safeParse(raw);
+  let candidate = raw;
+  // Compatibilidade com registros antigos gravados com entrada 100% + saldo residual.
+  if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) {
+    const rec = candidate as Record<string, unknown>;
+    const dp = rec["downPayment"] as Record<string, unknown> | undefined;
+    const plan = rec["plan"] as Record<string, unknown> | undefined;
+    if (
+      dp &&
+      dp["kind"] === "percent" &&
+      typeof dp["value"] === "number" &&
+      round2(dp["value"]) === 100 &&
+      plan &&
+      plan["kind"] !== "none"
+    ) {
+      const { term: _term, monthlyAmount: _monthly, ...rest } = rec;
+      void _term;
+      void _monthly;
+      candidate = { ...rest, plan: { kind: "none" } };
+    }
+  }
+  const parsed = paymentTermsSchema.safeParse(candidate);
   return parsed.success ? (parsed.data as PaymentTerms) : null;
 }
 
@@ -304,13 +369,15 @@ export function legacyInstallments(
   const rest =
     total - downPaymentAmount(t.downPayment, total) <= 0
       ? 0
-      : p.kind === "monthly"
-        ? p.months
-        : p.kind === "periodic"
-          ? p.count
-          : p.kind === "fixed_date"
-            ? 1
-            : p.milestones.length;
+      : p.kind === "none"
+        ? 0
+        : p.kind === "monthly"
+          ? p.months
+          : p.kind === "periodic"
+            ? p.count
+            : p.kind === "fixed_date"
+              ? 1
+              : p.milestones.length;
   return { installments: Math.max(1, entry + rest), dueDay: "dueDay" in p ? p.dueDay : null };
 }
 
@@ -332,13 +399,15 @@ export function describePaymentTerms(t: PaymentTerms): string {
         : " (vence na assinatura do contrato)";
   const p = t.plan;
   const balance =
-    p.kind === "monthly"
-      ? `${p.months} mensalidades no dia ${p.dueDay}`
-      : p.kind === "periodic"
-        ? `${p.count} parcelas a cada ${p.intervalMonths} ${p.intervalMonths === 1 ? "mês" : "meses"}, dia ${p.dueDay}`
-        : p.kind === "fixed_date"
-          ? `saldo em parcela única em ${p.date.split("-").reverse().join("/")}`
-          : `${p.milestones.length} ${p.milestones.length === 1 ? "marco" : "marcos"} de entrega`;
+    p.kind === "none"
+      ? "sem saldo"
+      : p.kind === "monthly"
+        ? `${p.months} mensalidades no dia ${p.dueDay}`
+        : p.kind === "periodic"
+          ? `${p.count} parcelas a cada ${p.intervalMonths} ${p.intervalMonths === 1 ? "mês" : "meses"}, dia ${p.dueDay}`
+          : p.kind === "fixed_date"
+            ? `saldo em parcela única em ${p.date.split("-").reverse().join("/")}`
+            : `${p.milestones.length} ${p.milestones.length === 1 ? "marco" : "marcos"} de entrega`;
   const term = t.term ? ` · ${describeContractTerm(t.term)}` : "";
   return `${entry}${entryDue} · ${balance}${term}`;
 }

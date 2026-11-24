@@ -74,4 +74,24 @@ describe("condições de pagamento da cotação", () => {
     await expect(saveQuotePaymentTermsCore(s, "q-1", bad)).rejects.toThrow("somar 100%");
     expect(s.written).toBeNull();
   });
+
+  it("quote payment terms refuses 100% down payment when balance plan is still set", async () => {
+    const s = store({ total: 4500 });
+    const bad: PaymentTerms = {
+      downPayment: { kind: "percent", value: 100 },
+      plan: { kind: "milestones", milestones: [{ label: "Entrega final", percent: 100 }] },
+    };
+    await expect(saveQuotePaymentTermsCore(s, "q-1", bad)).rejects.toThrow("não pode haver saldo");
+    expect(s.written).toBeNull();
+  });
+
+  it("quote payment terms accepts 100% down payment with plan none", async () => {
+    const s = store({ total: 4500 });
+    const ok: PaymentTerms = {
+      downPayment: { kind: "percent", value: 100 },
+      plan: { kind: "none" },
+    };
+    expect(await saveQuotePaymentTermsCore(s, "q-1", ok)).toEqual({ ok: true });
+    expect(s.written).toEqual(ok);
+  });
 });

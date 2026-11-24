@@ -1,6 +1,6 @@
 // Campos reutilizáveis do editor de itens de linha (texto, número, desconto e
 // linhas de resumo). Componentes de apresentação, sem acesso a dados.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { CurrencyCommitInput } from "@/components/ui/currency-commit-input";
@@ -10,22 +10,28 @@ import type { DiscountType } from "./use-line-items";
 export function LabeledNumber({
   label,
   value,
+  committedValue,
   step,
   onCommit,
   onDirty,
+  onDraftChange,
   disabled,
   suffix,
 }: {
   label: string;
   value: number;
+  committedValue?: number;
   step?: string;
   onCommit: (v: number) => void;
   onDirty?: () => void;
+  onDraftChange?: (v: number) => void;
   disabled?: boolean;
   suffix?: string;
 }) {
   const [v, setV] = useState(String(value));
   const [focused, setFocused] = useState(false);
+  const editedInFocus = useRef(false);
+  const base = committedValue ?? value;
   useEffect(() => {
     if (!focused) setV(String(value));
   }, [value, focused]);
@@ -39,15 +45,23 @@ export function LabeledNumber({
           value={v}
           disabled={disabled}
           className={suffix ? "pr-8" : undefined}
-          onFocus={() => setFocused(true)}
+          onFocus={() => {
+            setFocused(true);
+            editedInFocus.current = false;
+          }}
           onChange={(e) => {
-            setV(e.target.value);
+            const raw = e.target.value;
+            setV(raw);
+            editedInFocus.current = true;
             onDirty?.();
+            const num = Number(raw);
+            if (raw !== "" && !Number.isNaN(num)) onDraftChange?.(num);
           }}
           onBlur={() => {
             setFocused(false);
             const num = Number(v);
-            if (!Number.isNaN(num) && num !== Number(value)) onCommit(num);
+            if (editedInFocus.current && !Number.isNaN(num) && num !== Number(base)) onCommit(num);
+            editedInFocus.current = false;
           }}
         />
         {suffix ? (
@@ -62,19 +76,25 @@ export function LabeledNumber({
 
 export function TextField({
   value,
+  committedValue,
   placeholder,
   className,
   onCommit,
   onDirty,
+  onDraftChange,
 }: {
   value: string;
+  committedValue?: string;
   placeholder?: string;
   className?: string;
   onCommit: (v: string) => void;
   onDirty?: () => void;
+  onDraftChange?: (v: string) => void;
 }) {
   const [v, setV] = useState(value);
   const [focused, setFocused] = useState(false);
+  const editedInFocus = useRef(false);
+  const base = committedValue ?? value;
   useEffect(() => {
     if (!focused) setV(value);
   }, [value, focused]);
@@ -83,14 +103,21 @@ export function TextField({
       className={className}
       placeholder={placeholder}
       value={v}
-      onFocus={() => setFocused(true)}
+      onFocus={() => {
+        setFocused(true);
+        editedInFocus.current = false;
+      }}
       onChange={(e) => {
-        setV(e.target.value);
+        const next = e.target.value;
+        setV(next);
+        editedInFocus.current = true;
         onDirty?.();
+        onDraftChange?.(next);
       }}
       onBlur={() => {
         setFocused(false);
-        if (v !== value) onCommit(v);
+        if (editedInFocus.current && v !== base) onCommit(v);
+        editedInFocus.current = false;
       }}
     />
   );
@@ -112,18 +139,36 @@ export function DiscountField({
   discountType,
   discountPct,
   discountAmount,
+  committedPct,
+  committedAmount,
   onChangeType,
   onCommitPct,
   onCommitAmount,
+  onDraftPct,
+  onDraftAmount,
+  onDirty,
 }: {
   currency: string;
   discountType: DiscountType;
   discountPct: number;
   discountAmount: number;
+  committedPct?: number;
+  committedAmount?: number;
   onChangeType: (type: DiscountType) => void;
   onCommitPct: (v: number) => void;
   onCommitAmount: (v: number) => void;
+  onDraftPct?: (v: number) => void;
+  onDraftAmount?: (v: number) => void;
+  onDirty?: () => void;
 }) {
+  const [pctText, setPctText] = useState(String(n(discountPct)));
+  const [pctFocused, setPctFocused] = useState(false);
+  const pctEdited = useRef(false);
+  const basePct = committedPct ?? n(discountPct);
+  useEffect(() => {
+    if (!pctFocused) setPctText(String(n(discountPct)));
+  }, [discountPct, pctFocused]);
+
   return (
     <div className="space-y-1">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Desconto</div>
@@ -134,6 +179,11 @@ export function DiscountField({
             className="pr-14"
             currency={currency}
             value={n(discountAmount)}
+            committedValue={committedAmount ?? n(discountAmount)}
+            onDraftChange={(v) => {
+              onDirty?.();
+              onDraftAmount?.(v ?? 0);
+            }}
             onCommit={(v) => onCommitAmount(v ?? 0)}
           />
         ) : (
@@ -141,12 +191,25 @@ export function DiscountField({
             type="number"
             step="0.01"
             className="pr-14"
-            key={`pct-${n(discountPct)}`}
-            defaultValue={String(n(discountPct))}
+            value={pctText}
             aria-label="Desconto em porcentagem"
-            onBlur={(e) => {
-              const num = Number(e.currentTarget.value);
-              if (!Number.isNaN(num) && num !== n(discountPct)) onCommitPct(num);
+            onFocus={() => {
+              setPctFocused(true);
+              pctEdited.current = false;
+            }}
+            onChange={(e) => {
+              const raw = e.target.value;
+              setPctText(raw);
+              pctEdited.current = true;
+              onDirty?.();
+              const num = Number(raw);
+              if (raw !== "" && !Number.isNaN(num)) onDraftPct?.(num);
+            }}
+            onBlur={() => {
+              setPctFocused(false);
+              const num = Number(pctText);
+              if (pctEdited.current && !Number.isNaN(num) && num !== basePct) onCommitPct(num);
+              pctEdited.current = false;
             }}
           />
         )}

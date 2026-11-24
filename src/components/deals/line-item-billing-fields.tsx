@@ -29,15 +29,20 @@ const UNIT_OPTIONS = ["hour", "unit", "vacancy", "headcount", "month", "day", "p
 
 export function LineItemBillingFields({
   item,
+  savedItem,
   currency,
   onUpdate,
   onDirty,
+  onDraftChange,
 }: {
   item: LineItem;
+  savedItem?: LineItem;
   currency: string;
   onUpdate: (patch: Partial<LineItem>) => void;
   onDirty?: () => void;
+  onDraftChange?: (patch: Partial<LineItem>) => void;
 }) {
+  const saved = savedItem ?? item;
   const model: BillingModel = isBillingModel(item.billing_model) ? item.billing_model : "per_unit";
   const percentBased = usesPercent(model);
 
@@ -134,6 +139,11 @@ export function LineItemBillingFields({
               aria-label="Base de cálculo"
               currency={currency}
               value={Number(item.percent_base_amount ?? 0)}
+              committedValue={Number(saved.percent_base_amount ?? 0)}
+              onDraftChange={(v) => {
+                onDirty?.();
+                onDraftChange?.({ percent_base_amount: v ?? 0 });
+              }}
               onCommit={(v) => onUpdate({ percent_base_amount: v ?? 0 })}
             />
           </div>
@@ -142,7 +152,9 @@ export function LineItemBillingFields({
             suffix="%"
             step="0.01"
             value={Number(item.percent ?? 0)}
+            committedValue={Number(saved.percent ?? 0)}
             onDirty={onDirty}
+            onDraftChange={(v) => onDraftChange?.({ percent: v })}
             onCommit={(v) => onUpdate({ percent: v })}
           />
           <div className="space-y-1">
@@ -151,8 +163,10 @@ export function LineItemBillingFields({
             </div>
             <TextField
               value={item.description ?? ""}
+              committedValue={saved.description ?? ""}
               placeholder="Ex.: salário alvo da vaga"
               onDirty={onDirty}
+              onDraftChange={(v) => onDraftChange?.({ description: v || null })}
               onCommit={(v) => onUpdate({ description: v || null })}
             />
           </div>

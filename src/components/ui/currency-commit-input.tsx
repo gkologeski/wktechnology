@@ -4,6 +4,10 @@ import { CurrencyInput, type CurrencyInputProps } from "@/components/ui/currency
 export type CurrencyCommitInputProps = Omit<CurrencyInputProps, "onValueChange"> & {
   /** Chamado apenas ao confirmar (blur ou Enter) e quando o valor mudou. */
   onCommit: (value: number | null) => void;
+  /** Valor já gravado, quando diferente do exibido (rascunho restaurado). */
+  committedValue?: number | null;
+  /** Chamado durante a digitação para preservar rascunho local. */
+  onDraftChange?: (value: number | null) => void;
 };
 
 function toNumber(v: number | string | null | undefined): number | null {
@@ -21,10 +25,15 @@ function toNumber(v: number | string | null | undefined): number | null {
  * `onCommit` dispara uma única vez, em `blur` ou `Enter`.
  */
 export const CurrencyCommitInput = React.forwardRef<HTMLInputElement, CurrencyCommitInputProps>(
-  ({ value, onCommit, onBlur, onFocus, onKeyDown, ...rest }, ref) => {
+  (
+    { value, committedValue, onCommit, onDraftChange, onBlur, onFocus, onKeyDown, ...rest },
+    ref,
+  ) => {
     const external = toNumber(value);
+    const committed = committedValue === undefined ? external : toNumber(committedValue);
     const [draft, setDraft] = React.useState<number | null>(external);
     const [focused, setFocused] = React.useState(false);
+    const editedInFocus = React.useRef(false);
 
     React.useEffect(() => {
       if (!focused) setDraft(external);
@@ -35,14 +44,20 @@ export const CurrencyCommitInput = React.forwardRef<HTMLInputElement, CurrencyCo
         {...rest}
         ref={ref}
         value={draft}
-        onValueChange={setDraft}
+        onValueChange={(next) => {
+          setDraft(next);
+          editedInFocus.current = true;
+          onDraftChange?.(next);
+        }}
         onFocus={(e) => {
           setFocused(true);
+          editedInFocus.current = false;
           onFocus?.(e);
         }}
         onBlur={(e) => {
           setFocused(false);
-          if (draft !== external) onCommit(draft);
+          if (editedInFocus.current && draft !== committed) onCommit(draft);
+          editedInFocus.current = false;
           onBlur?.(e);
         }}
         onKeyDown={(e) => {

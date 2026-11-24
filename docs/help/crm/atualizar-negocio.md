@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 201
-version: 3
+version: 4
 is_published: true
 ---
 # Atualizar um negócio
@@ -22,7 +22,7 @@ is_published: true
 2. Para trocar o funil, use o seletor com a indicação "Selecione o funil".
 3. Confira a etapa e o substatus após a alteração.
 4. Consulte a **Jornada comercial e contratação** no painel central. A aba **Documentos** reúne cotações, propostas, minutas e contratos.
-5. Para criar uma cotação, adicione primeiro itens de linha ao negócio. Depois, na jornada ou em Documentos > Cotações, prepare a cotação.
+5. Para criar uma cotação, adicione primeiro itens de linha ao negócio. Na janela **Itens de linha**, o que você digitar fica salvo como rascunho neste navegador se a janela fechar antes de gravar (ao reabrir, aparece **Rascunho restaurado** com opção **Descartar rascunho**). Clique em **Concluído** para gravar qualquer pendência e fechar a janela. Depois, na jornada ou em Documentos > Cotações, prepare a cotação.
 6. Para excluir o negócio, use a ação de exclusão apenas se tiver permissão e confirme a solicitação.
 ![Tela: detalhe do negócio com seletor de funil e áreas Cotações, Propostas e Contratos](/help-media/crm/atualizar-negocio.webp)
 
@@ -31,6 +31,7 @@ O negócio passa a refletir o funil atualizado. Os documentos vinculados podem s
 
 ## Regras e limites
 - A criação de cotação fica desabilitada quando o negócio não tem itens de linha.
+- O rascunho de itens de linha fica guardado localmente por usuário e negócio, sendo limpo automaticamente após a gravação bem-sucedida. Se a gravação falhar ao clicar em **Concluído**, a janela continua aberta com o rascunho preservado.
 - O acesso ao negócio não concede automaticamente permissão para excluir.
 - Alterações e exclusões respeitam as permissões do registro, também no servidor e no banco.
 

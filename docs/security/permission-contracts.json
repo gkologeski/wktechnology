@@ -12852,8 +12852,32 @@
         "techsales.deals.update.team",
         "techsales.deals.update.workspace"
       ],
-      "rationale": "TEMPO-ITENS: removes two redundant AFTER triggers that rewrote deals.value with incomplete formulas (keeps recompute_deal_value, unchanged). Line-item update keeps the user client and RLS/sales_row_guard; it only retries transient errors and treats zero returned rows as denied. No new action, key, grant or policy.",
+      "rationale": "TEMPO-ITENS: removes two redundant AFTER triggers that rewrote deals.value with incomplete formulas (keeps recompute_deal_value, unchanged). Line-item update keeps the user client and RLS/sales_row_guard; it only retries transient errors and treats zero returned rows as denied. 24/11/2026: browser-only localStorage draft scoped by userId+dealId (line-item-draft.ts) preserves unfinished field edits until saved through updateLineItemGuarded/RLS; Concluído flushes pending updates and only closes the dialog on success. No new action, key, grant or policy.",
       "controls": [
+        {
+          "file": "src/components/sales-access.tsx",
+          "symbol": "SalesAction"
+        },
+        {
+          "file": "src/components/deals/line-item-card.tsx",
+          "symbol": "LineItemCard"
+        },
+        {
+          "file": "src/components/deals/line-item-billing-fields.tsx",
+          "symbol": "LineItemBillingFields"
+        },
+        {
+          "file": "src/components/deals/line-item-fields.tsx",
+          "symbol": "DiscountField"
+        },
+        {
+          "file": "src/components/ui/currency-commit-input.tsx",
+          "symbol": "CurrencyCommitInput"
+        },
+        {
+          "file": "src/components/ui/currency-input.tsx",
+          "symbol": "CurrencyInput"
+        },
         {
           "file": "src/lib/deals/line-item-write.ts",
           "symbol": "updateLineItemGuarded"
@@ -12897,8 +12921,21 @@
       },
       "files": {
         "drizzle/migrations/0324_tempo_itens_single_deal_recalc.sql": "0f1f674b5790a54330040db4bc3c495f1a8e1446aae2b55a711bf1c6ade25d2a",
-        "src/components/deals/use-line-items.ts": "431e8ba644b154cb368bf352c5c803b892597fd3555c0379006cd562092b05c4",
+        "src/components/deals/deal-line-items.tsx": "959ffcc01a5455bfd7638ce8c45399aa7c1e40b95e08eb3d22e1311e11fa1e21",
+        "src/components/deals/line-item-billing-fields.tsx": "80d99286a91f1f7b4c2d2bad739b2937de7b5cfcbb2d09b11516787824bf01c8",
+        "src/components/deals/line-item-card.tsx": "0b9b0eec7f1e9897775064fa259b2760c93038424ac55b4c68674cd9cff89325",
+        "src/components/deals/line-item-fields.tsx": "3f4a06ffb21677e947501ad273f58764f9cb66b3187544cb6ff9f7fe69f966ca",
+        "src/components/deals/use-line-items.ts": "d9efde1e2017250deabfce1e9bdd903895ee2300e3fd868195dc6d3b3e437360",
+        "src/components/ui/currency-commit-input.tsx": "da54ad17fdd226469093a25a7332ef30d64c9055b26b7c24301d3ae4d58dfdf4",
         "src/lib/deals/line-item-write.ts": "5528e0ebd8d08c45f7b7b01cce08238765d856119475c7c4b425219b17ad2fa6"
+      }
+    },
+    {
+      "id": "deal-line-items-draft-ui",
+      "kind": "presentation",
+      "rationale": "Pure browser localStorage draft helper (line-item-draft.ts). No database client, fetch, server function, route, UI action or authorization; all writes still pass through use-line-items.ts -> updateLineItemGuarded and RLS under tempo-itens-deal-recalc.",
+      "files": {
+        "src/lib/deals/line-item-draft.ts": "f4c6996c3466e0a74737760b6a246578794120ede50e6cd9965375a9798e0058"
       }
     },
     {
@@ -12920,7 +12957,7 @@
         "techsales.quotes.update.team",
         "techsales.quotes.update.workspace"
       ],
-      "rationale": "CONDICOES-PAGAMENTO: a cotação passa a guardar entrada e saldo (mensal, parcelas ou marcos). A gravação é uma server function autenticada que exige techsales.quotes update, confere a linha com assertSalesRecord e só escreve na própria cotação; o total lido é o da própria linha (RLS), e números que não fecham são recusados antes de gravar. Coluna nova com padrão {} e preenchimento das propostas antigas a partir das parcelas existentes: nenhuma coluna, política ou grant existente foi alterado. 0326: as colunas novas de cotações e propostas recebem GRANT por coluna a authenticated (a tabela usa grants por coluna); as políticas RLS de update continuam decidindo quem grava.",
+      "rationale": "CONDICOES-PAGAMENTO: a cotação passa a guardar entrada e saldo (mensal, parcelas ou marcos). A gravação é uma server function autenticada que exige techsales.quotes update, confere a linha com assertSalesRecord e só escreve na própria cotação; o total lido é o da própria linha (RLS), e números que não fecham são recusados antes de gravar. Coluna nova com padrão {} e preenchimento das propostas antigas a partir das parcelas existentes: nenhuma coluna, política ou grant existente foi alterado. 0326: as colunas novas de cotações e propostas recebem GRANT por coluna a authenticated (a tabela usa grants por coluna); as políticas RLS de update continuam decidindo quem grava. 24/11/2026: entrada de 100% (ou igual ao total) passa a exigir plan.kind='none' sem saldo configurado, validado no schema zod e em validatePaymentTerms no servidor e bloqueado na UI.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -12993,10 +13030,10 @@
       },
       "files": {
         "drizzle/migrations/0325_quote_payment_terms.sql": "cb6ba51e5baa85548e547d5c7d01dd89a6f96a1217a3ec524ff05d056f21e861",
-        "src/lib/sales/payment-terms.ts": "46d0f740dcf352d29fd854fed1ce98cf30b9d476ff8638d2a0887beb3178bb54",
+        "src/lib/sales/payment-terms.ts": "d2d8b96b35d64bba7a44952d474a4f9123ff12932c07454617ca20dc87ac72d4",
         "src/lib/sales/quote-payment-terms.write.ts": "53bd243aa624ab155416251f9977ef77dcdc801851d2be2443034f4924cfe836",
         "src/lib/sales/quote-payment-terms.functions.ts": "5d76c67e6afe9903722e51c0948844e8db097c5b5ef3cf5be8bbf2eeddade7b3",
-        "src/components/sales/payment-terms-editor.tsx": "3ca019849dbbe8d3c93d8a9138a003d88648b6d020ed122d6530334a7d572d56",
+        "src/components/sales/payment-terms-editor.tsx": "ab07015d236a02bf3e2239146e6b473195cf4c1d1828966aea52f2f7184d1dfa",
         "src/components/deals/quote-wizard.tsx": "8ae23a5d321b35b2ae33898a7c813ba256bbaa9af8de01771aeedad2d29664ae",
         "drizzle/migrations/0326_grant_payment_terms_columns.sql": "fcc41e114bbb3c0bd713ff8a256e30913f4cf72904a756800aea7e499b1701ec"
       }
