@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 1
-version: 6
+version: 7
 is_published: true
 ---
 # Acompanhar a jornada comercial e contratação
@@ -18,9 +18,9 @@ is_published: true
 **Antes de começar:** Vincule cliente, itens de linha e empresa prestadora WK. Confira o catálogo, o modelo jurídico e os aprovadores. Nenhum cargo recebe novas permissões automaticamente.
 
 ## Passo a passo
-1. Na etapa **Cotação**, prepare e envie os valores pelos controles existentes. Depois da concordância do cliente, prepare a proposta.
-2. Em **Proposta**, acompanhe o aceite formal. A proposta aceita deve ter sua versão e decisão preservadas; isso ainda não inicia o serviço.
-3. Em **Minuta**, use a abertura pelo workflow ou **Preparar minuta para revisão**. O Jurídico confere o modelo, usa **Preencher dados da proposta**, resolve as pendências nos cadastros, confere a vigência e aprova o envio. O link público permite que o cliente aceite as cláusulas ou solicite ajustes.
+1. Na etapa **Cotação**, prepare e envie os valores pelos controles existentes, escolhendo a **Empresa prestadora (CNPJ WK)** antes do aceite. Depois da concordância do cliente, prepare a proposta.
+2. Em **Proposta**, confira ou troque a **Empresa prestadora (CNPJ WK)** enquanto a proposta não estiver selada/enviada e acompanhe o aceite formal. A proposta aceita tem sua versão e decisão preservadas; isso ainda não inicia o serviço.
+3. Em **Minuta**, use a abertura pelo workflow ou **Preparar minuta para revisão**. A minuta herda a empresa prestadora da proposta; o Jurídico pode trocá-la enquanto estiver em revisão, usa **Preencher dados da proposta**, resolve as pendências nos cadastros, confere a vigência e aprova o envio. O link público permite que o cliente aceite as cláusulas ou solicite ajustes.
 4. Ajustes passam novamente pelo Jurídico. **Preparar nova revisão** exige motivo e revoga o aceite e o link anteriores. Depois de criado o contrato definitivo, mudanças devem ser formalizadas por aditivo.
 5. Após o aceite da minuta, o **Financeiro** confere a origem e prepara o contrato. O texto é o da minuta aceita, sem regenerar cláusulas do modelo atual. Valores estruturados, itens, pagamento e vigência são preservados da origem aprovada. Se faltar valor estruturado, regularize a proposta antes de continuar. Criar não envia automaticamente para assinatura.
 6. Em **Contrato e assinaturas**, confira aprovações e signatários no próprio painel. Use **Enviar para assinatura por e-mail**, revise os destinatários e confirme. O convite é pessoal e seu resultado aparece por signatário. O reenvio alcança apenas pendentes, com intervalo mínimo de 60 segundos. Confira aprovações e assinaturas. O documento nativo é preparado e enviado pelos controles de Assinaturas; evidência externa exige o PDF e conferência autorizada. Assinatura parcial, evidência revogada ou conteúdo alterado não liberam a operação.

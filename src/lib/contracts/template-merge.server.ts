@@ -75,6 +75,13 @@ export type MergeInput = {
   title?: string;
   proposalId?: string;
   contractingLegalEntityId?: string;
+  /** Empresa prestadora já resolvida no servidor (ex.: via RPC SECURITY DEFINER de minuta). */
+  resolvedLegalEntity?: {
+    id: string;
+    name: string | null;
+    cnpj: string | null;
+    address_json: unknown;
+  } | null;
   /** Contratação de fornecedor: contato escolhido na solicitação (mesma empresa). */
   contactId?: string;
   /** Compra com profissional PF: contraparte é o próprio contato (sem empresa). */
@@ -176,10 +183,43 @@ export async function buildMergeContext(
     contact = data;
   }
 
-  const entityId =
-    input.contractingLegalEntityId ?? (defaults.contracting_legal_entity_id as string | undefined);
-  if (requiresProposal && !entityId)
-    throw new Error("Selecione a pessoa jurídica prestadora do contrato.");
+  // Condições da proposta e signatário legal da contratante.
+  let proposalTerms: {
+    installments_count: number | null;
+    installments_due_day: number | null;
+    validity_days: number | null;
+    payment_method: string | null;
+    payment_terms?: unknown;
+    total_amount?: number | null;
+    legal_entity_id?: string | null;
+  } | null = null;
+  if (source) {
+    const { data } = await supabase
+      .from("proposals")
+      .select(
+        "installments_count, installments_due_day, validity_days, payment_method, payment_terms, total_amount, legal_entity_id",
+      )
+      .eq("workspace_id", workspaceId)
+      .eq("id", source.proposal.id)
+      .maybeSingle();
+    proposalTerms = data ?? null;
+  }
+
+  // Cadeia de fallback da empresa prestadora: explícita -> padrão do modelo -> proposta -> cotação -> padrão do workspace.
+  let entityId: string | undefined =
+    input.contractingLegalEntityId ??
+    (defaults.contracting_legal_entity_id as string | undefined) ??
+    proposalTerms?.legal_entity_id ??
+    undefined;
+  if (!entityId && source?.proposal.quote_id) {
+    const { data: quoteRow } = await supabase
+      .from("quotes")
+      .select("legal_entity_id")
+      .eq("workspace_id", workspaceId)
+      .eq("id", source.proposal.quote_id)
+      .maybeSingle();
+    if (quoteRow?.legal_entity_id) entityId = quoteRow.legal_entity_id as string;
+  }
   let entityQuery = supabase
     .from("legal_entities")
     .select("id, name, cnpj, address_json")
@@ -187,9 +227,22 @@ export async function buildMergeContext(
     .eq("active", true);
   if (entityId) entityQuery = entityQuery.eq("id", entityId);
   else entityQuery = entityQuery.eq("is_default", true);
-  const { data: entity, error: entityError } = await entityQuery.maybeSingle();
+  const { data: queriedEntity, error: entityError } = await entityQuery.maybeSingle();
+  let entity = queriedEntity;
+  // Se o usuário não tem leitura direta de legal_entities (RLS financeiro), usa a entidade já validada pela RPC de origem.
+  if (
+    !entity &&
+    input.resolvedLegalEntity &&
+    (!entityId || input.resolvedLegalEntity.id === entityId)
+  ) {
+    entity = { ...input.resolvedLegalEntity };
+  }
   if (entityError || (entityId && !entity))
     throw new Error("Pessoa jurídica indisponível neste workspace.");
+  if (requiresProposal && !entity)
+    throw new Error(
+      "Selecione a empresa prestadora do contrato na tela ou defina uma empresa padrão.",
+    );
   // Endereço da PJ prestadora vazio: completa pelo CNPJ e grava (RLS do usuário; manual nunca é sobrescrito).
   if (entity && shouldAutofillAddress(entity.address_json)) {
     const addr = await lookupCnpjAddress(entity.cnpj);
@@ -202,27 +255,6 @@ export async function buildMergeContext(
         .eq("id", entity.id)
         .eq("address_json", {});
     }
-  }
-
-  // Condições da proposta e signatário legal da contratante.
-  let proposalTerms: {
-    installments_count: number | null;
-    installments_due_day: number | null;
-    validity_days: number | null;
-    payment_method: string | null;
-    payment_terms?: unknown;
-    total_amount?: number | null;
-  } | null = null;
-  if (source) {
-    const { data } = await supabase
-      .from("proposals")
-      .select(
-        "installments_count, installments_due_day, validity_days, payment_method, payment_terms, total_amount",
-      )
-      .eq("workspace_id", workspaceId)
-      .eq("id", source.proposal.id)
-      .maybeSingle();
-    proposalTerms = data ?? null;
   }
   let signer: any = null;
   const signerCompanyId = source?.proposal.company_id ?? input.companyId ?? null;

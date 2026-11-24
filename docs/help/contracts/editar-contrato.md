@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 30
-version: 10
+version: 11
 is_published: true
 ---
 # Editar a ficha de um contrato
@@ -27,7 +27,7 @@ Botões desabilitados mostram o motivo (ex.: "Sem permissão"). Fluxo do contrat
 
 ## Passo a passo
 1. Abra o contrato pela lista. O conteúdo fica nas abas Visão geral, Documento, Aprovações e assinatura, Aditivos e vínculos e Histórico.
-2. Edite "Título", "Tipo", "Tipo de documento", "Contrato principal" quando for aditivo, e "Valor total".
+2. Edite "Título", "Empresa prestadora (CNPJ WK)" (enquanto em rascunho ou revisão), "Tipo", "Tipo de documento", "Contrato principal" quando for aditivo, e "Valor total".
 3. Revise "Início", "Fim", "Renovação automática" e "Aviso prévio (dias)".
 4. Na aba "Documento", em "Cláusulas / corpo do contrato", edite o texto no editor formatado (negrito, alinhamento, listas e tabelas), com rolagem própria; clique em Salvar para gravar.
 5. Clique em "Salvar" e aguarde "Contrato atualizado.".
@@ -53,6 +53,7 @@ Alterações persistidas na ficha.
 - "Detalhes extraídos" exibe informações disponíveis em leitura; não torna todos os campos extraídos editáveis.
 - Campos alterados localmente só são gravados após salvar.
 - Conteúdo, partes e condições alterados podem exigir nova evidência de assinatura.
+- A **Empresa prestadora (CNPJ WK)** pode ser alterada na ficha enquanto o contrato estiver em rascunho, revisão ou negociação, não tiver assinatura e não estiver travado por uma minuta aceita. Após assinado ou gerado de minuta aceita, alterações devem ser formalizadas por termo aditivo. Toda troca é registrada no histórico do contrato; lembre de revisar o texto na aba Documento após alterar a empresa.
 - Status e aprovação têm regras próprias.
 
 ## Erros comuns

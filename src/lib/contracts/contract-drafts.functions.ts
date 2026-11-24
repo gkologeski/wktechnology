@@ -67,33 +67,39 @@ export const getContractDraft = createServerFn({ method: "POST" })
     const { data: draft, error } = await sb
       .from("contract_drafts")
       .select(
-        "id, workspace_id, deal_id, proposal_id, template_id, title, body_html, status, missing_template, decided_by, decided_at, decision_note, revision, created_at, updated_at, sent_at, sent_to, client_decided_at, client_name, client_note, prepared_terms",
+        "id, workspace_id, deal_id, proposal_id, template_id, legal_entity_id, title, body_html, status, missing_template, decided_by, decided_at, decision_note, revision, created_at, updated_at, sent_at, sent_to, client_decided_at, client_name, client_note, prepared_terms",
       )
       .eq("id", data.id)
       .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!draft) return null;
-    const [{ data: events }, { data: canReview }, { data: deal }, versionsResult] =
-      await Promise.all([
-        sb
-          .from("contract_draft_events")
-          .select("id, actor_id, kind, detail, created_at")
-          .eq("draft_id", draft.id)
-          .order("created_at", { ascending: false })
-          .limit(50),
-        sb.rpc("contract_draft_is_approver", { p_ws: draft.workspace_id, p_user: context.userId }),
-        draft.deal_id
-          ? sb.from("deals").select("id, name").eq("id", draft.deal_id).maybeSingle()
-          : Promise.resolve({ data: null }),
-        sb
-          .from("contract_draft_versions")
-          .select("revision,captured_at")
-          .eq("workspace_id", draft.workspace_id)
-          .eq("draft_id", draft.id)
-          .order("revision", { ascending: false })
-          .limit(50),
-      ]);
+    const [
+      { data: events },
+      { data: canReview },
+      { data: deal },
+      versionsResult,
+      { data: legalEntitiesRaw },
+    ] = await Promise.all([
+      sb
+        .from("contract_draft_events")
+        .select("id, actor_id, kind, detail, created_at")
+        .eq("draft_id", draft.id)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      sb.rpc("contract_draft_is_approver", { p_ws: draft.workspace_id, p_user: context.userId }),
+      draft.deal_id
+        ? sb.from("deals").select("id, name").eq("id", draft.deal_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      sb
+        .from("contract_draft_versions")
+        .select("revision,captured_at")
+        .eq("workspace_id", draft.workspace_id)
+        .eq("draft_id", draft.id)
+        .order("revision", { ascending: false })
+        .limit(50),
+      sb.rpc("finance_reference_list", { _resource: "legal_entities" }),
+    ]);
     if (versionsResult.error) throw new Error(versionsResult.error.message);
     const actorIds = [
       ...new Set(
@@ -111,12 +117,22 @@ export const getContractDraft = createServerFn({ method: "POST" })
     const actorName = new Map(
       (actors ?? []).map((a: { id: string; full_name: string | null }) => [a.id, a.full_name]),
     );
+    const legalEntities = (
+      (legalEntitiesRaw ?? []) as Array<{
+        id: string;
+        name: string;
+        cnpj?: string | null;
+        active?: boolean;
+        is_default?: boolean;
+      }>
+    ).filter((e) => e.active !== false);
     return {
       draft,
       versions: versionsResult.data ?? [],
       deal: (deal as { id: string; name: string | null } | null) ?? null,
       canReview: canReview === true,
       templates,
+      legalEntities,
       events: (events ?? []).map((e: { actor_id: string | null }) => ({
         ...e,
         actor_name: e.actor_id
@@ -235,6 +251,13 @@ export const prepareContractDraftText = createServerFn({ method: "POST" })
       workspace_id: string;
       proposal_id: string;
       deal_id: string;
+      legal_entity_id?: string | null;
+      legal_entity?: {
+        id: string;
+        name: string | null;
+        cnpj: string | null;
+        address_json: unknown;
+      } | null;
       template: Record<string, any>;
       prepared_terms?: { starts_at?: string; ends_at?: string | null; number?: string };
       supplier?: {
@@ -251,6 +274,7 @@ export const prepareContractDraftText = createServerFn({ method: "POST" })
       import("./template-tokens"),
     ]);
     const template = { ...source.template, body_html: data.body };
+    const entityId = source.legal_entity_id ?? source.supplier?.legal_entity_id ?? undefined;
     const { ctx, contract } = await buildMergeContext(
       context.supabase,
       source.workspace_id,
@@ -260,11 +284,16 @@ export const prepareContractDraftText = createServerFn({ method: "POST" })
             templateId: data.templateId,
             companyId: source.supplier.company_id,
             ...(source.supplier.contact_id ? { contactId: source.supplier.contact_id } : {}),
-            ...(source.supplier.legal_entity_id
-              ? { contractingLegalEntityId: source.supplier.legal_entity_id }
-              : {}),
+            ...(entityId ? { contractingLegalEntityId: entityId } : {}),
+            ...(source.legal_entity ? { resolvedLegalEntity: source.legal_entity } : {}),
           }
-        : { templateId: data.templateId, proposalId: source.proposal_id, dealId: source.deal_id },
+        : {
+            templateId: data.templateId,
+            proposalId: source.proposal_id,
+            dealId: source.deal_id,
+            ...(entityId ? { contractingLegalEntityId: entityId } : {}),
+            ...(source.legal_entity ? { resolvedLegalEntity: source.legal_entity } : {}),
+          },
       template,
     );
     const preparedTerms = {
@@ -321,6 +350,26 @@ export const getContractDraftVersion = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     return row as { body_html: string; revision: number; captured_at: string } | null;
+  });
+
+export const setContractDraftLegalEntity = createServerFn({ method: "POST" })
+  .middleware([requireWorkPermission("techcontracts.contract_drafts", "approve")])
+  .inputValidator((i) =>
+    z.object({ draftId: z.string().uuid(), legalEntityId: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<{
+      id: string;
+      revision: number;
+      legal_entity_id: string;
+      from_name?: string | null;
+      to_name?: string | null;
+      changed: boolean;
+    }>(context.supabase, "contract_draft_set_legal_entity", {
+      p_draft: data.draftId,
+      p_legal_entity: data.legalEntityId,
+    });
   });
 
 // MINUTA-BLOQUEIO: dispensa do aceite do cliente (a regra real está no banco).

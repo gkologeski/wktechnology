@@ -10,6 +10,7 @@ import { CONFIDENCE_LABEL } from "@/lib/contracts/link-suggest";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listContractLinkEvents } from "@/lib/contracts.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { formatDateTime } from "@/lib/crm";
 
 const EVENT_LABEL: Record<string, string> = {
@@ -18,6 +19,7 @@ const EVENT_LABEL: Record<string, string> = {
   amendment_linked: "Aditivo vinculado",
   amendment_unlinked: "Aditivo desvinculado",
   role_recalculated: "Papel recalculado",
+  legal_entity_changed: "Empresa prestadora alterada",
 };
 
 const ROLE_LABEL: Record<string, string> = { provider: "Prestação", client: "Compra" };
@@ -35,6 +37,8 @@ type EventRow = {
     amendment_of_id?: string | null;
     from?: string | null;
     to?: string | null;
+    from_name?: string | null;
+    to_name?: string | null;
     title_after?: string | null;
     ai_suggestion?: {
       confidence?: "high" | "medium" | "low";
@@ -62,16 +66,28 @@ function describe(row: EventRow): string {
       const title = row.payload.title_after ? ` Novo título: “${row.payload.title_after}”.` : "";
       return `Papel corrigido de ${from} para ${to} com base nas empresas do workspace.${title}`;
     }
+    case "legal_entity_changed": {
+      const from = row.payload.from_name ?? "não definida";
+      const to = row.payload.to_name ?? "—";
+      return `Empresa prestadora alterada de “${from}” para “${to}”.`;
+    }
     default:
       return `${child} · ${parent}`;
   }
 }
 
 export function ContractLinksHistoryCard({ contractId }: { contractId: string }) {
+  const { canAny } = usePermissions();
+  const canView = canAny([
+    "techcontracts.contracts.view.workspace",
+    "techcontracts.contracts.view.team",
+    "techcontracts.contracts.view.own",
+  ]);
   const list = useServerFn(listContractLinkEvents);
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["contract-link-events", contractId],
     queryFn: () => list({ data: { contractId } }),
+    enabled: canView,
   });
 
   const rows = (data ?? []) as EventRow[];

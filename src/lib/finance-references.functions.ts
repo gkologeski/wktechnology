@@ -5,6 +5,7 @@ type Entity = {
   id: string;
   code: string | null;
   name: string;
+  cnpj: string | null;
   active: boolean;
   is_default: boolean;
 };

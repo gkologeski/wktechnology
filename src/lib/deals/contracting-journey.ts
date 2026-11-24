@@ -24,6 +24,7 @@ export type JourneyProposal = JourneyDocument & {
 export type JourneyDraft = JourneyDocument & {
   prepared_terms?: { starts_at?: string; ends_at?: string | null };
   proposal_id: string | null;
+  legal_entity_id?: string | null;
   revision: number;
   client_decided_at: string | null;
   client_note: string | null;

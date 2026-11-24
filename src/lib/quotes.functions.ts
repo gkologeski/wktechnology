@@ -5,6 +5,7 @@ import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isValidProposalToken } from "@/lib/proposals/proposal-pdf-rules";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 type LineForTotals = {
@@ -146,6 +147,7 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
         notes: z.string().max(5000).optional(),
         terms: z.string().max(10000).optional(),
         templateId: z.string().uuid().nullable().optional(),
+        legalEntityId: z.string().uuid().optional(),
       })
       .parse(input),
   )
@@ -199,6 +201,7 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
         notes: data.notes || null,
         terms: data.terms || null,
         template_id: templateId,
+        ...(data.legalEntityId ? { legal_entity_id: data.legalEntityId } : {}),
         ...totals,
       })
       .select("*")
@@ -248,6 +251,7 @@ export const updateQuote = createServerFn({ method: "POST" })
           terms: z.string().nullable().optional(),
           sent_at: z.string().nullable().optional(),
           template_id: z.string().uuid().nullable().optional(),
+          legal_entity_id: z.string().uuid().optional(),
           service_line: z
             .enum(["hunting", "outsourcing", "software_factory", "consulting"])
             .nullable()
@@ -260,6 +264,17 @@ export const updateQuote = createServerFn({ method: "POST" })
     if (data.id) await assertSalesRecord(context.supabase, "quotes", data.id, "update");
 
     const { supabase } = context;
+    if (data.patch.legal_entity_id) {
+      const { data: cur, error: curErr } = await supabase
+        .from("quotes")
+        .select("status, legal_entity_id")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (curErr) throw curErr;
+      if (cur?.status === "accepted" && cur.legal_entity_id !== data.patch.legal_entity_id) {
+        throw new Error("Cotação aceita não pode ter a empresa prestadora alterada.");
+      }
+    }
     const { error } = await supabase.from("quotes").update(data.patch).eq("id", data.id);
     if (error) throw error;
     return { ok: true };
@@ -432,6 +447,7 @@ export const createQuotePaymentLink = createServerFn({ method: "POST" })
 export const getQuoteByToken = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ token: z.string().min(16).max(128) }).parse(input))
   .handler(async ({ data }) => {
+    if (!isValidProposalToken(data.token)) throw new Error("Cotação indisponível.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: quote, error } = await supabaseAdmin
       .from("quotes")
@@ -524,6 +540,7 @@ export const respondToQuote = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    if (!isValidProposalToken(data.token)) throw new Error("Cotação indisponível.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { workRpc } = await import("@/lib/access-control/work-core.server");
     return workRpc<{ ok: boolean }>(supabaseAdmin, "sales_public_decision", {
