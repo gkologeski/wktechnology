@@ -8,8 +8,9 @@ function fakeDb(state: { linked: boolean; primary: string | null }, affected = 1
   const writes: Write[] = [];
   const from = (table: string) => {
     let op: Write["op"] | null = null;
+    let selectedCols: string | null = null;
     const q: Record<string, unknown> = {
-      select: () => q,
+      select: (cols?: string) => ((selectedCols = cols ?? "*"), q),
       eq: () => q,
       limit: () => q,
       maybeSingle: () => q,
@@ -18,8 +19,16 @@ function fakeDb(state: { linked: boolean; primary: string | null }, affected = 1
       then: (resolve: (v: unknown) => unknown) => {
         if (op) {
           writes.push({ table, op });
+          if (table === "deal_contacts" && selectedCols === "id") {
+            return resolve({
+              data: null,
+              error: { code: "42703", message: "column deal_contacts.id does not exist" },
+            });
+          }
           return resolve({
-            data: Array.from({ length: affected }, () => ({ id: "x" })),
+            data: Array.from({ length: affected }, () =>
+              table === "deal_contacts" ? { deal_id: "d1" } : { id: "x" },
+            ),
             error: null,
           });
         }

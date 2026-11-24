@@ -339,7 +339,8 @@ export const saveSdrMaterial = createServerFn({ method: "POST" })
     const { error: dErr } = await supabase
       .from("sdr_material_offers")
       .delete()
-      .eq("material_id", saved.id);
+      .eq("material_id", saved.id)
+      .select("material_id");
     if (dErr) throw new Error(dErr.message);
     if (data.offerIds.length) {
       const { error: lErr } = await supabase.from("sdr_material_offers").insert(

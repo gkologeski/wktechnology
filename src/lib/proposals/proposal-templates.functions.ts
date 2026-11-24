@@ -82,7 +82,12 @@ export const saveProposalTemplate = createServerFn({ method: "POST" })
       if (error) throw new Error("Você não tem permissão para criar modelos.");
       id = row.id;
     }
-    await sb.from("proposal_template_services").delete().eq("template_id", id);
+    const { error: deleteServicesError } = await sb
+      .from("proposal_template_services")
+      .delete()
+      .eq("template_id", id)
+      .select("template_id");
+    if (deleteServicesError) throw new Error(deleteServicesError.message);
     if (data.services.length) {
       const { error } = await sb.from("proposal_template_services").insert(
         data.services.map((sid) => ({

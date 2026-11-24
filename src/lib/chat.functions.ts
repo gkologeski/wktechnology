@@ -231,7 +231,8 @@ export const markRead = createServerFn({ method: "POST" })
       .from("chat_conversation_members")
       .update({ last_read_at: new Date().toISOString() } as never)
       .eq("conversation_id", data.conversation_id)
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .select("conversation_id");
     if (error) throw new Error(error.message);
     return { ok: true };
   });

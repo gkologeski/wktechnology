@@ -3811,7 +3811,7 @@
         "src/lib/sdr-agent.functions.ts": "5b72111380ad8cf6e83b58d9d8a70cf0950ffca91e80fb60fbe70e3645f468ee",
         "src/components/prospecting/sdr-operation-panels.tsx": "880e0f7df9cf909598cfd72235fadc57c9cbc7b550351eebcae9276d53c627a4",
         "src/components/prospecting/sdr-results-panel.tsx": "3c876914d9e89abcb5aa9d7ee43b3ba385c5603d7e506035f60655ed4346059f",
-        "src/lib/prospecting/sdr.functions.ts": "4560cc6958f94d04dd3e03aa76cf004ce1df1cc70216bc2d2f2fd47451abe32d"
+        "src/lib/prospecting/sdr.functions.ts": "eda00c558e2f7a2a8fab71250f4f9177dac4e9d48d6ea978be1821e59a56b0dd"
       }
     },
     {
@@ -4495,7 +4495,7 @@
       "files": {
         "src/components/record/associations/company-cards.tsx": "3ac0a3d33a5f38748f158a1e1c6061b2bcb9585b48647e2ffccb990cb4441cd0",
         "src/components/record/associations/pipeline-cards.tsx": "afd61d083edf12ced17ddafd734b8f39c82defec1f666814a26058127840d06f",
-        "src/components/record/associations/unlink-deal-contact.ts": "49b82c4169aa7d7496ba380458b5d44b7b99726cf023665a6b1ea5715c9787c1",
+        "src/components/record/associations/unlink-deal-contact.ts": "1639eda723c945b89735b2c50f08de0762b4dd880e57384934618f12118c3b15",
         "drizzle/migrations/0262_contact_domain_link_respect_unlink.sql": "34d3b40b1599870f6dcf4fbb388bd484ed709a7ff8b05b637b96f1611ff09d26"
       }
     },
@@ -26638,7 +26638,7 @@
       "kind": "business",
       "rationale": "Reusable model configuration only. Existing TechSales create/update/delete/view permissions and user/RLS client remain mandatory; save explicitly gates the exact create or update action. The published contract model is read through caller RLS in the same active workspace; invoker trigger rechecks visibility on direct writes and composite FK prevents tenant mismatch and deletion while referenced. UI actions use effective permissions. No proposal, contract, acceptance, notification, service or finance record is created. Role remains a property of the linked legal model; this association is not an executed contract or signature. Five executable SQL cases use production RBAC functions, proposal-model RLS and the actual migration; they do not certify a purchase conversion workflow.",
       "files": {
-        "src/lib/proposals/proposal-templates.functions.ts": "0bcdf140609744e3e6c4e8718ae8a5d9b288a2df304adfd3e203d4e66e857138",
+        "src/lib/proposals/proposal-templates.functions.ts": "fd1772799a9e1a1d79449ad954d75cb08e9fbbc54f76749a90f79f4fd09871b5",
         "src/routes/_authenticated/settings.proposal-templates.tsx": "66b03a511606d91abcfcb35da4f63b5154f01397ce25d0bdfabe493a493a20f2",
         "drizzle/migrations/0456_proposal_template_contract_model.sql": "65e79b97e4585fef45390294a63311c9fa401138285fa90a825965c719c7bffb"
       },
@@ -27279,6 +27279,85 @@
       },
       "files": {
         "src/lib/mcp/tools/list-deals.ts": "9067e998329109e32dae6d26f9a96bdad429883f3d69424876f835b6b26ced38"
+      }
+    },
+    {
+      "id": "composite-key-checked-mutations",
+      "kind": "business",
+      "resources": [
+        "techsales.segments",
+        "system.messenger"
+      ],
+      "actions": [
+        "delete",
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.segments.delete.own",
+        "techsales.segments.delete.team",
+        "techsales.segments.delete.workspace",
+        "system.messenger.view.own"
+      ],
+      "rationale": "Bug fix only: checkedMutationClient previously injected .select('id') on every update/delete without a selection, failing with PostgreSQL 42703 on composite-key tables that have no id column (proposal_template_services, deal_contacts, segment_members, chat_conversation_members, sdr_material_offers). Both checkedMutationClient and each affected caller now project the table's real key column. Existing requireSalesPermission, requireSharedPermission, active membership, workspace isolation, zero-row denial and caller RLS policies (sales_delete on segment_members, shared_chat_self on chat_conversation_members) are completely unchanged. No new permissions, grants or schema changes.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/checked-mutation-client.ts",
+          "symbol": "checkedMutationClient"
+        },
+        {
+          "file": "src/lib/access-control/checked-mutation-client.ts",
+          "symbol": "returningColumnForTable"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/shared-permission.middleware.ts",
+          "symbol": "requireSharedPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0229_order5_shared_activate.sql",
+          "symbol": "shared_chat_self"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/composite-key-mutations.test.ts",
+          "name": "composite-key mutation allows active authorized member on segment_members and chat_conversation_members"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/composite-key-mutations.test.ts",
+          "name": "composite-key mutation rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/composite-key-mutations.test.ts",
+          "name": "composite-key mutation rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/composite-key-mutations.test.ts",
+          "name": "composite-key mutation rejects foreign workspace record"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/composite-key-mutations.test.ts",
+          "name": "composite-key mutation rejects inactive member"
+        }
+      },
+      "files": {
+        "src/lib/access-control/checked-mutation-client.ts": "7111e0ce866a480be3177bf26c66bd5b3836cc245dfff29aa1a84d85ae0935c6",
+        "src/lib/segments.functions.ts": "9f0027efb6a2fccd26302ee9334dabd394a0e3438a22044885ff8400eb813685",
+        "src/lib/chat.functions.ts": "1abb57af6bb891f72fe2a910c68c84a0a14d52c579da3957eba5ae1f2ca55311"
       }
     }
   ],

@@ -204,7 +204,8 @@ export const removeStaticMember = createServerFn({ method: "POST" })
       .from("segment_members")
       .delete()
       .eq("segment_id", data.segmentId)
-      .eq("entity_id", data.entityId);
+      .eq("entity_id", data.entityId)
+      .select("segment_id");
     if (error) throw error;
     const { count } = await supabase
       .from("segment_members")

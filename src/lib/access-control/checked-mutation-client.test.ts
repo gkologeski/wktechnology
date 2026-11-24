@@ -38,4 +38,33 @@ describe("association writes", () => {
     expect((r as { error: unknown }).error).toBeNull();
     expect(c.select).toHaveBeenCalledTimes(1);
   });
+
+  it.each([
+    ["proposal_template_services", "template_id"],
+    ["deal_contacts", "deal_id"],
+    ["segment_members", "segment_id"],
+    ["chat_conversation_members", "conversation_id"],
+    ["sdr_material_offers", "material_id"],
+  ])(
+    "projects the composite key column %s -> %s instead of non-existent id",
+    async (table, expectedColumn) => {
+      const c = client([{ [expectedColumn]: "k1" }], false);
+      const r = await (
+        c.db as { from: (t: string) => Record<string, (...a: unknown[]) => unknown> }
+      )
+        .from(table)
+        .delete();
+      expect((r as { error: unknown }).error).toBeNull();
+      expect(c.select).toHaveBeenCalledWith(expectedColumn);
+    },
+  );
+
+  it("still blocks zero-row client deletes on composite-key tables without id", async () => {
+    const c = client([], false);
+    const r = await (c.db as { from: (t: string) => Record<string, (...a: unknown[]) => unknown> })
+      .from("deal_contacts")
+      .delete();
+    expect((r as { error: { code: string } }).error.code).toBe("42501");
+    expect(c.select).toHaveBeenCalledWith("deal_id");
+  });
 });

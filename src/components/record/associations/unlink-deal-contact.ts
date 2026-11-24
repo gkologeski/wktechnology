@@ -40,7 +40,8 @@ export async function unlinkDealContact(
       .from("deal_contacts")
       .delete()
       .eq("deal_id", dealId)
-      .eq("contact_id", contactId);
+      .eq("contact_id", contactId)
+      .select("deal_id");
     if (error) return { error };
   }
   if (isPrimary) {
