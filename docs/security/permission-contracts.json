@@ -15420,6 +15420,10 @@
         {
           "file": "drizzle/migrations/0227_order5_shared_prepare.sql",
           "symbol": "shared_storage_session_access"
+        },
+        {
+          "file": "drizzle/migrations/0468_contract_attachments_all_served_sales.sql",
+          "symbol": "contract_attachment_manage"
         }
       ],
       "tests": {
@@ -15453,7 +15457,8 @@
         "src/lib/contracts/quote-pdf.server.ts": "989695b7a69f55577314fc0535ce4dafb540f729f9c263b555ceaa1bbdb5ab19",
         "src/lib/contracts/proposal-pdf.server.ts": "f60f92f473f0af768e76302ae842a2e50fbfecb2b94514c2c1d0b754bf30124b",
         "drizzle/migrations/0367_contract_signature_packages.sql": "2479a6a3f1af4f49c966969646e32b901b75922cd15649e2b798794d8fd91acf",
-        "src/components/contracts/signature-attachments-summary.tsx": "2a0e06fa6cba5466c4d92f2e1830e01593effa3377a6c4790f5dc2f62c5efd03"
+        "src/components/contracts/signature-attachments-summary.tsx": "2a0e06fa6cba5466c4d92f2e1830e01593effa3377a6c4790f5dc2f62c5efd03",
+        "drizzle/migrations/0468_contract_attachments_all_served_sales.sql": "6c4658dd5b2cbc0de67a5acbb96e9c9a728796f1ff75c091fa9fe7070e0ef474"
       }
     },
     {

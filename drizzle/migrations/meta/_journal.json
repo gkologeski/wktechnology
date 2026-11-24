@@ -3277,6 +3277,13 @@
       "when": 1795467172462,
       "tag": "0467_release_draft_formalization_archive",
       "breakpoints": true
+    },
+    {
+      "idx": 468,
+      "version": "7",
+      "when": 1795482594909,
+      "tag": "0468_contract_attachments_all_served_sales",
+      "breakpoints": true
     }
   ]
 }
