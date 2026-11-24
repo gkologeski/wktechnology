@@ -83,6 +83,7 @@ import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
 import { LinkedProjectsCard } from "@/components/projects/linked-projects-card";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { EffectiveTermsCard } from "@/components/contracts/effective-terms-card";
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
   head: () => ({
     meta: [
@@ -369,7 +370,7 @@ function ContractDetail() {
   const nextStep = contractNextStep({
     status,
     startsAt: startsAt || null,
-    endsAt: endsAt || null,
+    endsAt: (contract?.effective?.applied.length ? contract.effective.ends_at : null) ?? (endsAt || null),
     totalValue,
     hasBody: bodyHtml.trim().length > 0,
     canUpdate: canUpdateContract,
@@ -680,6 +681,19 @@ function ContractDetail() {
               </CardContent>
             </Card>
           </div>
+
+          {contract.effective && contract.effective.applied.length > 0 ? (
+            <EffectiveTermsCard
+              effective={contract.effective}
+              original={{
+                starts_at: contract.starts_at,
+                ends_at: contract.ends_at,
+                total_value: Number(contract.total_value ?? 0),
+              }}
+              amendments={contract.amendments}
+              currency={contract.currency ?? "BRL"}
+            />
+          ) : null}
 
           <ContractPaymentTermsCard
             raw={(contract as { payment_terms?: unknown }).payment_terms}

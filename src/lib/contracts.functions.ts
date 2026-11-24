@@ -195,7 +195,7 @@ export const getContract = createServerFn({ method: "POST" })
 
     // Aditivos: contrato principal deste aditivo e aditivos deste contrato.
     const AMENDMENT_COLS =
-      "id, number, title, status, total_value, currency, role, starts_at, ends_at, amendment_number, amendment_effective_at, document_kind";
+      "id, number, title, status, total_value, currency, role, starts_at, ends_at, amendment_number, amendment_effective_at, document_kind, deal_id, monthly_value, hours_per_month, notice_days, service_scope";
     type AmendmentRow = {
       id: string;
       number: string | null;
@@ -224,12 +224,33 @@ export const getContract = createServerFn({ method: "POST" })
       .eq("amendment_of_id", data.id)
       .order("amendment_effective_at", { ascending: true });
 
+    // Horas contratadas por negócio (itens em hora), para consolidar com os aditivos.
+    const amendRows = (amendments ?? []) as unknown as (AmendmentRow & { deal_id?: string | null })[];
+    const dealIds = [row.deal_id, ...amendRows.map((a) => a.deal_id)].filter((v): v is string => !!v);
+    const hoursByDeal = new Map<string, number>();
+    if (dealIds.length) {
+      const { data: items } = await supabase
+        .from("deal_line_items")
+        .select("deal_id, quantity, unit")
+        .in("deal_id", dealIds)
+        .eq("unit", "hour");
+      for (const it of (items ?? []) as { deal_id: string; quantity: number | string | null }[])
+        hoursByDeal.set(it.deal_id, (hoursByDeal.get(it.deal_id) ?? 0) + Number(it.quantity ?? 0));
+    }
+    const hoursOf = (d?: string | null) => (d && hoursByDeal.has(d) ? hoursByDeal.get(d)! : null);
+    const { effectiveTerms } = await import("@/lib/contracts/effective-terms");
+    const effective = effectiveTerms(
+      { ...(row as unknown as import("@/lib/contracts/effective-terms").TermsRow), contracted_hours: hoursOf(row.deal_id) },
+      amendRows.map((a) => ({ ...a, contracted_hours: hoursOf(a.deal_id) })),
+    );
+
     return {
       ...row,
       parent,
       children: children ?? [],
       amendmentOf,
-      amendments: (amendments ?? []) as unknown as AmendmentRow[],
+      amendments: amendRows as unknown as AmendmentRow[],
+      effective,
     };
   });
 

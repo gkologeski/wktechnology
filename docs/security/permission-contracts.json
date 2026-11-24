@@ -26580,7 +26580,7 @@
         "src/components/contracts/legacy/contract-legacy-panel.tsx": "c434e08ea45d5f0f37678bb05e87e9053df7e09f2ea23b9b516b119e1f666b0a",
         "src/lib/contracts/legacy.functions.ts": "29e306393c0daf2590d88a720bfd89bbe5683e9400af3efc0ebd85f04c3736a6",
         "src/lib/contracts/legacy.server.ts": "fdb7b015d3ccd7f3a081bb38900b362ab097d65a118d20420a4ea1a274dc5f47",
-        "src/routes/_authenticated/contracts.$id.tsx": "1015bc65c7ad25e7a958327f54fe01c056f311e2398834344daab1928e295aee",
+        "src/routes/_authenticated/contracts.$id.tsx": "84f8efe8fadbdf5d50370a2840eff70fd30f9daf880130b0d6a1c75981513ae6",
         "drizzle/migrations/0454_contract_legacy_discard_pending.sql": "7ee86112069b893634b01b4babc64a3339947bf9b02524cbc8152a35ad8fbe72",
         "drizzle/migrations/0455_contract_legacy_discard_list_batch.sql": "255ab07053c066122545fc1c0a1f856a52241d543f95e055b3c90213a17621ab"
       }
@@ -26686,9 +26686,9 @@
     {
       "id": "contract-list-and-bulk-permission-completion",
       "kind": "business",
-      "rationale": "Completes three previously unreviewed current-main sources before releasing reusable model configuration. All sixteen server handlers now use the canonical exact-action work permission middleware before any query; existing per-record, field, transition, linking and RLS gates remain intact. The middleware delegates to work_area_authorize, whose context validates active membership, active workspace and effective keys with deny precedence. Bulk and inline UI default to denied until useWorkCapabilities confirms each selected row; assign additionally requires can_assign, export additionally requires the export key, and discarded legacy rows cannot mutate. No grants, members, roles or business records are changed. Unit tests execute the real middleware and server handler against allowed/denied RPC responses and assert no data access on denial; existing PostgreSQL RBAC/RLS suites remain mandatory in full verify.",
+      "rationale": "Completes three previously unreviewed current-main sources before releasing reusable model configuration. All sixteen server handlers now use the canonical exact-action work permission middleware before any query; existing per-record, field, transition, linking and RLS gates remain intact. The middleware delegates to work_area_authorize, whose context validates active membership, active workspace and effective keys with deny precedence. Bulk and inline UI default to denied until useWorkCapabilities confirms each selected row; assign additionally requires can_assign, export additionally requires the export key, and discarded legacy rows cannot mutate. No grants, members, roles or business records are changed. Unit tests execute the real middleware and server handler against allowed/denied RPC responses and assert no data access on denial; existing PostgreSQL RBAC/RLS suites remain mandatory in full verify. 23/11/2026: getContract (view gate unchanged) also returns read-only consolidated terms of active amendments (pure effective-terms.ts) and hour line items of the caller-visible deals via user RLS; no new action.",
       "files": {
-        "src/lib/contracts.functions.ts": "f2e530e7d06b30763e432a428f70320c90e68fd7c49516f57924deb1a8358fcc",
+        "src/lib/contracts.functions.ts": "e08c89e7d4d6dcdd49a5d4525ff9f86cb1b21334fb5e9158dc545216a6f5c5f9",
         "src/components/contracts/contracts-bulk-bar.tsx": "f733ab87754b4a9432a06450da1f5cd8d57a495c9eebebda9f31b1bb7c56fe20",
         "src/components/contracts/contracts-grouped-list.tsx": "32e88c99298ff76506805e4dc7f6791c7938f6f3792df9de7925ed8aff034ec6"
       },
@@ -27001,6 +27001,15 @@
         }
       },
       "exception": null
+    },
+    {
+      "id": "contract-effective-terms-display",
+      "kind": "presentation",
+      "rationale": "Pure consolidation of a main contract with its active amendments and a read-only card. No database client, server function, action or authorization; data comes from getContract under its existing view gate.",
+      "files": {
+        "src/lib/contracts/effective-terms.ts": "fddebd7d0f427907f722e428109d7b59cbe62d045d6dc0bcde58ff05c8b10baa",
+        "src/components/contracts/effective-terms-card.tsx": "65be6fcfca9ab7ce742b25e5a912b8aea07a3328a9574f3fede40fc491c5f38f"
+      }
     }
   ],
   "retired": {
