@@ -26636,10 +26636,11 @@
     {
       "id": "proposal-template-contract-model-catalogue",
       "kind": "business",
-      "rationale": "Reusable model configuration only. Existing TechSales create/update/delete/view permissions and user/RLS client remain mandatory; save explicitly gates the exact create or update action. The published contract model is read through caller RLS in the same active workspace; invoker trigger rechecks visibility on direct writes and composite FK prevents tenant mismatch and deletion while referenced. UI actions use effective permissions. No proposal, contract, acceptance, notification, service or finance record is created. Role remains a property of the linked legal model; this association is not an executed contract or signature. Five executable SQL cases use production RBAC functions, proposal-model RLS and the actual migration; they do not certify a purchase conversion workflow.",
+      "rationale": "Reusable model configuration only. Existing TechSales create/update/delete/view permissions and user/RLS client remain mandatory; save explicitly gates the exact create or update action, and duplicateProposalTemplate enforces requireSalesPermission(create), assertSalesArea(create), assertSalesRecord(view) and caller RLS in the active workspace (rechecking published contract model visibility before insert). List action menu (ProposalTemplateList) exposes Editar/Duplicar/Excluir gated by effective permissions with disabled reasons. No proposal, contract, acceptance, notification, service or finance record is created. Role remains a property of the linked legal model; this association is not an executed contract or signature. Five executable SQL cases plus five duplicateProposalTemplate unit cases cover allowed, missing permission, explicit deny, foreign workspace and inactive membership.",
       "files": {
-        "src/lib/proposals/proposal-templates.functions.ts": "fd1772799a9e1a1d79449ad954d75cb08e9fbbc54f76749a90f79f4fd09871b5",
-        "src/routes/_authenticated/settings.proposal-templates.tsx": "66b03a511606d91abcfcb35da4f63b5154f01397ce25d0bdfabe493a493a20f2",
+        "src/lib/proposals/proposal-templates.functions.ts": "febbaf0d4764a4382f3e964b3c1db57d5e2956d0c6fd96cfc5dec1361f475680",
+        "src/components/proposals/proposal-template-list.tsx": "875e987355892f43d31261787c9e5594474ce19cdc729c5a3bf7d81252511cf1",
+        "src/routes/_authenticated/settings.proposal-templates.tsx": "28aa6a3f859ced6a3cc9305720459a40157e9ed82c9e5f7d52b568b0569e8a07",
         "drizzle/migrations/0456_proposal_template_contract_model.sql": "65e79b97e4585fef45390294a63311c9fa401138285fa90a825965c719c7bffb"
       },
       "resources": [
@@ -26729,6 +26730,14 @@
           "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
           "name": "proposal model SQL rejects inactive membership"
         }
+      }
+    },
+    {
+      "id": "proposal-template-copy-name-pure",
+      "kind": "presentation",
+      "rationale": "Pure helper generating numbered '(cópia)' / '(cópia N)' names within 200 characters for proposal template duplication. No database client, fetch, server function, route, credential, UI action or authorization; authorization belongs to duplicateProposalTemplate under proposal-template-contract-model-catalogue.",
+      "files": {
+        "src/lib/proposals/copy-name.ts": "fcc036a3868eae26d5fd0a9f84ffedb3a19ed19cfff2a5c35dc7a9a4b65155da"
       }
     },
     {

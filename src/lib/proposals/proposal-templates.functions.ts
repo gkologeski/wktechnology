@@ -116,3 +116,90 @@ export const deleteProposalTemplate = createServerFn({ method: "POST" })
     if (!rows?.length) throw new Error("Você não tem permissão para excluir este modelo.");
     return { ok: true };
   });
+
+export const duplicateProposalTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.proposal_templates", "create")])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+    const { nextCopyName } = await import("@/lib/proposals/copy-name");
+    const sb = context.supabase;
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    await assertSalesArea(sb, "techsales.proposal_templates", "create");
+    await assertSalesRecord(sb, "proposal_templates", data.id, "view");
+
+    const { data: source, error: sourceError } = await sb
+      .from("proposal_templates")
+      .select("id, name, description, html, contract_template_id")
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (sourceError) throw new Error(sourceError.message);
+    if (!source) throw new Error("Modelo de proposta não encontrado neste workspace.");
+
+    if (source.contract_template_id) {
+      const { data: model, error: modelError } = await sb
+        .from("contract_templates")
+        .select("id")
+        .eq("workspace_id", workspaceId)
+        .eq("id", source.contract_template_id)
+        .eq("status", "published")
+        .maybeSingle();
+      if (modelError || !model) {
+        throw new Error("Modelo de contrato publicado indisponível neste workspace.");
+      }
+    }
+
+    const [servicesRes, namesRes] = await Promise.all([
+      sb
+        .from("proposal_template_services")
+        .select("service_catalog_id")
+        .eq("template_id", source.id)
+        .eq("workspace_id", workspaceId),
+      sb.from("proposal_templates").select("name").eq("workspace_id", workspaceId),
+    ]);
+    if (servicesRes.error) throw new Error(servicesRes.error.message);
+    if (namesRes.error) throw new Error(namesRes.error.message);
+
+    const copyName = nextCopyName(
+      source.name,
+      (namesRes.data ?? []).map((row) => row.name),
+    );
+    const services = (servicesRes.data ?? []).map((row) => row.service_catalog_id);
+
+    const { data: created, error: insertError } = await sb
+      .from("proposal_templates")
+      .insert({
+        workspace_id: workspaceId,
+        name: copyName,
+        description: source.description,
+        html: source.html,
+        is_default: false,
+        contract_template_id: source.contract_template_id,
+        updated_at: new Date().toISOString(),
+      })
+      .select("id, name, description, html, is_default, contract_template_id")
+      .single();
+    if (insertError) {
+      if (insertError.code === "42501") {
+        throw new Error("Você não tem permissão para criar modelos.");
+      }
+      throw new Error(insertError.message || "Não foi possível duplicar o modelo.");
+    }
+
+    if (services.length) {
+      const { error: svcInsertError } = await sb.from("proposal_template_services").insert(
+        services.map((sid) => ({
+          template_id: created.id,
+          service_catalog_id: sid,
+          workspace_id: workspaceId,
+        })),
+      );
+      if (svcInsertError) throw new Error(svcInsertError.message);
+    }
+
+    return {
+      ...created,
+      services,
+    };
+  });

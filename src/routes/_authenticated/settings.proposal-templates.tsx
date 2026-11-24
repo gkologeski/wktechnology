@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -12,13 +12,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { WordEditor } from "@/components/word-editor-lazy";
+import {
+  ProposalTemplateList,
+  type ProposalTemplateItem,
+} from "@/components/proposals/proposal-template-list";
 import { supabase } from "@/integrations/supabase/client";
 import {
   deleteProposalTemplate,
+  duplicateProposalTemplate,
   listProposalTemplates,
   saveProposalTemplate,
 } from "@/lib/proposals/proposal-templates.functions";
-import { cn } from "@/lib/utils";
 import { normalizeProposalTemplateHtml } from "@/lib/proposals/proposal-template-html";
 import { listContractTemplates } from "@/lib/contracts/templates.functions";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -61,6 +65,17 @@ const EMPTY: Draft = {
   contract_template_id: null,
 };
 
+function toDraft(t: ProposalTemplateItem): Draft {
+  return {
+    id: t.id,
+    name: t.name,
+    description: t.description ?? "",
+    html: normalizeProposalTemplateHtml(t.html),
+    services: t.services,
+    contract_template_id: t.contract_template_id,
+  };
+}
+
 const VARIABLES = [
   "{{company.name}}",
   "{{contact.name}}",
@@ -79,12 +94,19 @@ function ProposalTemplatesPage() {
   const list = useServerFn(listProposalTemplates);
   const save = useServerFn(saveProposalTemplate);
   const del = useServerFn(deleteProposalTemplate);
+  const duplicate = useServerFn(duplicateProposalTemplate);
   const listContracts = useServerFn(listContractTemplates);
   const { can } = usePermissions();
   const allowed = (resource: string, action: string) =>
     ["own", "team", "workspace"].some((s) => can(`${resource}.${action}.${s}`));
   const [draft, setDraft] = useState<Draft | null>(null);
-  const canSave = allowed("techsales.proposal_templates", draft?.id ? "update" : "create");
+  const [dirty, setDirty] = useState(false);
+  const [editorNonce, setEditorNonce] = useState(0);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const canCreate = allowed("techsales.proposal_templates", "create");
+  const canUpdate = allowed("techsales.proposal_templates", "update");
+  const canDelete = allowed("techsales.proposal_templates", "delete");
+  const canSave = draft?.id ? canUpdate : canCreate;
   const canReadContracts = allowed("techcontracts.contract_templates", "view");
 
   const contractsQ = useQuery({
@@ -105,50 +127,129 @@ function ProposalTemplatesPage() {
       return data ?? [];
     },
   });
-  const templates = templatesQ.data ?? [];
+  const templates = useMemo(() => templatesQ.data ?? [], [templatesQ.data]);
 
   useEffect(() => {
-    if (!draft && templates[0]) {
-      const t = templates[0];
-      setDraft({
-        ...t,
-        html: normalizeProposalTemplateHtml(t.html),
-        description: t.description ?? "",
-      });
+    if (!draft && !dirty && templates[0]) {
+      setDraft(toDraft(templates[0]));
     }
-  }, [templates, draft]);
+  }, [templates, draft, dirty]);
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["proposal-templates-admin"] });
     void qc.invalidateQueries({ queryKey: ["proposal-templates"] });
   };
+
+  const updateDraft = (patch: Partial<Draft>) => {
+    setDraft((prev) => (prev ? { ...prev, ...patch } : prev));
+    setDirty(true);
+  };
+
   const saveM = useMutation({
     mutationFn: (d: Draft) =>
       save({ data: { ...d, description: d.description.trim() || null, name: d.name.trim() } }),
     onSuccess: (r) => {
       toast.success("Modelo salvo.");
       setDraft((d) => (d ? { ...d, id: r.id } : d));
+      setDirty(false);
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  async function remove(id: string) {
+  const duplicateM = useMutation({
+    mutationFn: (id: string) => duplicate({ data: { id } }),
+    onSuccess: (created) => {
+      toast.success("Modelo duplicado.");
+      qc.setQueryData<ProposalTemplateItem[]>(["proposal-templates-admin"], (prev) =>
+        prev
+          ? [...prev.filter((item) => item.id !== created.id), created].sort((a, b) =>
+              a.name.localeCompare(b.name, "pt-BR"),
+            )
+          : [created],
+      );
+      setDraft(toDraft(created));
+      setDirty(false);
+      setEditorNonce((n) => n + 1);
+      invalidate();
+      requestAnimationFrame(() => nameInputRef.current?.focus());
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteM = useMutation({
+    mutationFn: (id: string) => del({ data: { id } }),
+    onSuccess: (_res, deletedId) => {
+      toast.success("Modelo excluído.");
+      qc.setQueryData<ProposalTemplateItem[]>(["proposal-templates-admin"], (prev) =>
+        prev ? prev.filter((item) => item.id !== deletedId) : prev,
+      );
+      if (draft?.id === deletedId) {
+        const remaining = templates.find((t) => t.id !== deletedId);
+        setDraft(remaining ? toDraft(remaining) : null);
+        setDirty(false);
+        setEditorNonce((n) => n + 1);
+      }
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const isBusy = saveM.isPending || duplicateM.isPending || deleteM.isPending;
+  const busyTemplateId = duplicateM.isPending
+    ? duplicateM.variables
+    : deleteM.isPending
+      ? deleteM.variables
+      : null;
+
+  async function confirmDiscardIfDirty() {
+    if (!dirty) return true;
+    return confirmDialog({
+      title: "Descartar alterações não salvas?",
+      description: "As alterações feitas no modelo atual serão perdidas se você continuar.",
+      confirmLabel: "Descartar e continuar",
+    });
+  }
+
+  async function openTemplate(t: ProposalTemplateItem, focusName = false) {
+    if (draft?.id === t.id) {
+      if (focusName) nameInputRef.current?.focus();
+      return;
+    }
+    if (!(await confirmDiscardIfDirty())) return;
+    setDraft(toDraft(t));
+    setDirty(false);
+    setEditorNonce((n) => n + 1);
+    if (focusName) {
+      requestAnimationFrame(() => nameInputRef.current?.focus());
+    }
+  }
+
+  async function startNew() {
+    if (!canCreate || isBusy) return;
+    if (!(await confirmDiscardIfDirty())) return;
+    setDraft({ ...EMPTY });
+    setDirty(false);
+    setEditorNonce((n) => n + 1);
+    requestAnimationFrame(() => nameInputRef.current?.focus());
+  }
+
+  async function handleDuplicate(t: ProposalTemplateItem) {
+    if (!canCreate || isBusy) return;
+    if (!(await confirmDiscardIfDirty())) return;
+    duplicateM.mutate(t.id);
+  }
+
+  async function remove(target: { id: string; name: string }) {
+    if (!canDelete || isBusy) return;
     const ok = await confirmDialog({
-      title: "Excluir modelo?",
+      title: `Excluir modelo "${target.name}"?`,
       description: "Propostas já criadas não são afetadas.",
       confirmLabel: "Excluir",
       variant: "destructive",
     });
     if (!ok) return;
-    try {
-      await del({ data: { id } });
-      toast.success("Modelo excluído.");
-      setDraft(null);
-      invalidate();
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
+    deleteM.mutate(target.id);
   }
 
   return (
@@ -161,13 +262,16 @@ function ProposalTemplatesPage() {
             ligado aos serviços dos itens de linha.
           </p>
         </div>
-        <Button
-          disabled={!allowed("techsales.proposal_templates", "create")}
-          onClick={() => setDraft({ ...EMPTY })}
-        >
+        <Button disabled={!canCreate || isBusy} onClick={() => void startNew()}>
           <Plus className="mr-1 h-4 w-4" /> Novo modelo
         </Button>
       </div>
+
+      {(duplicateM.isPending || deleteM.isPending) && (
+        <div role="status" aria-live="polite" className="sr-only">
+          {duplicateM.isPending ? "Duplicando modelo de proposta..." : "Excluindo modelo..."}
+        </div>
+      )}
 
       {templatesQ.isLoading ? (
         <div className="h-64 animate-pulse rounded-md bg-muted" aria-busy="true" />
@@ -184,45 +288,30 @@ function ProposalTemplatesPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
-          <nav aria-label="Modelos" className="space-y-1">
-            {templates.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nenhum modelo. Crie o primeiro.</p>
-            )}
-            {templates.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() =>
-                  setDraft({
-                    ...t,
-                    html: normalizeProposalTemplateHtml(t.html),
-                    description: t.description ?? "",
-                  })
-                }
-                className={cn(
-                  "w-full rounded-md border px-3 py-2 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  draft?.id === t.id ? "border-primary bg-primary/5" : "hover:bg-muted/50",
-                )}
-              >
-                <div className="font-medium">{t.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {t.services.length} serviço(s) vinculado(s)
-                </div>
-              </button>
-            ))}
-          </nav>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <ProposalTemplateList
+            templates={templates}
+            selectedId={draft?.id ?? null}
+            isBusy={isBusy}
+            busyTemplateId={busyTemplateId}
+            onSelect={(t) => void openTemplate(t)}
+            onEdit={(t) => void openTemplate(t, true)}
+            onDuplicate={(t) => void handleDuplicate(t)}
+            onDelete={(t) => void remove(t)}
+          />
 
           {draft ? (
-            <Card>
-              <CardContent className="space-y-4 p-4">
+            <Card className="min-w-0">
+              <CardContent className="min-w-0 space-y-4 p-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="pt-name">Nome *</Label>
                     <Input
+                      ref={nameInputRef}
                       id="pt-name"
                       value={draft.name}
-                      onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                      disabled={!canSave || isBusy}
+                      onChange={(e) => updateDraft({ name: e.target.value })}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -230,7 +319,8 @@ function ProposalTemplatesPage() {
                     <Input
                       id="pt-desc"
                       value={draft.description}
-                      onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                      disabled={!canSave || isBusy}
+                      onChange={(e) => updateDraft({ description: e.target.value })}
                     />
                   </div>
                 </div>
@@ -238,10 +328,9 @@ function ProposalTemplatesPage() {
                   <Label htmlFor="pt-contract">Modelo de contrato vinculado</Label>
                   <Select
                     value={draft.contract_template_id ?? "__none__"}
-                    disabled={!canSave || !canReadContracts || contractsQ.isError}
+                    disabled={!canSave || !canReadContracts || contractsQ.isError || isBusy}
                     onValueChange={(value) =>
-                      setDraft({
-                        ...draft,
+                      updateDraft({
                         contract_template_id: value === "__none__" ? null : value,
                       })
                     }
@@ -281,10 +370,10 @@ function ProposalTemplatesPage() {
                         <div key={s.id} className="flex items-center gap-2">
                           <Checkbox
                             id={id}
+                            disabled={!canSave || isBusy}
                             checked={draft.services.includes(s.id)}
                             onCheckedChange={(v) =>
-                              setDraft({
-                                ...draft,
+                              updateDraft({
                                 services: v
                                   ? [...draft.services, s.id]
                                   : draft.services.filter((x) => x !== s.id),
@@ -302,9 +391,16 @@ function ProposalTemplatesPage() {
                 <div className="space-y-1.5">
                   <Label>Conteúdo</Label>
                   <WordEditor
-                    key={draft.id ?? "novo"}
+                    key={`${draft.id ?? "novo"}-${editorNonce}`}
                     value={draft.html}
-                    onChange={(html) => setDraft((d) => (d ? { ...d, html } : d))}
+                    editable={canSave && !isBusy}
+                    onChange={(html) => {
+                      setDraft((d) => {
+                        if (!d || d.html === html) return d;
+                        setDirty(true);
+                        return { ...d, html };
+                      });
+                    }}
                     minHeight={360}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -320,19 +416,29 @@ function ProposalTemplatesPage() {
                   {draft.id ? (
                     <Button
                       variant="ghost"
-                      disabled={!allowed("techsales.proposal_templates", "delete")}
-                      onClick={() => void remove(draft.id!)}
+                      disabled={!canDelete || isBusy}
+                      onClick={() => void remove({ id: draft.id!, name: draft.name })}
                     >
-                      <Trash2 className="mr-1 h-4 w-4" /> Excluir
+                      {deleteM.isPending && deleteM.variables === draft.id ? (
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Trash2 className="mr-1 h-4 w-4" aria-hidden="true" />
+                      )}{" "}
+                      Excluir
                     </Button>
                   ) : (
                     <span />
                   )}
                   <Button
                     onClick={() => saveM.mutate(draft)}
-                    disabled={!canSave || saveM.isPending || !draft.name.trim()}
+                    disabled={!canSave || isBusy || !draft.name.trim()}
                   >
-                    <Save className="mr-1 h-4 w-4" /> Salvar
+                    {saveM.isPending ? (
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Save className="mr-1 h-4 w-4" aria-hidden="true" />
+                    )}{" "}
+                    Salvar
                   </Button>
                 </div>
               </CardContent>

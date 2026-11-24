@@ -8,7 +8,7 @@ route_pattern: /settings/proposal-templates
 min_permission: techsales.proposal_templates.view.workspace
 audience: internal
 sort_order: 158
-version: 6
+version: 7
 is_published: true
 ---
 
@@ -25,8 +25,10 @@ is_published: true
 ## Passo a passo
 
 1. Abra /settings/proposal-templates.
-2. Revise Nome, Descrição e Conteúdo no editor.
-3. Confira o documento antes de salvar.
+2. Use o menu de ações (`⋯`) em cada modelo da lista para **Editar**, **Duplicar** ou **Excluir**, ou clique em **Novo modelo** para criar do zero.
+3. Ao **Duplicar**, o sistema cria uma cópia com o mesmo conteúdo, descrição, serviços do catálogo e modelo de contrato vinculado, nomeada como `<nome> (cópia)` (ou `(cópia 2)` se já existir), e abre a cópia pronta para edição.
+4. Revise Nome, Descrição, serviços vinculados e Conteúdo no editor e clique em **Salvar**. Se tentar trocar de modelo com alterações não salvas, confirme se deseja descartá-las.
+5. Para **Excluir**, confirme no diálogo exibido (na lista ou no rodapé do editor). Propostas já criadas não são afetadas.
 
 ## Resultado esperado
 
@@ -34,7 +36,7 @@ A tela apresenta o resultado da consulta ou da ação descrita. Confira a confir
 
 ## Regras e limites
 
-Modelos de proposta são próprios e podem se vincular ao catálogo de serviços; não são cláusulas de contrato. Edição do documento final da proposta ocorre pelo ProposalWizard.
+Modelos de proposta são próprios e podem se vincular ao catálogo de serviços; não são cláusulas de contrato. Edição do documento final da proposta ocorre pelo ProposalWizard. As ações respeitam as permissões efetivas do cargo em `techsales.proposal_templates` (`update` para editar, `create` para criar ou duplicar e `delete` para excluir) no workspace ativo.
 
 ## Erros comuns
 
