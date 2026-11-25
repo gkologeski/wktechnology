@@ -12,6 +12,7 @@ import {
   nextTimelinePage,
   TIMELINE_PAGE_SIZE,
   type TimelineFeedSession,
+  type TimelineSourceError,
 } from "@/lib/timeline/activity-fetch";
 import type { HistoryGroup } from "@/lib/timeline/history-groups";
 import { getActivitySurveyResponses } from "@/lib/surveys/survey-activity.functions";
@@ -44,6 +45,8 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [serverCounts, setServerCounts] = useState<Map<TimelineCategory, number>>(new Map());
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [partialErrors, setPartialErrors] = useState<TimelineSourceError[]>([]);
   // Grupos de histórico já agrupados no servidor (indivisíveis entre páginas).
   const [historyGroups, setHistoryGroups] = useState<HistoryGroup[]>([]);
   // Versão da requisição: respostas de contexto anterior (registro, filtros,
@@ -129,7 +132,11 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
           ? Math.max(TIMELINE_PAGE_SIZE, loadedCountRef.current)
           : TIMELINE_PAGE_SIZE;
         if (opts?.silent) setRefreshing(true);
-        else setLoading(true);
+        else {
+          setLoading(true);
+          setLoadError(null);
+          setPartialErrors([]);
+        }
         try {
           const session = createTimelineFeed({
             relatedKey,
@@ -149,10 +156,15 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
           setHasMore(page.hasMore);
           setTotalCount(page.totalCount);
           setServerCounts(page.categoryCounts);
+          setLoadError(null);
+          setPartialErrors(page.sourceErrors ?? []);
         } catch (error) {
           // Falha não vira lista vazia: mantém o que já estava na tela.
-          if (!controller.signal.aborted && version === requestVersion.current)
-            toast.error((error as Error).message);
+          if (!controller.signal.aborted && version === requestVersion.current) {
+            const message = (error as Error).message;
+            setLoadError(message);
+            toast.error(message);
+          }
         } finally {
           if (version === requestVersion.current) {
             setLoading(false);
@@ -192,6 +204,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
       });
       setEmailMeta((current) => new Map([...current, ...page.emailMeta]));
       setHasMore(page.hasMore);
+      if (page.sourceErrors?.length) setPartialErrors(page.sourceErrors);
     } catch (error) {
       if (version === requestVersion.current) toast.error((error as Error).message);
     } finally {
@@ -399,6 +412,8 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     surveyMeta,
     loading,
     refreshing,
+    loadError,
+    partialErrors,
     load,
     filters,
     setFilters,

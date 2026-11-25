@@ -88,10 +88,18 @@ export type FeedItem = {
   history?: HistoryGroup;
 };
 
+export type TimelineSourceKind = "activity" | "calendar" | "history";
+
+export type TimelineSourceError = {
+  source: TimelineSourceKind;
+  message: string;
+};
+
 export type TimelineFeedSession = {
   sources: FeedSourceState<FeedItem>[];
   totals: { activity: number; calendar: number; history: number };
   counts: Map<TimelineCategory, number>;
+  sourceErrors: TimelineSourceError[];
   signal?: AbortSignal;
 };
 
@@ -104,10 +112,12 @@ export type TimelinePage = {
   hasMore: boolean;
   totalCount: number;
   categoryCounts: Map<TimelineCategory, number>;
+  sourceErrors?: TimelineSourceError[];
 };
 
 /** Cria um fetcher paginado com cursor próprio. */
 function pagedSource<T>(
+  sourceId: TimelineSourceKind,
   call: (cursor: TimelineCursor | null) => Promise<PagePayload<T>>,
   toItem: (row: T) => FeedItem,
   onFirst: (payload: PagePayload<T>) => void,
@@ -115,6 +125,7 @@ function pagedSource<T>(
   let cursor: TimelineCursor | null = null;
   let first = true;
   return {
+    id: sourceId,
     buffer: [],
     hasMore: true,
     fetchNext: async () => {
@@ -228,6 +239,7 @@ export function createTimelineFeed({
     sources: [],
     totals: { activity: 0, calendar: 0, history: 0 },
     counts: new Map(),
+    sourceErrors: [],
   };
   const addCounts = (counts: Record<string, number> | undefined) => {
     for (const [k, v] of Object.entries(counts ?? {})) {
@@ -239,6 +251,7 @@ export function createTimelineFeed({
   if (activityCats.length) {
     session.sources.push(
       pagedSource<Activity>(
+        "activity",
         (cursor) =>
           rpcPage(
             "get_timeline_activity_page",
@@ -277,6 +290,7 @@ export function createTimelineFeed({
   if (selected.includes("meeting") && filters.assignees.length === 0) {
     session.sources.push(
       pagedSource<CalRow>(
+        "calendar",
         (cursor) =>
           rpcPage(
             "get_timeline_calendar_page",
@@ -319,6 +333,7 @@ export function createTimelineFeed({
     };
     session.sources.push(
       pagedSource<HistRow>(
+        "history",
         (cursor) =>
           rpcPage(
             "get_timeline_history_page",
@@ -402,7 +417,15 @@ export async function nextTimelinePage(
   size = TIMELINE_PAGE_SIZE,
 ): Promise<TimelinePage> {
   session.signal?.throwIfAborted();
-  const items = await takeMerged(session.sources, size, (i) => i);
+  const items = await takeMerged(session.sources, size, (i) => i, {
+    signal: session.signal,
+    onSourceError: (source, error) => {
+      const kind = (source.id ?? "activity") as TimelineSourceKind;
+      if (!session.sourceErrors.some((e) => e.source === kind)) {
+        session.sourceErrors.push({ source: kind, message: error.message });
+      }
+    },
+  });
   session.signal?.throwIfAborted();
   const activities = items.flatMap((i) => (i.activity ? [i.activity] : []));
   const historyGroups = items.flatMap((i) => (i.history ? [i.history] : []));
@@ -418,5 +441,6 @@ export async function nextTimelinePage(
     hasMore: feedHasMore(session.sources),
     totalCount: session.totals.activity + session.totals.calendar + session.totals.history,
     categoryCounts: new Map(session.counts),
+    sourceErrors: [...session.sourceErrors],
   };
 }

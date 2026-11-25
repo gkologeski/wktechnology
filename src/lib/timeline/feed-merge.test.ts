@@ -64,4 +64,51 @@ describe("takeMerged", () => {
     expect(await takeMerged([broken], 40, key)).toEqual([]);
     expect(feedHasMore([broken])).toBe(false);
   });
+
+  it("preserva as demais origens quando apenas uma falha e reporta a origem com erro", async () => {
+    const acts = { ...pagedSource([{ at: 100, rank: 0, id: "a1" }], 40), id: "activity" };
+    const cal: FeedSourceState<Item> = {
+      id: "calendar",
+      buffer: [],
+      hasMore: true,
+      fetchNext: async () => {
+        throw new Error("canceling statement due to statement timeout");
+      },
+    };
+    const errors: Array<{ id?: string; msg: string }> = [];
+    const page = await takeMerged([acts, cal], 40, key, {
+      onSourceError: (src, err) => errors.push({ id: src.id, msg: err.message }),
+    });
+    expect(page.map((p) => p.id)).toEqual(["a1"]);
+    expect(errors).toEqual([
+      { id: "calendar", msg: "canceling statement due to statement timeout" },
+    ]);
+    expect(cal.hasMore).toBe(false);
+  });
+
+  it("propaga o erro quando todas as origens falham sem nenhum item carregado", async () => {
+    const a: FeedSourceState<Item> = {
+      id: "activity",
+      buffer: [],
+      hasMore: true,
+      fetchNext: async () => {
+        throw new Error("timeout a");
+      },
+    };
+    const c: FeedSourceState<Item> = {
+      id: "calendar",
+      buffer: [],
+      hasMore: true,
+      fetchNext: async () => {
+        throw new Error("timeout c");
+      },
+    };
+    const errors: string[] = [];
+    await expect(
+      takeMerged([a, c], 40, key, {
+        onSourceError: (src) => errors.push(src.id ?? ""),
+      }),
+    ).rejects.toThrow("timeout a");
+    expect(errors).toEqual(["activity", "calendar"]);
+  });
 });

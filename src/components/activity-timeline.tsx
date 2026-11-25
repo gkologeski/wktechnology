@@ -18,8 +18,16 @@ import { fetchTimelineTarget, fetchTimelineTeam } from "@/lib/timeline/activity-
 import { TimelineFilterBar } from "./activity/timeline-filter-bar";
 import { TimelineExpandContext } from "./activity/timeline-expand-context";
 import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 import { isFiltered, DEFAULT_TIMELINE_FILTERS } from "@/lib/timeline/timeline-filters";
 import { useTimelineFeed } from "./activity/use-timeline-feed";
+import type { TimelineSourceKind } from "@/lib/timeline/activity-fetch";
+
+const SOURCE_ERROR_LABEL: Record<TimelineSourceKind, string> = {
+  activity: "as atividades",
+  calendar: "as reuniões do calendário",
+  history: "o histórico de alterações",
+};
 import {
   removeActivity,
   toggleActivityDone,
@@ -44,6 +52,8 @@ export function ActivityTimeline({
     surveyMeta,
     loading,
     refreshing,
+    loadError,
+    partialErrors,
     load,
     filters,
     setFilters,
@@ -174,7 +184,42 @@ export function ActivityTimeline({
         refreshing={refreshing && !loading}
       />
 
-      {!loading && timelineEntries.length === 0 && (isFiltered(filters) || datePreset !== "any") ? (
+      {!loading && partialErrors.length > 0 && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+            <span>
+              Não foi possível carregar{" "}
+              {partialErrors.map((e) => SOURCE_ERROR_LABEL[e.source]).join(" e ")}. Os demais itens
+              seguem visíveis abaixo.
+            </span>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => void load()}>
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+
+      {!loading && loadError && timelineEntries.length === 0 ? (
+        <div
+          role="alert"
+          className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-6 text-center text-sm text-foreground"
+        >
+          <div className="flex items-center justify-center gap-2 font-medium">
+            <AlertCircle className="h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
+            <span>Não foi possível carregar a linha do tempo.</span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">{loadError}</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => void load()}>
+            Tentar novamente
+          </Button>
+        </div>
+      ) : !loading &&
+        timelineEntries.length === 0 &&
+        (isFiltered(filters) || datePreset !== "any") ? (
         <div className="rounded-md border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
           <p>Nenhum item corresponde aos filtros.</p>
           <Button

@@ -122,4 +122,17 @@ it("preserves visible history and reports a current real failure", async () => {
   });
   expect(current.totalCount).toBe(175);
   expect(m.error).toHaveBeenCalledWith("database unavailable");
+  expect(current.loadError).toBe("database unavailable");
+});
+it("exposes partialErrors without clearing loaded activities when calendar fails", async () => {
+  m.next.mockResolvedValueOnce({
+    ...page(),
+    sourceErrors: [{ source: "calendar", message: "canceling statement due to statement timeout" }],
+  });
+  await act(async () => root.render(createElement(Harness, { id: "a" })));
+  expect(current.totalCount).toBe(175);
+  expect(current.loadError).toBeNull();
+  expect(current.partialErrors).toEqual([
+    { source: "calendar", message: "canceling statement due to statement timeout" },
+  ]);
 });

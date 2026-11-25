@@ -1835,7 +1835,7 @@
         "techsales.notes.view.workspace",
         "techsales.tasks.view.workspace"
       ],
-      "rationale": "User explicitly requested related contact/company history, identified as such, without moving source activity links. Invoker RPC requires a visible parent deal and keeps the existing per-activity RLS including note/task classification; same-workspace filter precedes pagination. No record mutation or permission grant. UI labels related history and other-deal provenance. Fixtures exercise production resolver with the activity resource CASE, plus separate full-schema real-JWT acceptance. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 15/11/2026: coalesce focus/visibility/reconnect reads, cancel superseded feed RPCs, and reconcile actual mutations once after an in-flight read; unchanged invoker RLS and complete pagination.",
+      "rationale": "User explicitly requested related contact/company history, identified as such, without moving source activity links. Invoker RPC requires a visible parent deal and keeps the existing per-activity RLS including note/task classification; same-workspace filter precedes pagination. No record mutation or permission grant. UI labels related history and other-deal provenance. Fixtures exercise production resolver with the activity resource CASE, plus separate full-schema real-JWT acceptance. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 15/11/2026: coalesce focus/visibility/reconnect reads, cancel superseded feed RPCs, and reconcile actual mutations once after an in-flight read; unchanged invoker RLS and complete pagination. Review 25/11/2026: isolate single-source timeline RPC failures (e.g. calendar timeout) so other sources remain visible with an inline retry banner, and show an explicit retry alert instead of a fake empty state when all sources fail; unchanged invoker RLS and permission model.",
       "controls": [
         {
           "file": "drizzle/migrations/0251_deal_related_activity_history.sql",
@@ -1852,6 +1852,10 @@
         {
           "file": "src/lib/timeline/activity-fetch.ts",
           "symbol": "rpcPage"
+        },
+        {
+          "file": "src/components/activity/use-timeline-feed.ts",
+          "symbol": "useTimelineFeed"
         }
       ],
       "database": [
@@ -1884,9 +1888,10 @@
       },
       "files": {
         "drizzle/migrations/0251_deal_related_activity_history.sql": "074748f2edde9e44c7e3a76e998e93223c0766f01dd1d43735e0cff118ae654a",
+        "src/components/activity-timeline.tsx": "6962d8d7ebf556676f108eedac5d0516f914cc61c25411ba3a9020eaf79edc61",
         "src/components/activity/activity-timeline-item.tsx": "15b71c0cc7292193aa9e768cebdd539a189122826e3be8a84992cbfe5d1d5297",
-        "src/components/activity/use-timeline-feed.ts": "9edf4e5c9ab899201c7bea0c50bfa381030911f5211c92b8992780aea142d07c",
-        "src/lib/timeline/activity-fetch.ts": "01ba7435b3f5f7f5deab3e320b418aa0b935f8accb6ef12d48c8b0d4528355e1"
+        "src/components/activity/use-timeline-feed.ts": "1a5812c7fba9f36ad29dfe0da95cdd3d18ff6aaafed727778936c64db21a8411",
+        "src/lib/timeline/activity-fetch.ts": "16c4f0d719b0d5db4e200d6c112a02dca0485d4e9a066096fb994b8c4ff17945"
       }
     },
     {
@@ -27668,6 +27673,107 @@
       "rationale": "Pure address normalization, validation and suggestion merge; no IO, identity, route or action. Save and lookup authorization remain in legal-entities.functions.ts.",
       "files": {
         "src/lib/legal-entity-address.ts": "74bc6961150b9bf0dd24fdae25e2806a53cdd1266157c218d321acd4a5022a79"
+      }
+    },
+    {
+      "id": "timeline-notification-query-performance",
+      "kind": "business",
+      "resources": [
+        "techsales.activities",
+        "techsales.notes",
+        "techsales.tasks",
+        "techsales.inbox.email",
+        "system.calendars"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.activities.view.workspace",
+        "techsales.notes.view.workspace",
+        "techsales.tasks.view.workspace",
+        "techsales.inbox.email.view.workspace",
+        "system.calendars.view.workspace"
+      ],
+      "rationale": "Performance-only database optimizations for statement timeout remediation (25/11/2026); zero permission, role, grant or visibility-boundary changes. 0475 adds calendar_events_ws_contact_idx, applies the existing sales_full_grants() workspace fast path + (SELECT auth.uid()) InitPlan to calendar_events/email_threads/email_messages (mathematically equivalent to the unchanged sales_context_access fallback), splits recurring vs non-recurring sibling counting in get_timeline_calendar_page to use the existing partial indexes under caller RLS, avoids CASE-induced Seq Scans in get_timeline_activity_page, and materializes caller-owned rows before source visibility checks in notification_center_badge/list/lookup. 0476 short-circuits rep_restricted_workspaces_for when rep_restricted_workspaces() is empty (equivalent because user_has_permission requires active membership), filters requested resource prefixes in sales_policy_context before JSONB aggregation, and consolidates single-pass entity-indexed reads in get_timeline_activity_page and get_timeline_calendar_page (SECURITY INVOKER, caller RLS preserved).",
+      "files": {
+        "drizzle/migrations/0475_optimize_timeline_and_notification_center_queries.sql": "99b5de156a06cdc16b943faad6b14cd827b00bf64231192c08bce982247af457",
+        "drizzle/migrations/0476_optimize_sales_context_and_timeline_single_pass.sql": "8b559944b7f8bd5e30fa55fc533baf6b4f6a20fce1b9b416c909acc1edf4cef5"
+      },
+      "controls": [
+        {
+          "file": "src/lib/timeline/activity-fetch.ts",
+          "symbol": "createTimelineFeed"
+        },
+        {
+          "file": "src/lib/notification-center.functions.ts",
+          "symbol": "getNotificationCenterBadge"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0475_optimize_timeline_and_notification_center_queries.sql",
+          "symbol": "notification_center_badge"
+        },
+        {
+          "file": "drizzle/migrations/0475_optimize_timeline_and_notification_center_queries.sql",
+          "symbol": "notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0475_optimize_timeline_and_notification_center_queries.sql",
+          "symbol": "notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0476_optimize_sales_context_and_timeline_single_pass.sql",
+          "symbol": "get_timeline_calendar_page"
+        },
+        {
+          "file": "drizzle/migrations/0476_optimize_sales_context_and_timeline_single_pass.sql",
+          "symbol": "get_timeline_activity_page"
+        },
+        {
+          "file": "drizzle/migrations/0476_optimize_sales_context_and_timeline_single_pass.sql",
+          "symbol": "rep_restricted_workspaces_for"
+        },
+        {
+          "file": "drizzle/migrations/0476_optimize_sales_context_and_timeline_single_pass.sql",
+          "symbol": "sales_policy_context"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "related timeline SQL allows authorized history with original links"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "related timeline SQL denies missing activity permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "related timeline SQL respects explicit activity deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "related timeline SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "related timeline SQL rejects inactive member"
+        }
+      }
+    },
+    {
+      "id": "timeline-feed-merge-pure",
+      "kind": "presentation",
+      "rationale": "Pure k-way merge helper for already-fetched timeline pages with optional partial-source error callback; no IO, auth, route or mutation. Server authorization stays in invoker timeline RPCs and activity-fetch.ts.",
+      "files": {
+        "src/lib/timeline/feed-merge.ts": "f9e41cb343d488d0e9124547fb19cb7fc8bc0168996135a2ddcc03ba179e4799"
       }
     }
   ],
