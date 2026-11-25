@@ -1,4 +1,5 @@
 // Tipos do rascunho de proposta (compartilhados entre servidor e assistente).
+import type { ProposalScopeBrief } from "./proposal-scope-forms";
 import type { VisualDesign } from "./visual-design";
 
 export type ProposalDraftSource = { quoteId?: string; dealId?: string; proposalId?: string };
@@ -46,6 +47,10 @@ export type ProposalDraft = {
   /** Empresa emissora (CNPJ) herdada da origem e empresas ativas do workspace — EMPRESA-PROPOSTA. */
   legal_entity_id?: string | null;
   legal_entity_options?: import("./proposal-legal-entity").LegalEntityOption[];
+  /** Respostas estruturadas do Copiloto de Escopo por serviço (salvas em proposals.variables). */
+  scope_brief?: ProposalScopeBrief | null;
+  /** Variáveis existentes da proposta preservadas ao gravar scope_brief. */
+  variables?: import("@/integrations/supabase/types").Json | null;
 };
 
 export type ProposalDraftResult =

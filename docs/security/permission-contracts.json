@@ -12494,8 +12494,8 @@
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "acb9e2e990a5f17064c2756374f46aa20af8dfcac0473af85261ec2182625ca7",
         "src/lib/sales-flow.functions.ts": "05c7c1905198cb686d1d0b0b223f9cd2cf96b1bb1f10f687ddf866c0f9501c6e",
-        "src/components/proposals/proposal-wizard.tsx": "4e1decddce55cdc60b182a0d49497fe748767ca18264dd71a1c445fbb4105d44",
-        "src/lib/proposals/proposal-draft.server.ts": "1dc72391104cbf53693d73d16408af467c32ee69dffcdf43d28ba593f19a2fbc",
+        "src/components/proposals/proposal-wizard.tsx": "2da32570e1b478795a433e91143e96b9a93658b146a5ef3ce6f99deab068f44e",
+        "src/lib/proposals/proposal-draft.server.ts": "9bc7f93bf0b1f89caa5df8f6e7d9e501c3fe8314ff4f7ea29ea90797736a7bf7",
         "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
         "drizzle/migrations/0321_proposal_versions_cascade.sql": "d74b28603f0279e6cb749f1af8ae34658c561ed0f659964fea8d6f4a2b257bcf",
         "drizzle/migrations/0323_proposal_payment_method.sql": "cf944cd4385707aeb616275a4e4a84839911ae49e6f3a50c3446c3f216bf9a99",
@@ -12681,7 +12681,9 @@
       "kind": "presentation",
       "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping. TEXTO-PROPOSTA: pure proposal terms block helper. TEXTO-CONSULTORIA: pure signer choice helper. TABELA-FINAL: pure items-table placement helper and proposal document/PDF ordering (presentation only; same data, same token gate). PROPOSTA-COMPLETA: pure payment-terms completeness check; wizards require installments/due day (UI validation only, writes unchanged). EMPRESA-PROPOSTA: pure issuing legal entity preselection and friendly error message. CONTAS-A-PAGAR-COMPRA: pure purchase payables proposal and sum check (no I/O); generation stays under purchase-contract-payables.",
       "files": {
-        "src/lib/proposals/proposal-draft-types.ts": "cd9cf5aac4fb2a7f93598f018ec97287ad1cbf1dbb22d4dd86b45b06adea74e9",
+        "src/lib/proposals/proposal-draft-types.ts": "c4f8cee4071b587f2b834baeaba460c1615d747f3238144fe108303a1d3e20c0",
+        "src/lib/proposals/proposal-scope-catalog.ts": "53328709c8ea558ff2690dae88651dabd662ed78003ffb3ebda1765e1c8f689b",
+        "src/lib/proposals/proposal-scope-forms.ts": "e60004481bd4954fa13f2d0d878079a723c6a1cd32072e07b2e55e739914abd3",
         "src/lib/contracts/contract-terms-defaults.ts": "4243429565dc9b855faf2b73986e8044ef2ad746a9582ee841e0f85b42583463",
         "src/components/word-editor-lazy.tsx": "4f6e7ef7880aa6b35c94c9bb6b2caacba43d380473fd193ab6adc1a0ed428e8d",
         "src/lib/proposals/proposal-terms-block.ts": "5621b6a6e969fcefa16a9474adad912378338c750c3a5683f2779dcb74e5478b",
@@ -27957,6 +27959,95 @@
         "techpeople.people.update.team",
         "techpeople.people.update.workspace"
       ]
+    },
+    {
+      "id": "proposal-scope-copilot-ai",
+      "kind": "business",
+      "rationale": "Proposal scope copilot lets active workspace members with TechSales proposal create/update access fill structured service-type and contracting-modality fields and generate technical scope drafts via workspace AI (aiChatFetch). generateProposalScope enforces requireSalesPermission(techsales.proposals, create/update), assertSalesAnyArea, assertSalesReferences (for referenced proposal/quote/deal under caller RLS), and resolveActiveWorkspace before invoking generateProposalScopeServer; ProposalScopeCopilot and ProposalScopeServiceCard also gate UI controls via usePermissions. Structured answers are stored only in proposals.variables under existing proposal update RLS and sales_proposal_guard; locked proposals remain immutable. No automatic sends, approvals or contract creation occur.",
+      "files": {
+        "src/lib/proposals/proposal-scope-ai.functions.ts": "2bb6a20abcfbb933ebad0297a3e1e3544fadc54397cfcac8ad63fbac3cdaa166",
+        "src/lib/proposals/proposal-scope-ai.server.ts": "2250ee06a0c2e3157fa88a4f572d7502a38ec8b54d20978fc5e767067b529912",
+        "src/components/proposals/proposal-scope-copilot.tsx": "bd4d0de0199494deb0761afa087ed2be092f2dea62ded5881b87544c1a45ddc0",
+        "src/components/proposals/proposal-scope-service-card.tsx": "3f48b556f1fddd73efbc6c09a71171ac2fa18c8e8e332a2ea38970c5cf62ff08"
+      },
+      "resources": [
+        "techsales.proposals"
+      ],
+      "actions": [
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.proposals.create.own",
+        "techsales.proposals.create.team",
+        "techsales.proposals.create.workspace",
+        "techsales.proposals.update.own",
+        "techsales.proposals.update.team",
+        "techsales.proposals.update.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesAnyArea"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesReferences"
+        },
+        {
+          "file": "src/lib/active-workspace.server.ts",
+          "symbol": "resolveActiveWorkspace"
+        },
+        {
+          "file": "src/lib/proposals/proposal-scope-ai.server.ts",
+          "symbol": "generateProposalScopeServer"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "public.sales_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0471_contract_draft_open_and_proposal_entity_guard.sql",
+          "symbol": "public.sales_proposal_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/proposals/proposal-scope-ai.test.ts",
+          "name": "allows an authorized active workspace member to generate technical scope via aiChatFetch"
+        },
+        "missing_permission": {
+          "file": "src/lib/proposals/proposal-scope-ai.test.ts",
+          "name": "rejects scope generation when proposal create/update permission key is missing without calling AI"
+        },
+        "explicit_deny": {
+          "file": "src/lib/proposals/proposal-scope-ai.test.ts",
+          "name": "rejects scope generation on explicit deny of proposal update/create"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/proposals/proposal-scope-ai.test.ts",
+          "name": "rejects scope generation when referenced deal or proposal belongs to another workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/proposals/proposal-scope-ai.test.ts",
+          "name": "rejects scope generation for an inactive workspace member"
+        }
+      }
     }
   ],
   "retired": {

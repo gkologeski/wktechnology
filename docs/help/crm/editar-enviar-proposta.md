@@ -8,7 +8,7 @@ route_pattern: /proposals/$id
 min_permission:
 audience: internal
 sort_order: 203
-version: 6
+version: 7
 is_published: true
 ---
 # Editar e enviar uma proposta
@@ -59,3 +59,7 @@ No passo **Dados** informe **Parcelas** e **Dia de vencimento** (obrigatórios p
 ## Forma de pagamento e Condições comerciais
 
 Além de parcelas, vencimento e vigência, informe **Forma de pagamento** (PIX, TED, Boleto bancário, Transferência bancária ou Outro) e, se quiser, **Observação do pagamento**. O texto da proposta ganha a seção **Condições comerciais**, atualizada sozinha sempre que você muda esses campos, com o valor de cada parcela. Na **Revisão**, um aviso mostra condições vazias e trechos "[Escreva aqui ...]" ainda não preenchidos (o aviso não impede salvar). A forma de pagamento também é copiada para o contrato.
+
+## Assistente de escopo por serviço (IA)
+
+Na etapa **Conteúdo**, abra **Assistente de escopo por serviço (IA)** para preencher campos específicos de cada serviço (Consultoria, Suporte e sustentação, Desenvolvimento, Alocação, Implantação ou Personalizado) e da modalidade de contratação (Preço fechado, Por hora ou Mensalidade), além de notas livres. Clique em **Gerar escopo técnico com IA** para obter uma redação técnica estruturada, revise a prévia e escolha **Inserir no escopo da proposta**, **Substituir texto atual** ou **Aplicar no modelo visual**. A geração exige permissão de criação ou edição de propostas (`techsales.proposals`) e respeita o provedor de IA configurado no workspace.

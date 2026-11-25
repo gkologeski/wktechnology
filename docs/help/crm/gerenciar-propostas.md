@@ -8,7 +8,7 @@ route_pattern: /proposals
 min_permission:
 audience: internal
 sort_order: 202
-version: 6
+version: 7
 is_published: true
 ---
 # Gerenciar propostas
@@ -56,3 +56,10 @@ Na primeira etapa do assistente, escolha em **Empresa emissora (CNPJ)** qual emp
 - Se o negócio ou a cotação já tiver uma empresa ativa, ela vem preenchida.
 - Se a empresa de origem estiver inativa, o campo vem vazio com o aviso "A empresa do negócio está inativa. Escolha a empresa emissora." Não dá para avançar nem salvar rascunho sem escolher.
 - A escolha vale só para a proposta. O negócio e a cotação mantêm a empresa original. O contrato gerado a partir da proposta usa a empresa escolhida.
+
+## Assistente de escopo por serviço (IA)
+Na etapa **Conteúdo** do assistente, você pode abrir o **Assistente de escopo por serviço (IA)** para estruturar propostas com um ou vários serviços (por exemplo, consultoria e suporte na mesma proposta):
+1. Preencha os **Dados gerais da proposta** (objetivo, resultado esperado, prazo/etapas, responsabilidades do cliente e exclusões).
+2. Para cada serviço (ou clicando em **Adicionar serviço**), escolha o **Tipo de serviço** (Consultoria, Suporte e sustentação, Desenvolvimento de software, Alocação de profissionais, Implantação e integração ou Personalizado) e a **Modalidade de contratação** (Preço fechado, Por hora ou Mensalidade).
+3. Responda aos campos específicos exibidos para aquele tipo de serviço e, se preferir, complemente com suas palavras em **Notas livres**.
+4. Clique em **Gerar escopo técnico com IA**, revise a prévia e aplique no texto da proposta (sem apagar o bloco de Condições comerciais) ou como páginas formatadas no modelo visual. As respostas preenchidas ficam salvas com a proposta para futuras revisões enquanto ela não estiver travada.

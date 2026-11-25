@@ -32,6 +32,7 @@ import { DatePicker } from "@/components/date-picker";
 import { WordEditor } from "@/components/word-editor-lazy";
 import { VisualProposalEditor } from "@/components/proposals/visual-editor/visual-proposal-editor";
 import { ProposalReviewPreview } from "@/components/proposals/proposal-review-preview";
+import { ProposalScopeCopilot } from "@/components/proposals/proposal-scope-copilot";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/crm";
@@ -51,6 +52,15 @@ import {
 } from "@/lib/proposals/proposal-template-html";
 import { updateProposal } from "@/lib/proposals.functions";
 import { saveProposalVisualDesign } from "@/lib/proposals/proposal-assets.functions";
+import { generateProposalScope } from "@/lib/proposals/proposal-scope-ai.functions";
+import {
+  appendScopePagesToVisualDesign,
+  buildInitialScopeBrief,
+  hasAnyScopeInput,
+  mergeScopeIntoProposalHtml,
+  type GeneratedScopeSection,
+  type ProposalScopeBrief,
+} from "@/lib/proposals/proposal-scope-forms";
 import {
   createProposalWithEntity,
   setProposalLegalEntity,
@@ -140,6 +150,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const setEntity = useServerFn(setProposalLegalEntity);
   const update = useServerFn(updateProposal);
   const saveDesign = useServerFn(saveProposalVisualDesign);
+  const generateScope = useServerFn(generateProposalScope);
   const members = useWorkspaceMembers();
 
   const draftQ = useQuery({
@@ -189,6 +200,8 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const [payTerms, setPayTerms] = useState<PaymentTerms | null>(null);
   const [entityId, setEntityId] = useState<string | null>(null);
   const [originInactive, setOriginInactive] = useState(false);
+  const [scopeBrief, setScopeBrief] = useState<ProposalScopeBrief>({ general: {}, services: [] });
+  const [scopeDirty, setScopeDirty] = useState(false);
   const { can } = usePermissions();
   const canEditTerms = ["own", "team", "workspace"].some((s) =>
     can(`techsales.proposals.update.${s}`),
@@ -235,6 +248,8 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
     const pick = pickInitialLegalEntity(draft.legal_entity_id, draft.legal_entity_options ?? []);
     setEntityId(pick.id);
     setOriginInactive(pick.originInactive);
+    setScopeBrief(buildInitialScopeBrief(draft.items, draft.scope_brief));
+    setScopeDirty(false);
     // Condições: as gravadas (da proposta ou da cotação) vencem; sem elas, parcelas antigas ou sugestão.
     const stored = parsePaymentTerms(draft.payment_terms);
     const suggested =
@@ -372,11 +387,21 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   }
 
   async function afterSave(id: string) {
-    await supabase
+    const shouldSaveScope =
+      canEditTerms && (scopeDirty || (!editId && hasAnyScopeInput(scopeBrief)));
+    const existingVars =
+      draft?.variables && typeof draft.variables === "object" && !Array.isArray(draft.variables)
+        ? (draft.variables as Record<string, unknown>)
+        : {};
+    const mergedVariables = shouldSaveScope
+      ? { ...existingVars, scope_brief: scopeBrief }
+      : undefined;
+    const { error: afterSaveError } = await supabase
       .from("proposals")
       .update({
         assigned_to: assignee,
         proposal_template_id: templateId,
+        ...(mergedVariables ? { variables: mergedVariables as never } : {}),
         // Condições contratuais: gravadas só por quem pode alterar propostas (RLS também valida).
         ...(canEditTerms
           ? {
@@ -390,6 +415,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
           : {}),
       })
       .eq("id", id);
+    if (afterSaveError) throw new Error(afterSaveError.message);
     void qc.invalidateQueries({ queryKey: ["deal-proposals"] });
     void qc.invalidateQueries({ queryKey: ["proposal", id] });
     void qc.invalidateQueries({ queryKey: ["proposal-doc", id] });
@@ -478,6 +504,57 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
 
   const memberName = (id: string | null) => (id ? members.nameFor(id) : "Sem responsável");
   const chosen = templates.find((t) => t.id === templateId) ?? null;
+
+  function handleScopeBriefChange(next: ProposalScopeBrief) {
+    setScopeBrief(next);
+    setScopeDirty(true);
+  }
+
+  async function handleGenerateScope(brief: ProposalScopeBrief) {
+    const selectedEntity = draft?.legal_entity_options?.find((e) => e.id === entityId);
+    return generateScope({
+      data: {
+        ...(editId ? { proposalId: editId } : {}),
+        ...(draft?.quote_id ? { quoteId: draft.quote_id } : {}),
+        ...(draft?.deal_id ? { dealId: draft.deal_id } : {}),
+        brief,
+        context: {
+          title: title.trim() || draft?.title || "",
+          companyName: draft?.company_name ?? null,
+          providerName: selectedEntity?.name ?? null,
+          totalFormatted: amount != null ? formatCurrency(amount, currency) : null,
+          paymentTermsSummary: payTerms ? describePaymentTerms(payTerms) : null,
+          items: (draft?.items ?? []).map((it) => ({ name: it.name, billing: it.billing })),
+        },
+      },
+    });
+  }
+
+  async function handleApplyScopeHtml(html: string, mode: "insert" | "replace") {
+    if (mode === "replace" && body.trim()) {
+      const { confirmDialog } = await import("@/components/ui/confirm-dialog");
+      confirmingRef.current = true;
+      const ok = await confirmDialog({
+        title: "Substituir o texto atual?",
+        description:
+          "O texto atual da proposta será substituído pelo escopo gerado (as condições comerciais serão mantidas).",
+        confirmLabel: "Substituir texto",
+      });
+      window.setTimeout(() => (confirmingRef.current = false), 300);
+      if (!ok) return;
+    }
+    setBody((current) => mergeScopeIntoProposalHtml(current, html, mode));
+    toast.success("Escopo técnico aplicado ao documento.");
+  }
+
+  function handleApplyScopeVisual(sections: GeneratedScopeSection[]) {
+    if (!designJson) return;
+    const updated = appendScopePagesToVisualDesign(designJson, sections);
+    setDesignJson(updated);
+    setBody(extractPlainSummaryFromDesign(updated));
+    toast.success("Páginas de escopo técnico adicionadas ao modelo visual.");
+  }
+
   const reviewVisualContext: VisualRenderContext = useMemo(() => {
     const selectedEntity = draft?.legal_entity_options?.find((e) => e.id === entityId);
     const instVal = installmentValue(amount, installments);
@@ -857,6 +934,16 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                     </p>
                   )}
                 </div>
+                <ProposalScopeCopilot
+                  brief={scopeBrief}
+                  onChange={handleScopeBriefChange}
+                  onGenerate={handleGenerateScope}
+                  onApplyHtml={(html, mode) => void handleApplyScopeHtml(html, mode)}
+                  onApplyVisual={handleApplyScopeVisual}
+                  isVisualMode={!!designJson}
+                  hasExistingText={body.trim().length > 0}
+                  defaultOpen={!body.trim() && !designJson}
+                />
                 {designJson ? (
                   <VisualProposalEditor
                     value={designJson}
