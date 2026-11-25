@@ -26388,9 +26388,11 @@ export type Database = {
           contract_template_id: string | null
           created_at: string
           description: string | null
+          design_json: Json | null
           html: string
           id: string
           is_default: boolean
+          layout_kind: string
           name: string
           updated_at: string
           workspace_id: string
@@ -26399,9 +26401,11 @@ export type Database = {
           contract_template_id?: string | null
           created_at?: string
           description?: string | null
+          design_json?: Json | null
           html?: string
           id?: string
           is_default?: boolean
+          layout_kind?: string
           name: string
           updated_at?: string
           workspace_id: string
@@ -26410,9 +26414,11 @@ export type Database = {
           contract_template_id?: string | null
           created_at?: string
           description?: string | null
+          design_json?: Json | null
           html?: string
           id?: string
           is_default?: boolean
+          layout_kind?: string
           name?: string
           updated_at?: string
           workspace_id?: string
@@ -26444,6 +26450,7 @@ export type Database = {
           currency: string
           deal_id: string | null
           decided_at: string | null
+          design_json: Json | null
           esign_document_id: string | null
           expires_at: string | null
           id: string
@@ -26477,6 +26484,7 @@ export type Database = {
           currency?: string
           deal_id?: string | null
           decided_at?: string | null
+          design_json?: Json | null
           esign_document_id?: string | null
           expires_at?: string | null
           id?: string
@@ -26510,6 +26518,7 @@ export type Database = {
           currency?: string
           deal_id?: string | null
           decided_at?: string | null
+          design_json?: Json | null
           esign_document_id?: string | null
           expires_at?: string | null
           id?: string
@@ -41760,6 +41769,10 @@ export type Database = {
           p_since?: string
         }
         Returns: number
+      }
+      proposal_asset_storage_allowed: {
+        Args: { p_path: string; p_write: boolean }
+        Returns: boolean
       }
       proposal_contract_source: { Args: { p_id: string }; Returns: Json }
       proposal_document_snapshot: {

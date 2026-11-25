@@ -9,6 +9,7 @@ export type AcceptedProposalSource = {
     id: string;
     title: string;
     body: string;
+    design_json?: unknown;
     version: number;
     company_id: string | null;
     deal_id: string | null;

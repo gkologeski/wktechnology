@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { FileText, LayoutTemplate, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { WordEditor } from "@/components/word-editor-lazy";
+import { VisualProposalEditor } from "@/components/proposals/visual-editor/visual-proposal-editor";
 import {
   ProposalTemplateList,
   type ProposalTemplateItem,
@@ -24,6 +25,13 @@ import {
   saveProposalTemplate,
 } from "@/lib/proposals/proposal-templates.functions";
 import { normalizeProposalTemplateHtml } from "@/lib/proposals/proposal-template-html";
+import {
+  createBlankVisualDesign,
+  tryParseVisualDesign,
+  type VisualDesign,
+} from "@/lib/proposals/visual-design";
+import { createNexxusStarterDesign } from "@/lib/proposals/nexxus-starter-template";
+import { extractPlainSummaryFromDesign } from "@/lib/proposals/visual-renderer";
 import { listContractTemplates } from "@/lib/contracts/templates.functions";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
@@ -55,6 +63,8 @@ type Draft = {
   html: string;
   services: string[];
   contract_template_id: string | null;
+  layout_kind: "rich_text" | "visual";
+  design_json: VisualDesign | null;
 };
 const EMPTY: Draft = {
   id: null,
@@ -63,9 +73,16 @@ const EMPTY: Draft = {
   html: "",
   services: [],
   contract_template_id: null,
+  layout_kind: "rich_text",
+  design_json: null,
 };
 
 function toDraft(t: ProposalTemplateItem): Draft {
+  const layoutKind = t.layout_kind === "visual" ? "visual" : "rich_text";
+  const parsedDesign =
+    layoutKind === "visual"
+      ? (tryParseVisualDesign(t.design_json) ?? createBlankVisualDesign())
+      : null;
   return {
     id: t.id,
     name: t.name,
@@ -73,6 +90,8 @@ function toDraft(t: ProposalTemplateItem): Draft {
     html: normalizeProposalTemplateHtml(t.html),
     services: t.services,
     contract_template_id: t.contract_template_id,
+    layout_kind: layoutKind,
+    design_json: parsedDesign,
   };
 }
 
@@ -146,8 +165,22 @@ function ProposalTemplatesPage() {
   };
 
   const saveM = useMutation({
-    mutationFn: (d: Draft) =>
-      save({ data: { ...d, description: d.description.trim() || null, name: d.name.trim() } }),
+    mutationFn: (d: Draft) => {
+      const html =
+        d.layout_kind === "visual" && d.design_json
+          ? d.html.trim() || extractPlainSummaryFromDesign(d.design_json)
+          : d.html;
+      return save({
+        data: {
+          ...d,
+          html,
+          description: d.description.trim() || null,
+          name: d.name.trim(),
+          layout_kind: d.layout_kind,
+          design_json: d.layout_kind === "visual" ? d.design_json : null,
+        },
+      });
+    },
     onSuccess: (r) => {
       toast.success("Modelo salvo.");
       setDraft((d) => (d ? { ...d, id: r.id } : d));
@@ -225,13 +258,43 @@ function ProposalTemplatesPage() {
     }
   }
 
-  async function startNew() {
+  async function startNew(kind: "rich_text" | "visual" = "rich_text") {
     if (!canCreate || isBusy) return;
     if (!(await confirmDiscardIfDirty())) return;
-    setDraft({ ...EMPTY });
+    setDraft({
+      ...EMPTY,
+      layout_kind: kind,
+      design_json: kind === "visual" ? createNexxusStarterDesign() : null,
+    });
     setDirty(false);
     setEditorNonce((n) => n + 1);
     requestAnimationFrame(() => nameInputRef.current?.focus());
+  }
+
+  async function switchLayoutKind(nextKind: "rich_text" | "visual") {
+    if (!draft || draft.layout_kind === nextKind || !canSave || isBusy) return;
+    const hasOtherContent =
+      nextKind === "visual" ? draft.html.trim().length > 0 : draft.design_json !== null;
+    if (hasOtherContent) {
+      const ok = await confirmDialog({
+        title:
+          nextKind === "visual"
+            ? "Converter para modelo visual?"
+            : "Voltar para modelo de texto rico?",
+        description:
+          nextKind === "visual"
+            ? "O editor abrirá no formato visual de páginas. Você poderá personalizar ou aplicar o modelo editorial."
+            : "O layout visual não será usado neste modelo enquanto estiver em texto rico.",
+        confirmLabel: "Continuar",
+      });
+      if (!ok) return;
+    }
+    updateDraft({
+      layout_kind: nextKind,
+      design_json:
+        nextKind === "visual" ? (draft.design_json ?? createNexxusStarterDesign()) : null,
+    });
+    setEditorNonce((n) => n + 1);
   }
 
   async function handleDuplicate(t: ProposalTemplateItem) {
@@ -258,13 +321,22 @@ function ProposalTemplatesPage() {
         <div>
           <h1 className="text-xl font-semibold">Modelos de proposta</h1>
           <p className="text-sm text-muted-foreground">
-            Textos comerciais por serviço do catálogo. O assistente de proposta sugere o modelo
-            ligado aos serviços dos itens de linha.
+            Crie modelos visuais em páginas ou em texto rico por serviço do catálogo. O assistente
+            de proposta sugere o modelo ligado aos serviços dos itens de linha.
           </p>
         </div>
-        <Button disabled={!canCreate || isBusy} onClick={() => void startNew()}>
-          <Plus className="mr-1 h-4 w-4" /> Novo modelo
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            disabled={!canCreate || isBusy}
+            onClick={() => void startNew("rich_text")}
+          >
+            <Plus className="mr-1 h-4 w-4" /> Novo em texto
+          </Button>
+          <Button disabled={!canCreate || isBusy} onClick={() => void startNew("visual")}>
+            <LayoutTemplate className="mr-1 h-4 w-4" /> Novo modelo visual
+          </Button>
+        </div>
       </div>
 
       {(duplicateM.isPending || deleteM.isPending) && (
@@ -288,7 +360,13 @@ function ProposalTemplatesPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div
+          className={
+            draft?.layout_kind === "visual"
+              ? "grid grid-cols-1 gap-4 2xl:grid-cols-[240px_minmax(0,1fr)]"
+              : "grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)]"
+          }
+        >
           <ProposalTemplateList
             templates={templates}
             selectedId={draft?.id ?? null}
@@ -389,28 +467,70 @@ function ProposalTemplatesPage() {
                   </div>
                 </fieldset>
                 <div className="space-y-1.5">
-                  <Label>Conteúdo</Label>
-                  <WordEditor
-                    key={`${draft.id ?? "novo"}-${editorNonce}`}
-                    value={draft.html}
-                    editable={canSave && !isBusy}
-                    onChange={(html) => {
-                      setDraft((d) => {
-                        if (!d || d.html === html) return d;
-                        setDirty(true);
-                        return { ...d, html };
-                      });
-                    }}
-                    minHeight={360}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Variáveis:{" "}
-                    {VARIABLES.map((v) => (
-                      <code key={v} className="mr-2 rounded bg-muted px-1">
-                        {v}
-                      </code>
-                    ))}
-                  </p>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Label>Conteúdo</Label>
+                    <div
+                      role="group"
+                      aria-label="Formato do modelo"
+                      className="inline-flex rounded-md border border-border bg-muted/40 p-0.5"
+                    >
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={draft.layout_kind === "visual" ? "default" : "ghost"}
+                        className="h-7 gap-1.5 px-2.5 text-xs"
+                        disabled={!canSave || isBusy}
+                        onClick={() => void switchLayoutKind("visual")}
+                      >
+                        <LayoutTemplate className="h-3.5 w-3.5" aria-hidden="true" />
+                        Visual (páginas)
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={draft.layout_kind === "rich_text" ? "default" : "ghost"}
+                        className="h-7 gap-1.5 px-2.5 text-xs"
+                        disabled={!canSave || isBusy}
+                        onClick={() => void switchLayoutKind("rich_text")}
+                      >
+                        <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                        Texto rico
+                      </Button>
+                    </div>
+                  </div>
+
+                  {draft.layout_kind === "visual" ? (
+                    <VisualProposalEditor
+                      key={`visual-${draft.id ?? "novo"}-${editorNonce}`}
+                      value={draft.design_json ?? createBlankVisualDesign()}
+                      editable={canSave && !isBusy}
+                      onChange={(design_json) => updateDraft({ design_json })}
+                    />
+                  ) : (
+                    <>
+                      <WordEditor
+                        key={`${draft.id ?? "novo"}-${editorNonce}`}
+                        value={draft.html}
+                        editable={canSave && !isBusy}
+                        onChange={(html) => {
+                          setDraft((d) => {
+                            if (!d || d.html === html) return d;
+                            setDirty(true);
+                            return { ...d, html };
+                          });
+                        }}
+                        minHeight={360}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Variáveis:{" "}
+                        {VARIABLES.map((v) => (
+                          <code key={v} className="mr-2 rounded bg-muted px-1">
+                            {v}
+                          </code>
+                        ))}
+                      </p>
+                    </>
+                  )}
                 </div>
                 <div className="flex justify-between gap-2">
                   {draft.id ? (

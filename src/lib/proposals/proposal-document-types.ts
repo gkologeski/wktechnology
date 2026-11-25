@@ -22,6 +22,8 @@ export type ProposalDocumentData = {
   contact: string | null;
   contactEmail: string | null;
   agent: string | null;
+  visualHtml?: string | null;
+  visualOrientation?: "portrait" | "landscape" | null;
 };
 
 export const PROPOSAL_STATUS_LABEL: Record<string, string> = {

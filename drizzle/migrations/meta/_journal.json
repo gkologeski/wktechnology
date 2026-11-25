@@ -3305,6 +3305,20 @@
       "when": 1795543308841,
       "tag": "0471_contract_draft_open_and_proposal_entity_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 472,
+      "version": "7",
+      "when": 1795563869533,
+      "tag": "0472_proposal_visual_templates_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 473,
+      "version": "7",
+      "when": 1795564083195,
+      "tag": "0473_proposal_assets_storage_policies",
+      "breakpoints": true
     }
   ]
 }

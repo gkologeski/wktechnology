@@ -30,10 +30,13 @@ import {
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/date-picker";
 import { WordEditor } from "@/components/word-editor-lazy";
+import { VisualProposalEditor } from "@/components/proposals/visual-editor/visual-proposal-editor";
 import { sanitizeHtml } from "@/components/rich-html-editor";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/crm";
+import { tryParseVisualDesign, type VisualDesign } from "@/lib/proposals/visual-design";
+import { extractPlainSummaryFromDesign } from "@/lib/proposals/visual-renderer";
 import { cn } from "@/lib/utils";
 import { DEFAULT_VALIDITY_DAYS, clampInt } from "@/lib/contracts/contract-terms-defaults";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -43,6 +46,7 @@ import {
   normalizeProposalTemplateHtml,
 } from "@/lib/proposals/proposal-template-html";
 import { updateProposal } from "@/lib/proposals.functions";
+import { saveProposalVisualDesign } from "@/lib/proposals/proposal-assets.functions";
 import {
   createProposalWithEntity,
   setProposalLegalEntity,
@@ -95,6 +99,8 @@ type Template = {
   html: string;
   services: string[];
   contract_template_id: string | null;
+  layout_kind: "rich_text" | "visual";
+  design_json: unknown;
 };
 
 type Props = {
@@ -129,6 +135,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const createBlank = useServerFn(createProposalWithEntity);
   const setEntity = useServerFn(setProposalLegalEntity);
   const update = useServerFn(updateProposal);
+  const saveDesign = useServerFn(saveProposalVisualDesign);
   const members = useWorkspaceMembers();
 
   const draftQ = useQuery({
@@ -145,13 +152,15 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
       const [t, s] = await Promise.all([
         supabase
           .from("proposal_templates")
-          .select("id, name, description, html, contract_template_id")
+          .select("id, name, description, html, contract_template_id, layout_kind, design_json")
           .order("name"),
         supabase.from("proposal_template_services").select("template_id, service_catalog_id"),
       ]);
       if (t.error) throw t.error;
       return (t.data ?? []).map((row) => ({
         ...row,
+        layout_kind: row.layout_kind === "visual" ? ("visual" as const) : ("rich_text" as const),
+        design_json: row.design_json ?? null,
         services: (s.data ?? [])
           .filter((x) => x.template_id === row.id)
           .map((x) => x.service_catalog_id),
@@ -162,6 +171,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [designJson, setDesignJson] = useState<VisualDesign | null>(null);
   const [amount, setAmount] = useState<number | null>(null);
   const [expires, setExpires] = useState<string | null>(null);
   const [assignee, setAssignee] = useState<string | null>(null);
@@ -204,6 +214,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
     setStep(0);
     setTitle(draft.title);
     setBody(draft.body);
+    setDesignJson(tryParseVisualDesign(draft.design_json));
     setAmount(draft.total_amount);
     setExpires(draft.expires_at ? draft.expires_at.slice(0, 10) : null);
     setAssignee(draft.assigned_to);
@@ -309,7 +320,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   }
 
   async function applyTemplate(t: Template) {
-    if (body.trim() && templateId !== t.id) {
+    if ((body.trim() || designJson) && templateId !== t.id) {
       const { confirmDialog } = await import("@/components/ui/confirm-dialog");
       confirmingRef.current = true;
       const ok = await confirmDialog({
@@ -322,16 +333,30 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
       if (!ok) return;
     }
     setTemplateId(t.id);
-    setBody(renderTemplate(t));
+    if (t.layout_kind === "visual") {
+      const parsed = tryParseVisualDesign(t.design_json);
+      setDesignJson(parsed ? structuredClone(parsed) : null);
+      setBody(parsed ? extractPlainSummaryFromDesign(parsed) : "");
+    } else {
+      setDesignJson(null);
+      setBody(renderTemplate(t));
+    }
   }
 
   function goNext() {
     // Ao entrar em Conteúdo sem texto, aplica o modelo sugerido.
-    if (step === 1 && !body.trim()) {
+    if (step === 1 && !body.trim() && !designJson) {
       const t = suggested ?? templates.find((t) => !t.contract_template_id);
       if (t) {
         setTemplateId(t.id);
-        setBody(renderTemplate(t));
+        if (t.layout_kind === "visual") {
+          const parsed = tryParseVisualDesign(t.design_json);
+          setDesignJson(parsed ? structuredClone(parsed) : null);
+          setBody(parsed ? extractPlainSummaryFromDesign(parsed) : "");
+        } else {
+          setDesignJson(null);
+          setBody(renderTemplate(t));
+        }
       }
     }
     setStep((s) => Math.min(STEPS.length - 1, s + 1));
@@ -375,18 +400,22 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
     if (!entityId) return void toast.error(LEGAL_ENTITY_REQUIRED_MESSAGE);
     setSaving(true);
     try {
+      const finalBody = designJson
+        ? body.trim() || extractPlainSummaryFromDesign(designJson)
+        : body;
       if (editId) {
         await update({
           data: {
             id: editId,
             patch: {
               title: title.trim(),
-              body,
+              body: finalBody,
               total_amount: amount,
               expires_at: expires,
             },
           },
         });
+        await saveDesign({ data: { proposalId: editId, designJson } });
         if (entityId !== draft.legal_entity_id)
           await setEntity({ data: { id: editId, legalEntityId: entityId } });
         toast.success(asDraft ? "Rascunho salvo." : "Proposta atualizada.");
@@ -396,7 +425,8 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
           data: {
             quoteId: source.quoteId,
             title: title.trim(),
-            body,
+            body: finalBody,
+            design_json: designJson,
             total_amount: amount,
             expires_at: expires,
             assigned_to: assignee,
@@ -416,7 +446,8 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
         const row = await createBlank({
           data: {
             title: title.trim(),
-            body,
+            body: finalBody,
+            designJson,
             dealId: draft.deal_id,
             companyId: draft.company_id,
             contactId: draft.contact_id,
@@ -445,7 +476,10 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
       onOpenChange={(v) => (saving || (!v && confirmingRef.current) ? undefined : onOpenChange(v))}
     >
       <DialogContent
-        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        className={cn(
+          "max-h-[92vh] overflow-y-auto",
+          step === 2 && designJson ? "max-w-[96vw]" : "max-w-3xl",
+        )}
         // A confirmação "Trocar o conteúdo?" abre por cima; clicar nela não fecha o assistente.
         onInteractOutside={(e) => {
           if (confirmingRef.current) e.preventDefault();
@@ -733,6 +767,11 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                           >
                             <div className="flex items-center gap-2 text-sm font-medium">
                               {t.name}
+                              {t.layout_kind === "visual" && (
+                                <span className="inline-flex items-center rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                  Visual
+                                </span>
+                              )}
                               {suggested?.id === t.id && (
                                 <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 px-1.5 py-0.5 text-[10px] text-primary">
                                   <Sparkles className="h-3 w-3" aria-hidden="true" /> Sugerido
@@ -753,7 +792,11 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                     </p>
                   )}
                 </div>
-                <WordEditor value={body} onChange={setBody} minHeight={300} />
+                {designJson ? (
+                  <VisualProposalEditor value={designJson} editable onChange={setDesignJson} />
+                ) : (
+                  <WordEditor value={body} onChange={setBody} minHeight={300} />
+                )}
               </div>
             )}
 

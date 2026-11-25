@@ -10,6 +10,20 @@ import type { ProposalDocumentData } from "@/lib/proposals/proposal-document-typ
 export const ProposalDocument = forwardRef<HTMLDivElement, { doc: ProposalDocumentData }>(
   function ProposalDocument({ doc }, ref) {
     const { proposal: p, items } = doc;
+    if (doc.visualHtml) {
+      return (
+        <div ref={ref} className="space-y-4">
+          <div className="overflow-x-auto">
+            <div className="mx-auto w-fit" dangerouslySetInnerHTML={{ __html: doc.visualHtml }} />
+          </div>
+          {p.status === "accepted" && p.decided_at && (
+            <div className="mx-auto max-w-[210mm] rounded-md border-2 border-primary/30 bg-primary/5 p-4 text-sm font-medium">
+              Aceita em {formatDateTime(p.decided_at)}
+            </div>
+          )}
+        </div>
+      );
+    }
     const body = stripLegacyInvestment(p.body);
     const expired = !!p.expires_at && new Date(p.expires_at) < new Date();
     return (

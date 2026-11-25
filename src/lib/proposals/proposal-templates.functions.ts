@@ -13,13 +13,17 @@ export const listProposalTemplates = createServerFn({ method: "POST" })
     const [t, s] = await Promise.all([
       sb
         .from("proposal_templates")
-        .select("id, name, description, html, is_default, contract_template_id")
+        .select(
+          "id, name, description, html, is_default, contract_template_id, layout_kind, design_json",
+        )
         .order("name"),
       sb.from("proposal_template_services").select("template_id, service_catalog_id"),
     ]);
     if (t.error) throw new Error(t.error.message);
     return (t.data ?? []).map((row) => ({
       ...row,
+      layout_kind: row.layout_kind === "visual" ? ("visual" as const) : ("rich_text" as const),
+      design_json: row.design_json ?? null,
       services: (s.data ?? [])
         .filter((x) => x.template_id === row.id)
         .map((x) => x.service_catalog_id),
@@ -37,14 +41,24 @@ export const saveProposalTemplate = createServerFn({ method: "POST" })
         html: z.string().max(500_000),
         services: z.array(z.string().uuid()).max(200),
         contract_template_id: z.string().uuid().nullable().default(null),
+        layout_kind: z.enum(["rich_text", "visual"]).default("rich_text"),
+        design_json: z.unknown().nullable().optional(),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+    const { parseVisualDesign } = await import("./visual-design");
     const sb = context.supabase;
     const workspaceId = await resolveActiveWorkspace(context.userId);
     await assertSalesArea(sb, "techsales.proposal_templates", data.id ? "update" : "create");
+    const layoutKind = data.layout_kind ?? "rich_text";
+    const validatedDesign =
+      layoutKind === "visual"
+        ? parseVisualDesign(data.design_json)
+        : data.design_json != null
+          ? parseVisualDesign(data.design_json)
+          : null;
     if (data.contract_template_id) {
       const { data: model, error } = await sb
         .from("contract_templates")
@@ -61,6 +75,8 @@ export const saveProposalTemplate = createServerFn({ method: "POST" })
       description: data.description,
       html: data.html,
       contract_template_id: data.contract_template_id,
+      layout_kind: layoutKind,
+      design_json: validatedDesign as never,
       updated_at: new Date().toISOString(),
     };
     let id = data.id;
@@ -130,7 +146,7 @@ export const duplicateProposalTemplate = createServerFn({ method: "POST" })
 
     const { data: source, error: sourceError } = await sb
       .from("proposal_templates")
-      .select("id, name, description, html, contract_template_id")
+      .select("id, name, description, html, contract_template_id, layout_kind, design_json")
       .eq("id", data.id)
       .eq("workspace_id", workspaceId)
       .maybeSingle();
@@ -176,9 +192,13 @@ export const duplicateProposalTemplate = createServerFn({ method: "POST" })
         html: source.html,
         is_default: false,
         contract_template_id: source.contract_template_id,
+        layout_kind: source.layout_kind ?? "rich_text",
+        design_json: source.design_json ?? null,
         updated_at: new Date().toISOString(),
       })
-      .select("id, name, description, html, is_default, contract_template_id")
+      .select(
+        "id, name, description, html, is_default, contract_template_id, layout_kind, design_json",
+      )
       .single();
     if (insertError) {
       if (insertError.code === "42501") {
@@ -200,6 +220,8 @@ export const duplicateProposalTemplate = createServerFn({ method: "POST" })
 
     return {
       ...created,
+      layout_kind: created.layout_kind === "visual" ? ("visual" as const) : ("rich_text" as const),
+      design_json: created.design_json ?? null,
       services,
     };
   });

@@ -15,6 +15,7 @@ import type {
   ProposalDraftResult,
   ProposalDraftSource,
 } from "./proposal-draft-types";
+import { tryParseVisualDesign } from "./visual-design";
 
 const QUOTE_ITEM_COLUMNS = DEAL_LINE_ITEM_COLUMNS + ", position";
 
@@ -172,7 +173,7 @@ export async function buildProposalDraft(
     const { data: p, error } = await supabase
       .from("proposals")
       .select(
-        "id, title, body, total_amount, currency, expires_at, assigned_to, locked, company_id, contact_id, deal_id, quote_id, proposal_template_id, installments_count, installments_due_day, validity_days, payment_method, payment_notes, payment_terms, legal_entity_id",
+        "id, title, body, design_json, total_amount, currency, expires_at, assigned_to, locked, company_id, contact_id, deal_id, quote_id, proposal_template_id, installments_count, installments_due_day, validity_days, payment_method, payment_notes, payment_terms, legal_entity_id",
       )
       .eq("id", src.proposalId)
       .maybeSingle();
@@ -186,6 +187,7 @@ export async function buildProposalDraft(
       draft: {
         title: p.title,
         body: p.body ?? "",
+        design_json: tryParseVisualDesign((p as { design_json?: unknown }).design_json),
         total_amount: p.total_amount != null ? Number(p.total_amount) : null,
         currency,
         expires_at: p.expires_at,

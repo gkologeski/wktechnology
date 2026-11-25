@@ -11952,7 +11952,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: generated types add only the contract_purchase_payables_generate RPC signature; no table/grant change. 23/11/2026: regenerated for contract_purchase_sales table and contract_purchase_sale_set RPC (no new grants). | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "files": {
-        "src/integrations/supabase/types.ts": "456f001d1a12c41416b60b125001ae752b0dd087aa194edac164b1f6a681b0a3",
+        "src/integrations/supabase/types.ts": "b2077cc21f3da929f300319a37b897913ba71f75b3301d5ff5df5cc62ed2514b",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -12474,14 +12474,14 @@
         "src/lib/contracts/contract-create.server.ts": "773a356a646938842dcd1ab4d34984d5c64143bd0e77bb68b0f0032155bb84a3",
         "src/lib/contracts/template-merge.server.ts": "732fa6eba5cdf2c462b59692f65ad725ff630b28e7fc64df094639562fac0feb",
         "src/lib/contracts/templates.functions.ts": "56ec7226789a5aff861cd6354e4102cc1d5c94189c47bd6caf86a534fbcda4ec",
-        "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
-        "src/lib/sales-flow.server.ts": "8ebf5fd499ad7e5e6c4439bf32739e9dd46d0ea920e7f9363439bf8f04da3526",
-        "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
+        "src/lib/proposals/proposal-document.server.ts": "ccfa70f844701aa7e6063b51605e6ebb719bdb771d329af77fe3d90ada61fd12",
+        "src/lib/sales-flow.server.ts": "a8995103874a5940e1c3a28d67dbba44a1395eeb2a0a1a6515442e2ce150ae82",
+        "src/lib/contracts/accepted-proposal.server.ts": "d49d8bcf9bee5c0ea89fadb2bf672f4341f0aee216f6b2b46c05b74f0bc17366",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "acb9e2e990a5f17064c2756374f46aa20af8dfcac0473af85261ec2182625ca7",
-        "src/lib/sales-flow.functions.ts": "3a15a8618f54e8003b75db6384fc3630f233ff6c696ec9de85a4a5406a3b1e6e",
-        "src/components/proposals/proposal-wizard.tsx": "13999579ea12caab43b9a522c8e4d70f91c283d767820f1aa850c4ef128cff63",
-        "src/lib/proposals/proposal-draft.server.ts": "73ed9f29defffbcb7e1646542a49fe6220a2d851264515b3b9c93254a7688a68",
+        "src/lib/sales-flow.functions.ts": "972fcf9ee4660d6a3218eaec49f54691d0c32d5a145bd79a553fac81829014b9",
+        "src/components/proposals/proposal-wizard.tsx": "207606d68fd99f6cb228ade29f6017dcd55a90224aa21877afef3cfb90b93ad1",
+        "src/lib/proposals/proposal-draft.server.ts": "20841da9c339eed0a02fe486ddc8456201a10ca9a8bcfb1427764df47653eb0f",
         "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
         "drizzle/migrations/0321_proposal_versions_cascade.sql": "d74b28603f0279e6cb749f1af8ae34658c561ed0f659964fea8d6f4a2b257bcf",
         "drizzle/migrations/0323_proposal_payment_method.sql": "cf944cd4385707aeb616275a4e4a84839911ae49e6f3a50c3446c3f216bf9a99",
@@ -12667,13 +12667,13 @@
       "kind": "presentation",
       "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping. TEXTO-PROPOSTA: pure proposal terms block helper. TEXTO-CONSULTORIA: pure signer choice helper. TABELA-FINAL: pure items-table placement helper and proposal document/PDF ordering (presentation only; same data, same token gate). PROPOSTA-COMPLETA: pure payment-terms completeness check; wizards require installments/due day (UI validation only, writes unchanged). EMPRESA-PROPOSTA: pure issuing legal entity preselection and friendly error message. CONTAS-A-PAGAR-COMPRA: pure purchase payables proposal and sum check (no I/O); generation stays under purchase-contract-payables.",
       "files": {
-        "src/lib/proposals/proposal-draft-types.ts": "29c474556e912a317efa1d6bc38537a7838268e3b85fd319d52d4ed236443124",
+        "src/lib/proposals/proposal-draft-types.ts": "d8533d8684fd59cab28b900be609ecf5dbf031bf631b10a8651ac7d452693be4",
         "src/lib/contracts/contract-terms-defaults.ts": "4243429565dc9b855faf2b73986e8044ef2ad746a9582ee841e0f85b42583463",
         "src/components/word-editor-lazy.tsx": "4f6e7ef7880aa6b35c94c9bb6b2caacba43d380473fd193ab6adc1a0ed428e8d",
         "src/lib/proposals/proposal-terms-block.ts": "5621b6a6e969fcefa16a9474adad912378338c750c3a5683f2779dcb74e5478b",
         "src/lib/proposals/proposal-signer.ts": "2310c24c8b7a1b9e652a1530974c697671fb89c77c8f75793d2eb577c1a56e0d",
         "src/lib/proposals/proposal-items-placement.ts": "1a5de997747831baffb6a877b730bb5ab162bca1885f655701cfcf25bfce3442",
-        "src/components/proposals/proposal-document.tsx": "d3d2a6f4094bb3965e85cbbf66216279a29ef61efb592dea4521443f581b8826",
+        "src/components/proposals/proposal-document.tsx": "84a96ba55ffb9fd210d476be72787cd868ebd4dad507ad1a980b98d78d0bbd21",
         "src/lib/proposals/proposal-pdf-rules.ts": "8bdfc0a514dcc11b1798d5bab756ddf63569fad299f46f8ac0af12d2dc1c9f15",
         "src/lib/proposals/proposal-terms-check.ts": "0d102ff46a544c4c0082238a7c1812340e56b161b72baadf206f5a18432b86a7",
         "src/lib/contracts/payment-schedule-text.ts": "c5c25669c1678812bee6b8a4194cac1962265f97659eb784f9fa0195795ada59",
@@ -13377,7 +13377,7 @@
         }
       },
       "files": {
-        "src/lib/proposals/proposal-entity.functions.ts": "3dd63515ee6e3a2888c1a7947f21275e7592341c0b2285e81fc698df1458973c",
+        "src/lib/proposals/proposal-entity.functions.ts": "3ac053238cdbdb339dea3ea0e55ae72701b8fb08b1656b4f3e16aa4d0c27c264",
         "drizzle/migrations/0331_proposal_legal_entity_choice.sql": "0d93fa11f76988c8e6f30fc55fce7430c482560499d365acdc29e4d2c206acbb",
         "drizzle/migrations/0332_deal_legal_entity_for_proposal.sql": "222dbe3d4cf5959a615edaf8df9f3f0e90079645aefce6307e18bbc222680075"
       }
@@ -15498,7 +15498,7 @@
         "src/lib/contracts/signature-package.server.ts": "0ce2a44e6d6a9fdc358cd00901608235a93e399df9914bd471833dcc880f9938",
         "src/lib/contracts/signature-package-pdf.server.ts": "3fdc7bc18c0a461c9c4ed10c7780f9b9152c4af11324b3d9b1bedf6c120f17e7",
         "src/lib/contracts/quote-pdf.server.ts": "989695b7a69f55577314fc0535ce4dafb540f729f9c263b555ceaa1bbdb5ab19",
-        "src/lib/contracts/proposal-pdf.server.ts": "f60f92f473f0af768e76302ae842a2e50fbfecb2b94514c2c1d0b754bf30124b",
+        "src/lib/contracts/proposal-pdf.server.ts": "ea3850ccbcab518c80728ebb25dc5894c06d6422bd85cf82f5882921617a6033",
         "drizzle/migrations/0367_contract_signature_packages.sql": "2479a6a3f1af4f49c966969646e32b901b75922cd15649e2b798794d8fd91acf",
         "src/components/contracts/signature-attachments-summary.tsx": "2a0e06fa6cba5466c4d92f2e1830e01593effa3377a6c4790f5dc2f62c5efd03",
         "drizzle/migrations/0468_contract_attachments_all_served_sales.sql": "6c4658dd5b2cbc0de67a5acbb96e9c9a728796f1ff75c091fa9fe7070e0ef474"
@@ -26638,9 +26638,9 @@
       "kind": "business",
       "rationale": "Reusable model configuration only. Existing TechSales create/update/delete/view permissions and user/RLS client remain mandatory; save explicitly gates the exact create or update action, and duplicateProposalTemplate enforces requireSalesPermission(create), assertSalesArea(create), assertSalesRecord(view) and caller RLS in the active workspace (rechecking published contract model visibility before insert). List action menu (ProposalTemplateList) exposes Editar/Duplicar/Excluir gated by effective permissions with disabled reasons. No proposal, contract, acceptance, notification, service or finance record is created. Role remains a property of the linked legal model; this association is not an executed contract or signature. Five executable SQL cases plus five duplicateProposalTemplate unit cases cover allowed, missing permission, explicit deny, foreign workspace and inactive membership.",
       "files": {
-        "src/lib/proposals/proposal-templates.functions.ts": "febbaf0d4764a4382f3e964b3c1db57d5e2956d0c6fd96cfc5dec1361f475680",
-        "src/components/proposals/proposal-template-list.tsx": "875e987355892f43d31261787c9e5594474ce19cdc729c5a3bf7d81252511cf1",
-        "src/routes/_authenticated/settings.proposal-templates.tsx": "28aa6a3f859ced6a3cc9305720459a40157e9ed82c9e5f7d52b568b0569e8a07",
+        "src/lib/proposals/proposal-templates.functions.ts": "772eca9296ff361ba7b72fcc723d4c5ed60f6606838af842ba155953d2eb3fa5",
+        "src/components/proposals/proposal-template-list.tsx": "58a2f77700a08fa85c4d37f40f904031129fc66ba67bd9fc2aa4749ab0750c66",
+        "src/routes/_authenticated/settings.proposal-templates.tsx": "3ac2bf77dd6518ba1c14382491bfab873008cbabbbf64638d6cf75eaa0747655",
         "drizzle/migrations/0456_proposal_template_contract_model.sql": "65e79b97e4585fef45390294a63311c9fa401138285fa90a825965c719c7bffb"
       },
       "resources": [
@@ -27367,6 +27367,136 @@
         "src/lib/access-control/checked-mutation-client.ts": "7111e0ce866a480be3177bf26c66bd5b3836cc245dfff29aa1a84d85ae0935c6",
         "src/lib/segments.functions.ts": "9f0027efb6a2fccd26302ee9334dabd394a0e3438a22044885ff8400eb813685",
         "src/lib/chat.functions.ts": "1abb57af6bb891f72fe2a910c68c84a0a14d52c579da3957eba5ae1f2ca55311"
+      }
+    },
+    {
+      "id": "proposal-visual-templates-editor",
+      "kind": "business",
+      "rationale": "Visual multi-page proposal templates (layout_kind='visual', design_json) and private proposal-assets image uploads. Reuses existing TechSales proposal_templates and proposals permissions with requireSalesPermission, assertSalesArea, assertSalesRecord, active workspace resolution and caller RLS. Editor components receive editable from permission-gated routes and invoke only gated server functions. Private storage bucket proposal-assets restricts read/write/delete to active workspace members with techsales.proposal_templates/proposals access via public.proposal_asset_storage_allowed and denies anon, cross-workspace paths, traversal and read-only View As writes. Server signed URLs only sign paths prefixed by the caller active workspace. Five executable unit tests cover allowed, missing permission, explicit deny, foreign workspace and inactive membership.",
+      "files": {
+        "drizzle/migrations/0472_proposal_visual_templates_schema.sql": "685dfe312963a52bfbef153a20b85167d82026671ccc819818c1d52dd8470049",
+        "drizzle/migrations/0473_proposal_assets_storage_policies.sql": "b8fcbc0ff60d53a8cc088b7bb31c41681dcd01d83afadb4adf87c233d865da8b",
+        "src/lib/proposals/proposal-assets.functions.ts": "d3fb81af0bbf9e9ca84c2b56dedc75247a190bc5d8a53ceeadcbfdfb6d60ddd4",
+        "src/lib/proposals/proposal-assets.server.ts": "b66f456677f2dea9096522d012f66659740b0227bbfb996e32ecb458d058a66f",
+        "src/components/proposals/visual-editor/visual-canvas.tsx": "43f2d06ebce8938e69bc42819e926af4ea7b5c9ed98fba4c1508e604e911ff10",
+        "src/components/proposals/visual-editor/visual-element-view.tsx": "0ee63683334c123faa7e326917f9391cb50fe5520261bed0212fc6bf61524539",
+        "src/components/proposals/visual-editor/visual-inspector.tsx": "7638b7a99077cb68eb189e4ee97c5d45603151acb475639a0a07c7943d6a4984",
+        "src/components/proposals/visual-editor/visual-left-sidebar.tsx": "45e3efd551af51bb173889bf9eec7d9a80888100f07560bca7c0ccccfb341891",
+        "src/components/proposals/visual-editor/visual-page-strip.tsx": "e415ca149a54ea8d02a7bae911b342bdbf0eaefecf55f8138731288a2d4ea193",
+        "src/components/proposals/visual-editor/visual-preview-modal.tsx": "f87e698574ee3f2df336580041de5ea6f8f2dd4085e3a933e20ee0a9c8b9623f",
+        "src/components/proposals/visual-editor/visual-proposal-editor.tsx": "043351ff52afd6ed951d69bf158fade43bc2df4ce4df064b1d25c8b2241cb7fb"
+      },
+      "resources": [
+        "techsales.proposal_templates",
+        "techsales.proposals"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.proposal_templates.view.own",
+        "techsales.proposal_templates.view.team",
+        "techsales.proposal_templates.view.workspace",
+        "techsales.proposal_templates.create.own",
+        "techsales.proposal_templates.create.team",
+        "techsales.proposal_templates.create.workspace",
+        "techsales.proposal_templates.update.own",
+        "techsales.proposal_templates.update.team",
+        "techsales.proposal_templates.update.workspace",
+        "techsales.proposal_templates.delete.own",
+        "techsales.proposal_templates.delete.team",
+        "techsales.proposal_templates.delete.workspace",
+        "techsales.proposals.view.own",
+        "techsales.proposals.view.team",
+        "techsales.proposals.view.workspace",
+        "techsales.proposals.create.own",
+        "techsales.proposals.create.team",
+        "techsales.proposals.create.workspace",
+        "techsales.proposals.update.own",
+        "techsales.proposals.update.team",
+        "techsales.proposals.update.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesArea"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/active-workspace.server.ts",
+          "symbol": "resolveActiveWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/proposals/proposal-assets.functions.ts",
+          "symbol": "createProposalAssetUpload"
+        },
+        {
+          "file": "src/lib/proposals/proposal-assets.server.ts",
+          "symbol": "isValidWorkspaceAssetPath"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0472_proposal_visual_templates_schema.sql",
+          "symbol": "public.capture_proposal_document_version"
+        },
+        {
+          "file": "drizzle/migrations/0473_proposal_assets_storage_policies.sql",
+          "symbol": "public.proposal_asset_storage_allowed"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/proposals/visual-design.test.ts",
+          "name": "1. permitido: gera upload assinado no prefixo do workspace ativo"
+        },
+        "missing_permission": {
+          "file": "src/lib/proposals/visual-design.test.ts",
+          "name": "2. sem chave de permissão: bloqueia upload sem chamar storage"
+        },
+        "explicit_deny": {
+          "file": "src/lib/proposals/visual-design.test.ts",
+          "name": "3. deny explícito: bloqueia assinatura de URLs"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/proposals/visual-design.test.ts",
+          "name": "4. outro workspace: ignora paths estrangeiros e não gera URL assinada"
+        },
+        "inactive_member": {
+          "file": "src/lib/proposals/visual-design.test.ts",
+          "name": "5. membro inativo: bloqueia antes de acessar storage"
+        }
+      }
+    },
+    {
+      "id": "proposal-visual-pure-helpers",
+      "kind": "presentation",
+      "rationale": "Pure schema validation (Zod), escaped HTML/print rendering, editorial starter template data, document DTO types and pure canvas geometry/layer/alignment helpers. No database client, no server functions, no authorization logic; callers enforce permissions and RLS.",
+      "files": {
+        "src/lib/proposals/visual-design.ts": "d361baedb5e1492ccf63a96533d9b1826124f1e760cacdff49052fbf18ee2e7d",
+        "src/lib/proposals/visual-renderer.ts": "6c36f4e591057645a0bc03671db5ac358819371284d4795ac0d7504ea1ec6339",
+        "src/lib/proposals/nexxus-starter-template.ts": "4f5dd700fb673eff7a44129f2efce99576047af8f213cb50fdfd16dffed9e965",
+        "src/lib/proposals/proposal-document-types.ts": "7d13f14cc3aa57f2f405cb5ff901fd80e99b26f768df4f7c3feba0d0142e7e4e",
+        "src/components/proposals/visual-editor/visual-editor-state.ts": "144e94efbe63c6abec2c29172c3cd36cd5a1b5913a736a9b7f73ae1d251676dc"
       }
     }
   ],

@@ -11,6 +11,37 @@ function esc(s: unknown): string {
 }
 
 export async function renderProposalPdf(doc: ProposalDocumentData, browserlessToken: string) {
+  if (doc.visualHtml) {
+    const landscape = doc.visualOrientation === "landscape";
+    const wMm = landscape ? 297 : 210;
+    const hMm = landscape ? 210 : 297;
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8" /><style>@page{size:${wMm}mm ${hMm}mm;margin:0}html,body{margin:0;padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.vp-deck{display:block;margin:0;padding:0}.vp-page{page-break-after:always;break-after:page;margin:0}.vp-page:last-child{page-break-after:auto;break-after:auto}*{box-sizing:border-box}</style></head><body>${doc.visualHtml}</body></html>`;
+    const url = `https://production-sfo.browserless.io/pdf?token=${encodeURIComponent(browserlessToken)}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        html,
+        options: {
+          format: "A4",
+          landscape,
+          printBackground: true,
+          preferCSSPageSize: true,
+          margin: { top: "0", right: "0", bottom: "0", left: "0" },
+        },
+        viewport: landscape
+          ? { width: 1400, height: 900, deviceScaleFactor: 2 }
+          : { width: 900, height: 1400, deviceScaleFactor: 2 },
+        emulateMediaType: "screen",
+        gotoOptions: { waitUntil: "networkidle0", timeout: 30000 },
+      }),
+    });
+    if (!res.ok) {
+      const detail = (await res.text().catch(() => "")).slice(0, 300);
+      throw new Error(`Falha ao gerar PDF visual (HTTP ${res.status}): ${detail}`);
+    }
+    return new Uint8Array(await res.arrayBuffer());
+  }
   const p = doc.proposal;
   const fmt = (v: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: p.currency }).format(v);

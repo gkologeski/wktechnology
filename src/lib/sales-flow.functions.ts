@@ -16,6 +16,7 @@ export const createProposalFromQuote = createServerFn({ method: "POST" })
         quoteId: z.string().uuid(),
         title: z.string().max(300).optional(),
         body: z.string().max(500_000).optional(),
+        design_json: z.unknown().nullable().optional(),
         total_amount: z.number().nonnegative().nullable().optional(),
         expires_at: z.string().nullable().optional(),
         assigned_to: z.string().uuid().nullable().optional(),

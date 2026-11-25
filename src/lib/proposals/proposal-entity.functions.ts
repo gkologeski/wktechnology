@@ -13,6 +13,7 @@ export const createProposalWithEntity = createServerFn({ method: "POST" })
       .object({
         title: z.string().min(1).max(255),
         body: z.string().max(500_000).default(""),
+        designJson: z.unknown().nullable().optional(),
         dealId: z.string().uuid().nullable().optional(),
         contactId: z.string().uuid().nullable().optional(),
         companyId: z.string().uuid().nullable().optional(),
@@ -25,7 +26,9 @@ export const createProposalWithEntity = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+    const { parseVisualDesign } = await import("./visual-design");
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    const designJson = data.designJson != null ? parseVisualDesign(data.designJson) : null;
     const { data: row, error } = await context.supabase
       .from("proposals")
       .insert({
@@ -33,6 +36,7 @@ export const createProposalWithEntity = createServerFn({ method: "POST" })
         workspace_id: workspaceId,
         title: data.title,
         body: data.body,
+        design_json: designJson as never,
         deal_id: data.dealId ?? null,
         contact_id: data.contactId ?? null,
         company_id: data.companyId ?? null,

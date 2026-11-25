@@ -1,3 +1,4 @@
+import { LayoutTemplate } from "lucide-react";
 import { Copy, Loader2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,8 @@ export type ProposalTemplateItem = {
   html: string;
   is_default: boolean;
   contract_template_id: string | null;
+  layout_kind?: "rich_text" | "visual";
+  design_json?: unknown;
   services: string[];
 };
 
@@ -71,7 +74,15 @@ export function ProposalTemplateList({
               onClick={() => onSelect(t)}
               className="min-w-0 flex-1 rounded-l-md px-3 py-2 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
             >
-              <div className="truncate font-medium">{t.name}</div>
+              <div className="flex items-center gap-1.5">
+                <span className="truncate font-medium">{t.name}</span>
+                {t.layout_kind === "visual" && (
+                  <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                    <LayoutTemplate className="h-2.5 w-2.5" aria-hidden="true" />
+                    Visual
+                  </span>
+                )}
+              </div>
               <div className="text-xs text-muted-foreground">
                 {t.services.length} serviço(s) vinculado(s)
               </div>

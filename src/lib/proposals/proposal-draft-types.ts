@@ -1,4 +1,6 @@
 // Tipos do rascunho de proposta (compartilhados entre servidor e assistente).
+import type { VisualDesign } from "./visual-design";
+
 export type ProposalDraftSource = { quoteId?: string; dealId?: string; proposalId?: string };
 
 export type ProposalDraftItem = {
@@ -11,6 +13,7 @@ export type ProposalDraftItem = {
 export type ProposalDraft = {
   title: string;
   body: string;
+  design_json?: VisualDesign | null;
   total_amount: number | null;
   currency: string;
   expires_at: string | null;

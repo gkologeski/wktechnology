@@ -279,6 +279,8 @@ describe("duplicateProposalTemplate", () => {
       html: "<p>Escopo</p>",
       is_default: false,
       contract_template_id: CT_ID,
+      layout_kind: "rich_text",
+      design_json: null,
       services: [SVC_ID],
     });
 

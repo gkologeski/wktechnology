@@ -122,6 +122,7 @@ function proposalBodyFromQuote(
 export type ProposalOverrides = {
   title?: string;
   body?: string;
+  design_json?: unknown;
   total_amount?: number | null;
   expires_at?: string | null;
   assigned_to?: string | null;
@@ -149,6 +150,11 @@ export async function proposalFromQuote(
   const existingId = await existingProposalId(supabase, quoteId);
   if (existingId) return { id: existingId, reused: true };
   const { quote, items, line } = await loadQuote(supabase, quoteId);
+  let validatedDesign: unknown = null;
+  if (overrides.design_json != null) {
+    const { parseVisualDesign } = await import("@/lib/proposals/visual-design");
+    validatedDesign = parseVisualDesign(overrides.design_json);
+  }
 
   const { data: prop, error } = await supabase
     .from("proposals")
@@ -157,6 +163,7 @@ export async function proposalFromQuote(
       workspace_id: workspaceId,
       title: overrides.title?.trim() || quote.title || `Proposta — ${quote.number ?? "cotação"}`,
       body: overrides.body ?? proposalBodyFromQuote(quote, items, line),
+      design_json: validatedDesign,
       deal_id: quote.deal_id,
       contact_id: quote.contact_id,
       company_id: quote.company_id,
