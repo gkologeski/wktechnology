@@ -568,6 +568,7 @@ export function VisualProposalEditor({
           editable={editable}
           selectedIds={selectedIds}
           signedUrls={signedUrls}
+          workspaceLogoUrl={brandQ.data?.workspaceLogoUrl ?? null}
           onSelect={setSelectedIds}
           onLiveElementsChange={handleLiveElementsChange}
           onCommitElementsChange={handleCommitElementsChange}
@@ -687,6 +688,7 @@ export function VisualProposalEditor({
         onOpenChange={setPreviewOpen}
         design={value}
         signedUrls={signedUrls}
+        workspaceLogoUrl={brandQ.data?.workspaceLogoUrl ?? null}
       />
     </div>
   );

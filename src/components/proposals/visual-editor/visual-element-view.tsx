@@ -11,6 +11,7 @@ type VisualElementViewProps = {
   brandKit: VisualBrandKit;
   pxPerMm: number;
   signedUrls: Record<string, string>;
+  workspaceLogoUrl?: string | null;
   editing: boolean;
   onCommitText?: (text: string) => void;
   onEndEdit?: () => void;
@@ -47,6 +48,7 @@ export function VisualElementView({
   brandKit,
   pxPerMm,
   signedUrls,
+  workspaceLogoUrl = null,
   editing,
   onCommitText,
   onEndEdit,
@@ -206,7 +208,11 @@ export function VisualElementView({
       );
     }
     const src =
-      (el.props.bindLogo === "contracting" && brandKit.logoUrl) ||
+      (el.props.bindLogo === "contracting" &&
+        (brandKit.logoUrl ||
+          (brandKit.logoStoragePath ? signedUrls[brandKit.logoStoragePath] : undefined) ||
+          workspaceLogoUrl)) ||
+      (el.props.bindLogo === "workspace" && (workspaceLogoUrl || brandKit.logoUrl)) ||
       (el.props.storagePath ? signedUrls[el.props.storagePath] : undefined) ||
       el.props.src;
     if (!src) {

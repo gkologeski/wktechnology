@@ -51,6 +51,7 @@ type VisualCanvasProps = {
   editable: boolean;
   selectedIds: string[];
   signedUrls: Record<string, string>;
+  workspaceLogoUrl?: string | null;
   onSelect: (ids: string[]) => void;
   onLiveElementsChange: (elements: VisualElement[]) => void;
   onCommitElementsChange: (elements: VisualElement[]) => void;
@@ -76,6 +77,7 @@ export function VisualCanvas({
   editable: editableProp,
   selectedIds,
   signedUrls,
+  workspaceLogoUrl = null,
   onSelect,
   onLiveElementsChange,
   onCommitElementsChange,
@@ -379,6 +381,7 @@ export function VisualCanvas({
                       brandKit={design.brandKit}
                       pxPerMm={pxPerMm}
                       signedUrls={signedUrls}
+                      workspaceLogoUrl={workspaceLogoUrl}
                       editing={false}
                     />
                   </div>
@@ -422,6 +425,7 @@ export function VisualCanvas({
                     brandKit={design.brandKit}
                     pxPerMm={pxPerMm}
                     signedUrls={signedUrls}
+                    workspaceLogoUrl={workspaceLogoUrl}
                     editing={isEditing}
                     onCommitText={(nextText) => {
                       const next = activeElements.map((item) =>

@@ -27381,15 +27381,16 @@
       "files": {
         "drizzle/migrations/0472_proposal_visual_templates_schema.sql": "685dfe312963a52bfbef153a20b85167d82026671ccc819818c1d52dd8470049",
         "drizzle/migrations/0473_proposal_assets_storage_policies.sql": "b8fcbc0ff60d53a8cc088b7bb31c41681dcd01d83afadb4adf87c233d865da8b",
+        "drizzle/migrations/0474_grant_proposals_design_json_columns.sql": "b58bdeacd874f23ac6b7aaee7e03105536753900e8d2927864bad1e903899f92",
         "src/lib/proposals/proposal-assets.functions.ts": "f23a05a4a94aa7aa62e12512e817def23f655bce396e10325f0396698ffec11a",
         "src/lib/proposals/proposal-assets.server.ts": "7c374c0d1ab03b5411e40bec4eb23424451965c6d6252bc1adc46790c30e76f4",
-        "src/components/proposals/visual-editor/visual-canvas.tsx": "43f2d06ebce8938e69bc42819e926af4ea7b5c9ed98fba4c1508e604e911ff10",
-        "src/components/proposals/visual-editor/visual-element-view.tsx": "9df66e91d0296f51aca5859af41a519e76f29633d72bcf6abff583db59beee9b",
+        "src/components/proposals/visual-editor/visual-canvas.tsx": "742779d84d00e403ab821b640fd94411fa522e8909077c82351a446a908ecd38",
+        "src/components/proposals/visual-editor/visual-element-view.tsx": "9b0fdb9266ad4f2073ecb4410f858b766fbe8228e359d2eb7076f2f9728d6a67",
         "src/components/proposals/visual-editor/visual-inspector.tsx": "616b2ad35ec92b37e0c6e0d22b0116ed03869c1aec1f2a3afc134bd3824432b7",
         "src/components/proposals/visual-editor/visual-left-sidebar.tsx": "288a3a70a41926722b8795932ac84d22d5844f7d9b6b5a49f34e79797520ebad",
         "src/components/proposals/visual-editor/visual-page-strip.tsx": "e415ca149a54ea8d02a7bae911b342bdbf0eaefecf55f8138731288a2d4ea193",
-        "src/components/proposals/visual-editor/visual-preview-modal.tsx": "f87e698574ee3f2df336580041de5ea6f8f2dd4085e3a933e20ee0a9c8b9623f",
-        "src/components/proposals/visual-editor/visual-proposal-editor.tsx": "139e9af312dbc0a4c13c70b4e9dcf63b77e518c6e149e98f1b3583ece5edd80b"
+        "src/components/proposals/visual-editor/visual-preview-modal.tsx": "5f4b9fa3e421a3b378f4ca994498ad9f271d2450a5ac18397b753d1118e3440a",
+        "src/components/proposals/visual-editor/visual-proposal-editor.tsx": "aff9eff77fa43dd6b6785bd77cc6dedf3372a3b102193d08a29ca3e52035b220"
       },
       "resources": [
         "techsales.proposal_templates",
@@ -27467,6 +27468,10 @@
         {
           "file": "drizzle/migrations/0473_proposal_assets_storage_policies.sql",
           "symbol": "public.proposal_asset_storage_allowed"
+        },
+        {
+          "file": "drizzle/migrations/0474_grant_proposals_design_json_columns.sql",
+          "symbol": "public.proposals"
         }
       ],
       "tests": {
@@ -27498,7 +27503,7 @@
       "rationale": "Pure schema validation (Zod), escaped HTML/print rendering, editorial starter template data, document DTO types and pure canvas geometry/layer/alignment helpers. No database client, no server functions, no authorization logic; callers enforce permissions and RLS.",
       "files": {
         "src/lib/proposals/visual-design.ts": "7605c574508bc7b1babb1f80623c5a272328c642ed728f3c705a224cd61bc842",
-        "src/lib/proposals/visual-renderer.ts": "65400c80a1f2a592a7c15ed0b11defdbc4d94fca1c04986fbfe8698e3c940cfd",
+        "src/lib/proposals/visual-renderer.ts": "270dbbc1818159b7ff14f20252940c0c5226ec415d478ec47d1454055a08db11",
         "src/lib/proposals/nexxus-starter-template.ts": "4f5dd700fb673eff7a44129f2efce99576047af8f213cb50fdfd16dffed9e965",
         "src/lib/proposals/consultoria-starter-template.ts": "aca76663e385755ba707f2dfad473bf373ba6dd3505550954abf69fa36a4ad11",
         "src/lib/proposals/proposal-document-types.ts": "7d13f14cc3aa57f2f405cb5ff901fd80e99b26f768df4f7c3feba0d0142e7e4e",

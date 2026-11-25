@@ -508,3 +508,40 @@ export function extractPlainSummaryFromDesign(
   });
   return parts.join("\n").slice(0, 50_000);
 }
+
+/** Indica se o modelo visual referencia o logotipo da empresa cliente em algum elemento visível. */
+export function designUsesClientLogo(design: VisualDesign): boolean {
+  const scan = (els: VisualElement[]): boolean =>
+    els.some((el) => {
+      if (el.hidden) return false;
+      if (el.type === "image" && el.props.bindLogo === "client") return true;
+      if (
+        (el.type === "text" || el.type === "heading") &&
+        /\{\{\s*company\.logo\s*\}\}/.test(el.props.text)
+      ) {
+        return true;
+      }
+      return false;
+    });
+  return (
+    scan(design.master.headerElements) ||
+    scan(design.master.footerElements) ||
+    design.pages.some((p) => scan(p.elements))
+  );
+}
+
+/** Mescla o contexto da pré-visualização preservando fallbacks de marca e workspace. */
+export function mergeVisualPreviewContext(
+  base: VisualRenderContext,
+  design: VisualDesign,
+  signedUrls: Record<string, string>,
+  workspaceLogoUrl?: string | null,
+): VisualRenderContext {
+  return {
+    ...base,
+    contractingName: base.contractingName || design.brandKit.legalEntityName || "WK Technology",
+    contractingLogoUrl: base.contractingLogoUrl || design.brandKit.logoUrl || null,
+    workspaceLogoUrl: base.workspaceLogoUrl || workspaceLogoUrl || null,
+    signedUrls: { ...signedUrls, ...(base.signedUrls ?? {}) },
+  };
+}

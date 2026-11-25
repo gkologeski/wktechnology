@@ -10,7 +10,9 @@ import {
 import { createNexxusStarterDesign } from "./nexxus-starter-template";
 import { createConsultoriaStarterDesign } from "./consultoria-starter-template";
 import {
+  designUsesClientLogo,
   extractPlainSummaryFromDesign,
+  mergeVisualPreviewContext,
   renderVisualDesignPagesHtml,
   renderVisualDesignPrintDocument,
 } from "./visual-renderer";
@@ -252,6 +254,67 @@ describe("visual-renderer", () => {
 
     const summary = extractPlainSummaryFromDesign(design);
     expect(summary).toContain("<h2>");
+  });
+
+  it("usa logo do workspace como fallback na pré-visualização quando entidade e brandKit estão sem logo", () => {
+    const design = createNexxusStarterDesign();
+    const merged = mergeVisualPreviewContext(
+      {
+        proposalTitle: "Proposta NEXID",
+        companyName: "NEXID LTDA",
+        contractingName: "GM Kologeski & Cia Ltda ME",
+        contractingLogoUrl: null,
+      },
+      design,
+      {},
+      "https://cdn.wktechnology.com.br/wk-logo.png",
+    );
+    expect(merged.workspaceLogoUrl).toBe("https://cdn.wktechnology.com.br/wk-logo.png");
+    const html = renderVisualDesignPagesHtml(design, merged);
+    expect(html).toContain('src="https://cdn.wktechnology.com.br/wk-logo.png"');
+  });
+
+  it("preserva logo próprio da entidade prestadora acima do fallback do workspace", () => {
+    const design = createNexxusStarterDesign();
+    const merged = mergeVisualPreviewContext(
+      {
+        contractingName: "GM Kologeski & Cia Ltda ME",
+        contractingLogoUrl: "https://cdn.wktechnology.com.br/gm-logo.png",
+        workspaceLogoUrl: "https://cdn.wktechnology.com.br/wk-logo.png",
+      },
+      design,
+      {},
+      "https://cdn.wktechnology.com.br/wk-other.png",
+    );
+    const html = renderVisualDesignPagesHtml(design, merged);
+    expect(html).toContain('src="https://cdn.wktechnology.com.br/gm-logo.png"');
+  });
+
+  it("detecta quando o modelo visual referencia o logotipo do cliente", () => {
+    const design = createNexxusStarterDesign();
+    expect(designUsesClientLogo(design)).toBe(false);
+    const withClientBind = structuredClone(design);
+    withClientBind.pages[0]!.elements.push({
+      id: "el_client_logo_test",
+      type: "image",
+      name: "Logo cliente",
+      x: 10,
+      y: 10,
+      w: 40,
+      h: 12,
+      z: 99,
+      rotation: 0,
+      style: {},
+      props: { src: "", alt: "Logo cliente", fit: "contain", bindLogo: "client" },
+    });
+    expect(designUsesClientLogo(withClientBind)).toBe(true);
+    const withInlineToken = structuredClone(design);
+    withInlineToken.pages[0]!.elements[1] = {
+      ...withInlineToken.pages[0]!.elements[1]!,
+      type: "text",
+      props: { text: "Proposta {{company.logo}}" },
+    } as never;
+    expect(designUsesClientLogo(withInlineToken)).toBe(true);
   });
 });
 

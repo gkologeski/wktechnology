@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Printer } from "lucide-react";
+import { AlertCircle, Info, Loader2, Printer, RotateCcw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +25,8 @@ import {
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import type { VisualDesign } from "@/lib/proposals/visual-design";
 import {
+  designUsesClientLogo,
+  mergeVisualPreviewContext,
   renderVisualDesignPagesHtml,
   renderVisualDesignPrintDocument,
   type VisualRenderContext,
@@ -34,6 +37,7 @@ type VisualPreviewModalProps = {
   onOpenChange: (open: boolean) => void;
   design: VisualDesign;
   signedUrls: Record<string, string>;
+  workspaceLogoUrl?: string | null;
 };
 
 const DEMO_CONTEXT: VisualRenderContext = {
@@ -68,6 +72,7 @@ export function VisualPreviewModal({
   onOpenChange,
   design,
   signedUrls,
+  workspaceLogoUrl = null,
 }: VisualPreviewModalProps) {
   const { can } = usePermissions();
   const canLoadReal = ["own", "team", "workspace"].some(
@@ -87,23 +92,20 @@ export function VisualPreviewModal({
     queryKey: ["proposal-visual-preview-ctx", selectedProposalId],
     enabled: open && canLoadReal && selectedProposalId !== "__demo__",
     queryFn: () => ctxFn({ data: { proposalId: selectedProposalId } }),
+    retry: false,
   });
 
+  const isRealSelected = selectedProposalId !== "__demo__";
+  const hasRealError = isRealSelected && realCtxQ.isError;
+  const isRealLoading = isRealSelected && realCtxQ.isLoading;
+  const usesClientLogo = useMemo(() => designUsesClientLogo(design), [design]);
+  const missingClientLogo =
+    isRealSelected && Boolean(realCtxQ.data) && usesClientLogo && !realCtxQ.data?.clientLogoUrl;
+
   const mergedContext: VisualRenderContext = useMemo(() => {
-    const base = selectedProposalId !== "__demo__" && realCtxQ.data ? realCtxQ.data : DEMO_CONTEXT;
-    return {
-      ...base,
-      contractingName: base.contractingName || design.brandKit.legalEntityName || "WK Technology",
-      contractingLogoUrl: base.contractingLogoUrl || design.brandKit.logoUrl || null,
-      signedUrls: { ...signedUrls, ...(base.signedUrls ?? {}) },
-    };
-  }, [
-    design.brandKit.legalEntityName,
-    design.brandKit.logoUrl,
-    realCtxQ.data,
-    selectedProposalId,
-    signedUrls,
-  ]);
+    const base = isRealSelected && realCtxQ.data ? realCtxQ.data : DEMO_CONTEXT;
+    return mergeVisualPreviewContext(base, design, signedUrls, workspaceLogoUrl);
+  }, [design, isRealSelected, realCtxQ.data, signedUrls, workspaceLogoUrl]);
 
   const renderedHtml = useMemo(
     () => renderVisualDesignPagesHtml(design, mergedContext),
@@ -152,6 +154,7 @@ export function VisualPreviewModal({
                 size="sm"
                 variant="outline"
                 className="gap-1.5"
+                disabled={isRealLoading || hasRealError}
                 onClick={handlePrint}
               >
                 <Printer className="h-3.5 w-3.5" />
@@ -161,11 +164,64 @@ export function VisualPreviewModal({
           </div>
         </DialogHeader>
 
+        {proposalsQ.isError && (
+          <Alert variant="destructive" className="shrink-0 py-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-xs">
+              Não foi possível carregar a lista de propostas reais do workspace. Você ainda pode
+              pré-visualizar com os dados de exemplo.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {missingClientLogo && (
+          <Alert className="shrink-0 py-2">
+            <Info className="h-4 w-4" />
+            <AlertDescription className="text-xs">
+              A empresa cliente ({realCtxQ.data?.companyName || "desta proposta"}) não possui
+              logotipo nem domínio/site cadastrado em Empresas; o espaço de logotipo do cliente
+              permanece em branco.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex-1 overflow-auto rounded-md border border-border bg-muted/60 p-4">
-          {realCtxQ.isLoading ? (
+          {isRealLoading ? (
             <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Carregando dados da proposta...
+            </div>
+          ) : hasRealError ? (
+            <div className="mx-auto flex h-full max-w-lg flex-col items-center justify-center gap-4 text-center">
+              <Alert variant="destructive" className="text-left">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Não foi possível carregar os dados desta proposta</AlertTitle>
+                <AlertDescription className="mt-1 text-xs">
+                  {realCtxQ.error instanceof Error
+                    ? realCtxQ.error.message
+                    : "Ocorreu um erro ao buscar os dados reais da proposta selecionada."}
+                </AlertDescription>
+              </Alert>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => void realCtxQ.refetch()}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Tentar novamente
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setSelectedProposalId("__demo__")}
+                >
+                  Ver dados de exemplo
+                </Button>
+              </div>
             </div>
           ) : (
             <div
