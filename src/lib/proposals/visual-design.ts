@@ -136,9 +136,11 @@ export const VISUAL_FONTS = [
 
 export const VISUAL_VARIABLES = [
   { key: "{{company.name}}", label: "Nome da empresa cliente", group: "Cliente" },
+  { key: "{{counterparty.name}}", label: "Nome da contraparte (cliente)", group: "Cliente" },
   { key: "{{company_legal_name}}", label: "Razão social do cliente", group: "Cliente" },
   { key: "{{company_cnpj}}", label: "CNPJ do cliente", group: "Cliente" },
   { key: "{{contact.name}}", label: "Nome do contato", group: "Cliente" },
+  { key: "{{signer.full_name}}", label: "Signatário legal / responsável", group: "Cliente" },
   { key: "{{contact.email}}", label: "E-mail do contato", group: "Cliente" },
   { key: "{{deal.name}}", label: "Nome do negócio", group: "Proposta" },
   { key: "{{proposal.title}}", label: "Título da proposta", group: "Proposta" },

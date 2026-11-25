@@ -8,6 +8,7 @@ import {
   tryParseVisualDesign,
 } from "./visual-design";
 import { createNexxusStarterDesign } from "./nexxus-starter-template";
+import { createConsultoriaStarterDesign } from "./consultoria-starter-template";
 import {
   extractPlainSummaryFromDesign,
   renderVisualDesignPagesHtml,
@@ -106,6 +107,72 @@ describe("visual-design schema e template editorial", () => {
       p.elements.some((e) => e.type === "table" && e.binding === "items"),
     );
     expect(hasDynamicTable).toBe(true);
+  });
+
+  it("gera modelo visual Consultoria de 6 páginas preservando variáveis, tabela dinâmica e condições", () => {
+    const design = createConsultoriaStarterDesign({
+      primaryColor: "#2563EB",
+      legalEntityName: "WK Technology",
+    });
+    const parsed = parseVisualDesign(design);
+    expect(parsed.pages).toHaveLength(6);
+    expect(parsed.master.enabled).toBe(true);
+    expect(parsed.master.skipFirstPage).toBe(true);
+    expect(parsed.pages.map((p) => p.name)).toEqual([
+      "01 / Capa",
+      "02 / Diagnóstico",
+      "03 / Metodologia",
+      "04 / Entregáveis",
+      "05 / Cronograma e Equipe",
+      "06 / Investimento",
+    ]);
+
+    const allText = parsed.pages
+      .flatMap((p) => p.elements)
+      .map((e) => {
+        if (e.type === "text" || e.type === "heading") return e.props.text;
+        if (e.type === "price_card") {
+          return [e.props.eyebrow, e.props.title, e.props.price, e.props.subtitle].join(" ");
+        }
+        return "";
+      })
+      .join("\n");
+
+    for (const variable of [
+      "{{company.name}}",
+      "{{contact.name}}",
+      "{{deal.name}}",
+      "{{counterparty.name}}",
+      "{{signer.full_name}}",
+      "{{valid_until}}",
+      "{{total}}",
+      "{{payment_terms_summary}}",
+    ]) {
+      expect(allText).toContain(variable);
+    }
+
+    const hasDynamicTable = parsed.pages.some((p) =>
+      p.elements.some((e) => e.type === "table" && e.binding === "items"),
+    );
+    expect(hasDynamicTable).toBe(true);
+
+    const html = renderVisualDesignPagesHtml(parsed, {
+      companyName: "Cliente Exemplo Ltda",
+      contactName: "Ana Paula",
+      signerFullName: "Carlos Signatário",
+      dealName: "Consultoria Arquitetura",
+      total: "R$ 24.000,00",
+      validUntil: "30/12/2026",
+      paymentMethod: "Boleto bancário",
+      paymentTermsSummary: "Entrada 50% + saldo em 30 dias",
+      items: [{ id: "1", name: "Consultoria (100 h)", billing: "R$ 24.000,00" }],
+    });
+    expect(html).toContain("Cliente Exemplo Ltda");
+    expect(html).toContain("Carlos Signatário");
+    expect(html).toContain("Consultoria (100 h)");
+    expect(html).toContain("Entrada 50% + saldo em 30 dias");
+    expect(html).not.toContain("{{counterparty.name}}");
+    expect(html).not.toContain("{{signer.full_name}}");
   });
 
   it("rejeita JSON acima de 500 KB e cores inválidas", () => {

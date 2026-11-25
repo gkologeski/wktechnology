@@ -8,7 +8,7 @@ route_pattern: /settings/proposal-templates
 min_permission: techsales.proposal_templates.view.workspace
 audience: internal
 sort_order: 158
-version: 8
+version: 9
 is_published: true
 ---
 
@@ -34,7 +34,7 @@ is_published: true
 
 Além do formato em **Texto rico**, é possível criar modelos **Visual (páginas)** em formato A4 (retrato ou paisagem) com múltiplos quadros e páginas:
 
-- **Painel esquerdo:** aplique o **Modelo Editorial (5 págs.)** como ponto de partida, adicione formas, cartões comerciais, ícones, tipografia, campos dinâmicos (`{{company.name}}`, `{{total}}`, `{{valid_until}}`, etc.), configure o **Kit da Marca** (cores, fontes e empresa prestadora) ou envie imagens privadas (PNG, JPG, WebP, GIF ou SVG até 5 MB).
+- **Painel esquerdo:** aplique um modelo pronto como ponto de partida — **Proposta Editorial (5 págs.)** ou **Consultoria (6 págs.)** —, adicione formas, cartões comerciais, ícones, tipografia, campos dinâmicos (`{{company.name}}`, `{{counterparty.name}}`, `{{signer.full_name}}`, `{{total}}`, `{{valid_until}}`, etc.), configure o **Kit da Marca** (cores, fontes e empresa prestadora) ou envie imagens privadas (PNG, JPG, WebP, GIF ou SVG até 5 MB).
 - **Canvas e Página Mestre:** arraste, redimensione, gire, alinhe com guias magnéticas, dê duplo clique nos textos para editar inline, controle camadas/grupos e edite a **Página mestre** para repetir cabeçalho, rodapé e numeração automática (`{{page.number_padded}}`) nas páginas internas.
 - **Blocos dinâmicos:** tabelas vinculadas aos itens da proposta e cartões repetíveis por serviço preenchem automaticamente os dados reais da cotação/proposta.
 - **Pré-visualização e saída única:** clique em **Pré-visualizar** para testar com uma proposta real do workspace. A renderização é a mesma na ficha interna, no link público `/proposal/<token>` e no PDF.

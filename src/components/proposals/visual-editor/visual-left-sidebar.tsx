@@ -35,6 +35,7 @@ import {
   type VisualIconName,
 } from "@/lib/proposals/visual-design";
 import { createNexxusStarterDesign } from "@/lib/proposals/nexxus-starter-template";
+import { createConsultoriaStarterDesign } from "@/lib/proposals/consultoria-starter-template";
 
 type SidebarTab = "templates" | "elements" | "text" | "variables" | "brand" | "uploads";
 
@@ -265,6 +266,35 @@ export function VisualLeftSidebar({
                 }}
               >
                 Aplicar modelo editorial
+              </Button>
+            </div>
+
+            <div className="rounded-lg border border-border bg-background p-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">Consultoria (6 págs.)</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Capa, diagnóstico inicial, metodologia em 4 etapas, entregáveis, cronograma,
+                especialistas alocados e investimento com tabela dinâmica.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="mt-2.5 w-full"
+                disabled={!editable}
+                onClick={() => {
+                  onApplyStarter(
+                    createConsultoriaStarterDesign({
+                      primaryColor: bk.primaryColor,
+                      ...(bk.legalEntityName ? { legalEntityName: bk.legalEntityName } : {}),
+                      ...(bk.logoUrl ? { logoUrl: bk.logoUrl } : {}),
+                    }),
+                  );
+                }}
+              >
+                Aplicar modelo Consultoria
               </Button>
             </div>
 

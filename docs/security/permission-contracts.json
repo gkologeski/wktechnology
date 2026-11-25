@@ -27381,7 +27381,7 @@
         "src/components/proposals/visual-editor/visual-canvas.tsx": "43f2d06ebce8938e69bc42819e926af4ea7b5c9ed98fba4c1508e604e911ff10",
         "src/components/proposals/visual-editor/visual-element-view.tsx": "0ee63683334c123faa7e326917f9391cb50fe5520261bed0212fc6bf61524539",
         "src/components/proposals/visual-editor/visual-inspector.tsx": "7638b7a99077cb68eb189e4ee97c5d45603151acb475639a0a07c7943d6a4984",
-        "src/components/proposals/visual-editor/visual-left-sidebar.tsx": "45e3efd551af51bb173889bf9eec7d9a80888100f07560bca7c0ccccfb341891",
+        "src/components/proposals/visual-editor/visual-left-sidebar.tsx": "a2d03679444b04c7e688cefc9592abefea170f23b1a3baf1da35fe9a5c9cdf00",
         "src/components/proposals/visual-editor/visual-page-strip.tsx": "e415ca149a54ea8d02a7bae911b342bdbf0eaefecf55f8138731288a2d4ea193",
         "src/components/proposals/visual-editor/visual-preview-modal.tsx": "f87e698574ee3f2df336580041de5ea6f8f2dd4085e3a933e20ee0a9c8b9623f",
         "src/components/proposals/visual-editor/visual-proposal-editor.tsx": "043351ff52afd6ed951d69bf158fade43bc2df4ce4df064b1d25c8b2241cb7fb"
@@ -27492,9 +27492,10 @@
       "kind": "presentation",
       "rationale": "Pure schema validation (Zod), escaped HTML/print rendering, editorial starter template data, document DTO types and pure canvas geometry/layer/alignment helpers. No database client, no server functions, no authorization logic; callers enforce permissions and RLS.",
       "files": {
-        "src/lib/proposals/visual-design.ts": "d361baedb5e1492ccf63a96533d9b1826124f1e760cacdff49052fbf18ee2e7d",
-        "src/lib/proposals/visual-renderer.ts": "6c36f4e591057645a0bc03671db5ac358819371284d4795ac0d7504ea1ec6339",
+        "src/lib/proposals/visual-design.ts": "a1ce55764f5eac52a84e855f34cef68cad429359fd15956f52bf1e9aef1f1daa",
+        "src/lib/proposals/visual-renderer.ts": "3f3858f51fbc1cf2b36ea285e11d66f1c8dc986992dbd0c75b32a7483aec3e27",
         "src/lib/proposals/nexxus-starter-template.ts": "4f5dd700fb673eff7a44129f2efce99576047af8f213cb50fdfd16dffed9e965",
+        "src/lib/proposals/consultoria-starter-template.ts": "aca76663e385755ba707f2dfad473bf373ba6dd3505550954abf69fa36a4ad11",
         "src/lib/proposals/proposal-document-types.ts": "7d13f14cc3aa57f2f405cb5ff901fd80e99b26f768df4f7c3feba0d0142e7e4e",
         "src/components/proposals/visual-editor/visual-editor-state.ts": "144e94efbe63c6abec2c29172c3cd36cd5a1b5913a736a9b7f73ae1d251676dc"
       }

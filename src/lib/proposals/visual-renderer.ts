@@ -16,9 +16,11 @@ export type VisualRenderItem = {
 export type VisualRenderContext = {
   proposalTitle?: string | null;
   companyName?: string | null;
+  counterpartyName?: string | null;
   companyLegalName?: string | null;
   companyCnpj?: string | null;
   contactName?: string | null;
+  signerFullName?: string | null;
   contactEmail?: string | null;
   dealName?: string | null;
   total?: string | null;
@@ -83,9 +85,11 @@ export function buildTokenMap(
   const padded = String(pageNum).padStart(2, "0");
   return {
     "company.name": ctx.companyName ?? "",
+    "counterparty.name": ctx.counterpartyName || ctx.companyName || "",
     company_legal_name: ctx.companyLegalName || ctx.companyName || "",
     company_cnpj: ctx.companyCnpj ?? "",
     "contact.name": ctx.contactName ?? "",
+    "signer.full_name": ctx.signerFullName || ctx.contactName || "",
     "contact.email": ctx.contactEmail ?? "",
     "deal.name": ctx.dealName || ctx.proposalTitle || "",
     "proposal.title": ctx.proposalTitle ?? "",
