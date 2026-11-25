@@ -76,6 +76,10 @@ export function buildMetricsPlugin(): Plugin {
       phase.complete = true;
       save();
     },
+    closeBundle() {
+      const gc = (globalThis as { gc?: () => void }).gc;
+      if (typeof gc === "function") gc();
+    },
     buildEnd(error) {
       if (error) save();
     },

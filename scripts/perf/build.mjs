@@ -1,22 +1,35 @@
 // A report is successful only after Vite itself exits successfully, including finalization.
+import {
+  computeBuildHeapMb,
+  detectAvailableMemoryBytes,
+  sanitizeNodeOptions,
+} from "./build-heap.mjs";
 import { sourceFingerprint } from "./source-fingerprint.mjs";
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 const path = ".verification/build.json";
 const started = Date.now();
 const sourceHash = sourceFingerprint();
+const heapMb = computeBuildHeapMb(detectAvailableMemoryBytes());
 mkdirSync(".verification", { recursive: true });
 writeFileSync(path, JSON.stringify({ complete: false, phases: {}, duration_ms: 0 }));
 let interrupted = null;
 const child = spawn(
   process.execPath,
-  // Heap como flag de linha de comando: vence qualquer NODE_OPTIONS do ambiente
-  // (medido: --max-old-space-size=3072 herdado → OOM/SIGABRT no SSR).
-  ["--max-old-space-size=8192", "node_modules/vite/bin/vite.js", "build", ...process.argv.slice(2)],
+  // Heap dimensionado à RAM/cgroup disponível + --expose-gc para liberar ASTs
+  // entre client/ssr/nitro e vencer qualquer --max-old-space-size herdado.
+  [
+    "--expose-gc",
+    `--max-old-space-size=${heapMb}`,
+    "node_modules/vite/bin/vite.js",
+    "build",
+    ...process.argv.slice(2),
+  ],
   {
     stdio: "inherit",
     env: {
       ...process.env,
+      NODE_OPTIONS: sanitizeNodeOptions(process.env.NODE_OPTIONS, heapMb),
       TECHERP_BUILD_SOURCE_HASH: sourceHash,
     },
   },
