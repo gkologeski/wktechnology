@@ -12480,7 +12480,7 @@
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "acb9e2e990a5f17064c2756374f46aa20af8dfcac0473af85261ec2182625ca7",
         "src/lib/sales-flow.functions.ts": "05c7c1905198cb686d1d0b0b223f9cd2cf96b1bb1f10f687ddf866c0f9501c6e",
-        "src/components/proposals/proposal-wizard.tsx": "2676b15ba8fdd6d923c5f651d56c73a4b2b1f249a00dc1e2845b34fefcf45a8e",
+        "src/components/proposals/proposal-wizard.tsx": "4e1decddce55cdc60b182a0d49497fe748767ca18264dd71a1c445fbb4105d44",
         "src/lib/proposals/proposal-draft.server.ts": "18f697ab06685194d37a3f244e1a9f43623547bbb38c7a506350f11fbf62f9fa",
         "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
         "drizzle/migrations/0321_proposal_versions_cascade.sql": "d74b28603f0279e6cb749f1af8ae34658c561ed0f659964fea8d6f4a2b257bcf",
@@ -27389,8 +27389,9 @@
         "src/components/proposals/visual-editor/visual-inspector.tsx": "616b2ad35ec92b37e0c6e0d22b0116ed03869c1aec1f2a3afc134bd3824432b7",
         "src/components/proposals/visual-editor/visual-left-sidebar.tsx": "288a3a70a41926722b8795932ac84d22d5844f7d9b6b5a49f34e79797520ebad",
         "src/components/proposals/visual-editor/visual-page-strip.tsx": "e415ca149a54ea8d02a7bae911b342bdbf0eaefecf55f8138731288a2d4ea193",
-        "src/components/proposals/visual-editor/visual-preview-modal.tsx": "5f4b9fa3e421a3b378f4ca994498ad9f271d2450a5ac18397b753d1118e3440a",
-        "src/components/proposals/visual-editor/visual-proposal-editor.tsx": "aff9eff77fa43dd6b6785bd77cc6dedf3372a3b102193d08a29ca3e52035b220"
+        "src/components/proposals/visual-editor/visual-preview-modal.tsx": "d6ea59e393e060dc4e9c24c0e9e1e980d7b3e42cf27578a9ab37cd7d5db9f7e5",
+        "src/components/proposals/visual-editor/visual-proposal-editor.tsx": "03d7326683f0f8392396b0b673a0e5a52e6d4cf49b04b2b6edee813031da3478",
+        "src/components/proposals/proposal-review-preview.tsx": "e4f823ed2ac1687ffe75ee89ea153e510cac98e523f6aa19690707069327bb60"
       },
       "resources": [
         "techsales.proposal_templates",
@@ -27456,6 +27457,10 @@
           "symbol": "createProposalAssetUpload"
         },
         {
+          "file": "src/lib/proposals/proposal-assets.functions.ts",
+          "symbol": "signProposalAssetUrls"
+        },
+        {
           "file": "src/lib/proposals/proposal-assets.server.ts",
           "symbol": "isValidWorkspaceAssetPath"
         }
@@ -27503,7 +27508,7 @@
       "rationale": "Pure schema validation (Zod), escaped HTML/print rendering, editorial starter template data, document DTO types and pure canvas geometry/layer/alignment helpers. No database client, no server functions, no authorization logic; callers enforce permissions and RLS.",
       "files": {
         "src/lib/proposals/visual-design.ts": "7605c574508bc7b1babb1f80623c5a272328c642ed728f3c705a224cd61bc842",
-        "src/lib/proposals/visual-renderer.ts": "270dbbc1818159b7ff14f20252940c0c5226ec415d478ec47d1454055a08db11",
+        "src/lib/proposals/visual-renderer.ts": "3f96ff220ba5d7d222e58b6d077fab26c46bddb5e53fb0655cd426e58853cb39",
         "src/lib/proposals/nexxus-starter-template.ts": "4f5dd700fb673eff7a44129f2efce99576047af8f213cb50fdfd16dffed9e965",
         "src/lib/proposals/consultoria-starter-template.ts": "aca76663e385755ba707f2dfad473bf373ba6dd3505550954abf69fa36a4ad11",
         "src/lib/proposals/proposal-document-types.ts": "7d13f14cc3aa57f2f405cb5ff901fd80e99b26f768df4f7c3feba0d0142e7e4e",

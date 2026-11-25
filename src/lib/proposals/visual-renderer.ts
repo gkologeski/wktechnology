@@ -545,3 +545,52 @@ export function mergeVisualPreviewContext(
     signedUrls: { ...signedUrls, ...(base.signedUrls ?? {}) },
   };
 }
+
+const REVIEW_MM_TO_PX = 96 / 25.4;
+const REVIEW_PAGE_GAP_PX = 16;
+const REVIEW_FRAME_PADDING_PX = 24;
+
+export function computeReviewPreviewScale(
+  orientation: VisualDesign["orientation"],
+  containerWidthPx: number,
+): { scale: number; pageWidthPx: number; pageHeightPx: number } {
+  const dims = pageSizeMm(orientation);
+  const pageWidthPx = dims.width * REVIEW_MM_TO_PX;
+  const pageHeightPx = dims.height * REVIEW_MM_TO_PX;
+  const available = Math.max(240, containerWidthPx - REVIEW_FRAME_PADDING_PX);
+  const scale = Math.min(1, Math.max(0.25, available / pageWidthPx));
+  return { scale, pageWidthPx, pageHeightPx };
+}
+
+/** Monta o documento HTML isolado (sem scripts) em escala para o iframe da Revisão. */
+export function buildVisualReviewSrcDoc(
+  design: VisualDesign,
+  ctx: VisualRenderContext,
+  containerWidthPx: number,
+): string {
+  const { scale, pageWidthPx, pageHeightPx } = computeReviewPreviewScale(
+    design.orientation,
+    containerWidthPx,
+  );
+  const count = Math.max(1, design.pages.length);
+  const totalUnscaledH = count * pageHeightPx + Math.max(0, count - 1) * REVIEW_PAGE_GAP_PX;
+  const scaledW = Math.round(pageWidthPx * scale);
+  const scaledH = Math.round(totalUnscaledH * scale);
+  const inner = renderVisualDesignPagesHtml(design, ctx);
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<style>
+html, body { margin: 0; padding: 0; background: transparent; overflow-x: hidden; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { padding: 12px 0; display: flex; justify-content: center; }
+.vp-scale-box { width: ${scaledW}px; height: ${scaledH}px; position: relative; overflow: hidden; }
+.vp-scale-inner { width: ${pageWidthPx.toFixed(2)}px; transform: scale(${scale.toFixed(4)}); transform-origin: top left; }
+.vp-deck { display: flex; flex-direction: column; align-items: center; gap: ${REVIEW_PAGE_GAP_PX}px; margin: 0; padding: 0; }
+.vp-page { margin: 0 !important; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.14); border-radius: 2px; }
+* { box-sizing: border-box; }
+</style>
+</head>
+<body><div class="vp-scale-box"><div class="vp-scale-inner">${inner}</div></div></body>
+</html>`;
+}

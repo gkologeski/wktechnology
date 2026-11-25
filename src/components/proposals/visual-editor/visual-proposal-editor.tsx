@@ -47,6 +47,7 @@ import { VisualInspector } from "./visual-inspector";
 import { VisualLeftSidebar } from "./visual-left-sidebar";
 import { VisualPageStrip } from "./visual-page-strip";
 import { VisualPreviewModal } from "./visual-preview-modal";
+import type { VisualRenderContext } from "@/lib/proposals/visual-renderer";
 
 const MAX_HISTORY = 50;
 
@@ -54,12 +55,16 @@ type VisualProposalEditorProps = {
   value: VisualDesign;
   editable: boolean;
   onChange: (next: VisualDesign) => void;
+  previewContext?: VisualRenderContext | null;
+  previewLabel?: string;
 };
 
 export function VisualProposalEditor({
   value,
   editable: editableProp,
   onChange,
+  previewContext = null,
+  previewLabel,
 }: VisualProposalEditorProps) {
   const { can } = usePermissions();
   const editable =
@@ -689,6 +694,8 @@ export function VisualProposalEditor({
         design={value}
         signedUrls={signedUrls}
         workspaceLogoUrl={brandQ.data?.workspaceLogoUrl ?? null}
+        draftContext={previewContext}
+        {...(previewLabel ? { draftLabel: previewLabel } : {})}
       />
     </div>
   );

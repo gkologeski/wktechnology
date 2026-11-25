@@ -8,7 +8,7 @@ route_pattern: /proposals/$id
 min_permission:
 audience: internal
 sort_order: 203
-version: 5
+version: 6
 is_published: true
 ---
 # Editar e enviar uma proposta
@@ -21,7 +21,7 @@ is_published: true
 1. Clique em "Editar" para abrir o assistente, quando a proposta não estiver travada.
 2. Revise "Título *", "Responsável" e "Validade".
 3. Confira os itens e o campo "Valor total da proposta".
-4. Revise o modelo e o conteúdo. Avance pelas etapas e clique em "Salvar proposta".
+4. Revise o modelo e o conteúdo. Na etapa **Revisão**, propostas com modelo visual exibem a pré-visualização das páginas renderizadas com os dados reais e oferecem **Ver em tela cheia**; modelos em texto rico mostram o texto formatado. Avance pelas etapas e clique em "Salvar proposta".
 5. Para revisão interna de um rascunho, clique em "Enviar para aprovação".
 6. Escolha "Revisor", preencha "Comentário" se necessário e clique em "Enviar para revisão".
 7. Para enviar ao cliente, clique em "Enviar ao cliente aprovar por e-mail": confira o remetente (sua conta conectada), o destinatário (preenchido com o contato da proposta e editável), Cc, assunto e mensagem, e clique em "Enviar". O e-mail leva o botão "Ver e aprovar proposta".

@@ -31,12 +31,15 @@ import {
 import { DatePicker } from "@/components/date-picker";
 import { WordEditor } from "@/components/word-editor-lazy";
 import { VisualProposalEditor } from "@/components/proposals/visual-editor/visual-proposal-editor";
-import { sanitizeHtml } from "@/components/rich-html-editor";
+import { ProposalReviewPreview } from "@/components/proposals/proposal-review-preview";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/crm";
 import { tryParseVisualDesign, type VisualDesign } from "@/lib/proposals/visual-design";
-import { extractPlainSummaryFromDesign } from "@/lib/proposals/visual-renderer";
+import {
+  extractPlainSummaryFromDesign,
+  type VisualRenderContext,
+} from "@/lib/proposals/visual-renderer";
 import { cn } from "@/lib/utils";
 import { DEFAULT_VALIDITY_DAYS, clampInt } from "@/lib/contracts/contract-terms-defaults";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -475,6 +478,58 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
 
   const memberName = (id: string | null) => (id ? members.nameFor(id) : "Sem responsável");
   const chosen = templates.find((t) => t.id === templateId) ?? null;
+  const reviewVisualContext: VisualRenderContext = useMemo(() => {
+    const selectedEntity = draft?.legal_entity_options?.find((e) => e.id === entityId);
+    const instVal = installmentValue(amount, installments);
+    const instValFormatted = instVal != null ? formatCurrency(instVal, currency) : "";
+    const pmLabel = paymentMethodLabel(terms);
+    const termsSummary = payTerms ? describePaymentTerms(payTerms) : "";
+    const installmentsSummary =
+      termsSummary ||
+      (installments && instValFormatted
+        ? `${installments}x de ${instValFormatted}${pmLabel ? ` via ${pmLabel}` : ""}`
+        : pmLabel || "Condições conforme proposta");
+    return {
+      proposalTitle: title,
+      companyName: draft?.company_name ?? null,
+      clientLogoUrl: draft?.company_logo_url ?? null,
+      counterpartyName: draft?.company_name ?? null,
+      companyLegalName: draft?.company_legal_name ?? draft?.company_name ?? null,
+      companyCnpj: draft?.company_cnpj ?? "",
+      contactName: draft?.contact_name ?? null,
+      signerFullName: draft?.signer?.full_name || draft?.contact_name || null,
+      contactEmail: draft?.signer?.email || null,
+      dealName: draft?.deal_name ?? title,
+      total: amount != null ? formatCurrency(amount, currency) : "",
+      validUntil: expires ? format(parseISO(expires), "dd/MM/yyyy") : "",
+      validityDays: validityDays ?? "",
+      date: format(new Date(), "dd/MM/yyyy"),
+      contractingName: selectedEntity?.name ?? "",
+      contractingCnpj: selectedEntity?.cnpj ?? "",
+      contractingLogoUrl: selectedEntity?.logo_url ?? null,
+      workspaceLogoUrl: draft?.workspace_logo_url ?? null,
+      agentName: assignee ? members.nameFor(assignee) : null,
+      paymentMethod: pmLabel,
+      installmentsCount: installments ?? "",
+      installmentValue: instValFormatted,
+      installmentsSummary,
+      paymentTermsSummary: termsSummary || installmentsSummary,
+      items: (draft?.items ?? []).map((it) => ({ id: it.id, name: it.name, billing: it.billing })),
+    };
+  }, [
+    amount,
+    assignee,
+    currency,
+    draft,
+    entityId,
+    expires,
+    installments,
+    members,
+    payTerms,
+    terms,
+    title,
+    validityDays,
+  ]);
 
   return (
     <Dialog
@@ -484,7 +539,11 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
       <DialogContent
         className={cn(
           "max-h-[92vh] overflow-y-auto",
-          step === 2 && designJson ? "max-w-[96vw]" : "max-w-3xl",
+          step === 2 && designJson
+            ? "max-w-[96vw]"
+            : step === 3 && designJson
+              ? "max-w-4xl"
+              : "max-w-3xl",
         )}
         // A confirmação "Trocar o conteúdo?" abre por cima; clicar nela não fecha o assistente.
         onInteractOutside={(e) => {
@@ -799,7 +858,13 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                   )}
                 </div>
                 {designJson ? (
-                  <VisualProposalEditor value={designJson} editable onChange={setDesignJson} />
+                  <VisualProposalEditor
+                    value={designJson}
+                    editable
+                    onChange={setDesignJson}
+                    previewContext={reviewVisualContext}
+                    previewLabel={title.trim() || "Proposta atual"}
+                  />
                 ) : (
                   <WordEditor value={body} onChange={setBody} minHeight={300} />
                 )}
@@ -870,9 +935,12 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                     )}
                   </div>
                 )}
-                <div
-                  className="prose prose-sm max-h-64 max-w-none overflow-y-auto rounded-md border bg-muted/30 p-3 dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }}
+                <ProposalReviewPreview
+                  design={designJson}
+                  body={body}
+                  context={reviewVisualContext}
+                  workspaceLogoUrl={draft.workspace_logo_url ?? null}
+                  draftLabel={title.trim() || "Proposta atual"}
                 />
               </div>
             )}

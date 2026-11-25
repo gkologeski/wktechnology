@@ -1,3 +1,9 @@
+# REVISAO-VISUAL-PROPOSTA — pré-visualização visual na Revisão (P, 20–30 min)
+
+- [x] Exibir páginas visuais renderizadas em iframe sandbox na etapa Revisão do assistente de proposta, com botão Ver em tela cheia e dados reais do rascunho.
+- [x] Manter texto rico inalterado, estados de carregamento/erro sem dados fictícios, Ajuda v6 e contratos de permissão atualizados.
+- [x] Validado via 23 testes unitários, permissions:check (0 achados), help:coverage (256/256), eslint (0 erros) e Playwright autenticado na proposta Brooks (desktop, tela cheia, texto rico e mobile); sem publicar.
+
 # LOGO-CADASTRADO — propostas e cotações (P, 20–30 min)
 
 - [x] Aceitar logos raster inline seguros e priorizar imagem manual; novos uploads até 512 px, sem ampliar originais menores.

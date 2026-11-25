@@ -38,6 +38,8 @@ type VisualPreviewModalProps = {
   design: VisualDesign;
   signedUrls: Record<string, string>;
   workspaceLogoUrl?: string | null;
+  draftContext?: VisualRenderContext | null;
+  draftLabel?: string;
 };
 
 const DEMO_CONTEXT: VisualRenderContext = {
@@ -73,12 +75,16 @@ export function VisualPreviewModal({
   design,
   signedUrls,
   workspaceLogoUrl = null,
+  draftContext = null,
+  draftLabel,
 }: VisualPreviewModalProps) {
   const { can } = usePermissions();
   const canLoadReal = ["own", "team", "workspace"].some(
     (s) => can(`techsales.proposal_templates.view.${s}`) || can(`techsales.proposals.view.${s}`),
   );
-  const [selectedProposalId, setSelectedProposalId] = useState<string>("__demo__");
+  const [selectedProposalId, setSelectedProposalId] = useState<string>(
+    draftContext ? "__draft__" : "__demo__",
+  );
   const listFn = useServerFn(listProposalsForPreview);
   const ctxFn = useServerFn(loadProposalPreviewContext);
 
@@ -90,22 +96,28 @@ export function VisualPreviewModal({
 
   const realCtxQ = useQuery({
     queryKey: ["proposal-visual-preview-ctx", selectedProposalId],
-    enabled: open && canLoadReal && selectedProposalId !== "__demo__",
+    enabled:
+      open &&
+      canLoadReal &&
+      selectedProposalId !== "__demo__" &&
+      selectedProposalId !== "__draft__",
     queryFn: () => ctxFn({ data: { proposalId: selectedProposalId } }),
     retry: false,
   });
 
-  const isRealSelected = selectedProposalId !== "__demo__";
+  const isDraftSelected = selectedProposalId === "__draft__" && Boolean(draftContext);
+  const isRealSelected = selectedProposalId !== "__demo__" && selectedProposalId !== "__draft__";
   const hasRealError = isRealSelected && realCtxQ.isError;
   const isRealLoading = isRealSelected && realCtxQ.isLoading;
   const usesClientLogo = useMemo(() => designUsesClientLogo(design), [design]);
+  const activeRealContext = isDraftSelected ? draftContext : isRealSelected ? realCtxQ.data : null;
   const missingClientLogo =
-    isRealSelected && Boolean(realCtxQ.data) && usesClientLogo && !realCtxQ.data?.clientLogoUrl;
+    Boolean(activeRealContext) && usesClientLogo && !activeRealContext?.clientLogoUrl;
 
   const mergedContext: VisualRenderContext = useMemo(() => {
-    const base = isRealSelected && realCtxQ.data ? realCtxQ.data : DEMO_CONTEXT;
+    const base = activeRealContext ?? DEMO_CONTEXT;
     return mergeVisualPreviewContext(base, design, signedUrls, workspaceLogoUrl);
-  }, [design, isRealSelected, realCtxQ.data, signedUrls, workspaceLogoUrl]);
+  }, [activeRealContext, design, signedUrls, workspaceLogoUrl]);
 
   const renderedHtml = useMemo(
     () => renderVisualDesignPagesHtml(design, mergedContext),
@@ -140,6 +152,9 @@ export function VisualPreviewModal({
                   <SelectValue placeholder="Dados de exemplo" />
                 </SelectTrigger>
                 <SelectContent>
+                  {draftContext && (
+                    <SelectItem value="__draft__">{draftLabel || "Proposta atual"}</SelectItem>
+                  )}
                   <SelectItem value="__demo__">Dados de exemplo (Nexxus)</SelectItem>
                   {(proposalsQ.data ?? []).map((p) => (
                     <SelectItem key={p.id} value={p.id}>
@@ -178,7 +193,7 @@ export function VisualPreviewModal({
           <Alert className="shrink-0 py-2">
             <Info className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              A empresa cliente ({realCtxQ.data?.companyName || "desta proposta"}) não possui
+              A empresa cliente ({activeRealContext?.companyName || "desta proposta"}) não possui
               logotipo nem domínio/site cadastrado em Empresas; o espaço de logotipo do cliente
               permanece em branco.
             </AlertDescription>
