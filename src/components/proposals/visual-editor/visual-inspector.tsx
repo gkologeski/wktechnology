@@ -691,7 +691,7 @@ export function VisualInspector({
                               ...cur,
                               props: {
                                 ...cur.props,
-                                bindLogo: v as "none" | "contracting" | "workspace",
+                                bindLogo: v as "none" | "contracting" | "workspace" | "client",
                               },
                             }
                           : cur,
@@ -703,6 +703,7 @@ export function VisualInspector({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Imagem enviada</SelectItem>
+                      <SelectItem value="client">Logo da empresa cliente</SelectItem>
                       <SelectItem value="contracting">Logo da prestadora (WK)</SelectItem>
                       <SelectItem value="workspace">Logo do workspace</SelectItem>
                     </SelectContent>

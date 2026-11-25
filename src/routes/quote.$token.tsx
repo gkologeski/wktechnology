@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import { getQuoteByToken, respondToQuote } from "@/lib/quotes.functions";
+import { isValidProposalToken } from "@/lib/proposals/proposal-pdf-rules";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,6 +59,7 @@ function PublicQuotePage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["public-quote", token],
     queryFn: () => fetchQuote({ data: { token } }),
+    enabled: isValidProposalToken(token),
   });
 
   const respondMut = useMutation({
@@ -95,6 +97,9 @@ function PublicQuotePage() {
     return <div className="p-8 text-sm text-destructive">Cotação não encontrada.</div>;
 
   const { quote, items, company, contact, agent } = data;
+  const provider =
+    (data as unknown as { provider?: { name?: string | null; logo?: string | null } | null })
+      .provider ?? null;
   const template = (
     data as unknown as { template: { id: string; name: string; html: string } | null }
   ).template;
@@ -108,6 +113,7 @@ function PublicQuotePage() {
         quote={quote}
         items={items}
         company={company}
+        provider={provider}
         contact={contact}
         agent={agent}
         expired={!!expired}
@@ -404,7 +410,8 @@ type TemplatedQuoteProps = {
   html: string;
   quote: QuoteForRender;
   items: LineItem[];
-  company: { name?: string | null; website?: string | null } | null;
+  company: { name?: string | null; website?: string | null; logo?: string | null } | null;
+  provider?: { name?: string | null; logo?: string | null } | null;
   contact: { first_name?: string | null; last_name?: string | null; email?: string | null } | null;
   agent: { full_name?: string | null; email?: string | null } | null;
   expired: boolean;
@@ -424,7 +431,7 @@ type TemplatedQuoteProps = {
 const ACTIONS_MARKER = "__QUOTE_ACTIONS_PLACEHOLDER__";
 
 function TemplatedQuote(props: TemplatedQuoteProps) {
-  const { html, quote, items, company, contact, agent, expired, responded } = props;
+  const { html, quote, items, company, provider, contact, agent, expired, responded } = props;
 
   const ctx: QuoteRenderContext = useMemo(() => {
     const fmt = (n: number) => formatCurrency(Number(n), quote.currency);
@@ -441,7 +448,15 @@ function TemplatedQuote(props: TemplatedQuoteProps) {
         notes: quote.notes ?? "",
         terms: quote.terms ?? "",
       },
-      company: { name: company?.name ?? "", domain: company?.website ?? "" },
+      company: {
+        name: company?.name ?? "",
+        domain: company?.website ?? "",
+        logo: company?.logo ?? null,
+      },
+      provider: {
+        name: provider?.name ?? "",
+        logo: provider?.logo ?? null,
+      },
       contact: {
         name: contact ? `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim() : "",
         email: contact?.email ?? "",
@@ -469,7 +484,7 @@ function TemplatedQuote(props: TemplatedQuoteProps) {
         };
       }),
     };
-  }, [quote, items, company, contact, agent]);
+  }, [quote, items, company, provider, contact, agent]);
 
   const rendered = useMemo(() => {
     const out = renderQuoteTemplate(html, ctx).replace(/\{\{#actions\/\}\}/g, ACTIONS_MARKER);

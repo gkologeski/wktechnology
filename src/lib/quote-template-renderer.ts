@@ -9,6 +9,8 @@
  *  - {{#actions/}}              — marcador especial substituído na página pública
  */
 
+import { renderLogoImgTag, sanitizeHttpsLogoUrl } from "@/lib/sales/company-logo-token";
+
 export type QuoteRenderContext = Record<string, unknown>;
 
 function escapeHtml(s: unknown): string {
@@ -41,6 +43,26 @@ function isTruthy(v: unknown): boolean {
   return Boolean(v);
 }
 
+const LOGO_IMAGE_PATHS = new Set<string>(["company.logo", "provider.logo"]);
+
+function isPathTruthy(ctx: QuoteRenderContext, path: string): boolean {
+  const v = getPath(ctx, path);
+  if (LOGO_IMAGE_PATHS.has(path)) return sanitizeHttpsLogoUrl(v) !== null;
+  return isTruthy(v);
+}
+
+function renderLogoPath(ctx: QuoteRenderContext, path: string, value: unknown): string {
+  const isCompany = path === "company.logo";
+  const labelRaw = getPath(ctx, isCompany ? "company.name" : "provider.name");
+  const label = typeof labelRaw === "string" && labelRaw.trim() ? labelRaw.trim() : "";
+  const alt = label
+    ? `Logo de ${label}`
+    : isCompany
+      ? "Logo da empresa cliente"
+      : "Logo da empresa prestadora";
+  return renderLogoImgTag(value, alt);
+}
+
 /** Render template HTML against ctx. Replaces blocks and placeholders. */
 export function renderQuoteTemplate(html: string, ctx: QuoteRenderContext): string {
   let out = html;
@@ -67,7 +89,7 @@ export function renderQuoteTemplate(html: string, ctx: QuoteRenderContext): stri
   out = out.replace(
     /\{\{#if\s+([\w.]+)\s*\}\}([\s\S]*?)\{\{\/if\}\}/g,
     (_m, path: string, body: string) => {
-      return isTruthy(getPath(ctx, path)) ? body : "";
+      return isPathTruthy(ctx, path) ? body : "";
     },
   );
 
@@ -94,11 +116,13 @@ function renderInterpolations(src: string, ctx: QuoteRenderContext): string {
   // {{{ raw }}}
   out = out.replace(/\{\{\{\s*([\w.]+)\s*\}\}\}/g, (_m, path: string) => {
     const v = getPath(ctx, path);
+    if (LOGO_IMAGE_PATHS.has(path)) return renderLogoPath(ctx, path, v);
     return v == null ? "" : String(v);
   });
   // {{ value }} — leaves {{#...}} blocks alone (they should have been processed)
   out = out.replace(/\{\{\s*([^#/{}][\w.]*)\s*\}\}/g, (_m, path: string) => {
     const v = getPath(ctx, path);
+    if (LOGO_IMAGE_PATHS.has(path)) return renderLogoPath(ctx, path, v);
     if (RAW_HTML_PATHS.has(path)) return v == null ? "" : String(v);
     return escapeHtml(v);
   });
@@ -121,7 +145,15 @@ export function sampleQuoteContext(): QuoteRenderContext {
       notes: "Pagamento 30% na assinatura, saldo em 30 dias.",
       terms: "Validade da proposta: 30 dias. Reajustes anuais pelo IPCA.",
     },
-    company: { name: "Acme S/A", domain: "acme.com" },
+    company: {
+      name: "Acme S/A",
+      domain: "acme.com",
+      logo: "https://www.google.com/s2/favicons?domain=acme.com&sz=128",
+    },
+    provider: {
+      name: "Sua Empresa",
+      logo: "https://www.google.com/s2/favicons?domain=example.com&sz=128",
+    },
     contact: { name: "Maria Souza", email: "maria@acme.com" },
     agent: { name: "João Vendedor", email: "joao@suaempresa.com" },
     items: [
@@ -175,9 +207,11 @@ export const QUOTE_TEMPLATE_TOKENS: Array<{
     group: "Empresa / Contato",
     items: [
       { token: "{{company.name}}", label: "Nome da empresa" },
+      { token: "{{company.logo}}", label: "Logo da empresa cliente" },
       { token: "{{company.domain}}", label: "Domínio" },
       { token: "{{contact.name}}", label: "Nome do contato" },
       { token: "{{contact.email}}", label: "Email do contato" },
+      { token: "{{provider.logo}}", label: "Logo da empresa prestadora" },
       { token: "{{agent.name}}", label: "Vendedor" },
       { token: "{{agent.email}}", label: "Email do vendedor" },
     ],

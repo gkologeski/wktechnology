@@ -41,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { DEFAULT_VALIDITY_DAYS, clampInt } from "@/lib/contracts/contract-terms-defaults";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { renderQuoteTemplate } from "@/lib/quote-template-renderer";
+import { resolveProviderLogoUrl } from "@/lib/sales/company-logo-token";
 import {
   itemsTableHtml,
   normalizeProposalTemplateHtml,
@@ -286,9 +287,14 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
       /<p>\s*\{\{\{terms_block\}\}\}\s*<\/p>/g,
       "{{{terms_block}}}",
     );
+    const selectedEntity = draft.legal_entity_options?.find((e) => e.id === entityId);
     return renderQuoteTemplate(html, {
       items_table: itemsTableHtml(draft.items),
-      company: { name: draft.company_name ?? "" },
+      company: { name: draft.company_name ?? "", logo: draft.company_logo_url ?? null },
+      provider: {
+        name: selectedEntity?.name ?? "",
+        logo: resolveProviderLogoUrl(selectedEntity?.logo_url, draft.workspace_logo_url),
+      },
       contact: { name: draft.contact_name ?? "" },
       counterparty: { name: draft.company_name ?? "" },
       signer: draft.signer ?? {
@@ -301,8 +307,8 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
       company_cnpj: draft.company_cnpj ?? "",
       // The selected workspace legal entity is WK; the deal company is the supplier in purchase models.
       contracting: {
-        name: draft.legal_entity_options?.find((e) => e.id === entityId)?.name ?? "",
-        cnpj: draft.legal_entity_options?.find((e) => e.id === entityId)?.cnpj ?? "",
+        name: selectedEntity?.name ?? "",
+        cnpj: selectedEntity?.cnpj ?? "",
       },
       payment_method: paymentMethodLabel(terms),
       installments_count: installments ?? "",

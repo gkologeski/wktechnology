@@ -229,9 +229,16 @@ export function renderBlock(b: TemplateBlock, theme: TemplateTheme): string {
 </section>`;
     }
     case "logo": {
+      const source = prop(b, "source", "custom");
       const url = prop(b, "url");
       const width = num(b, "width", 140);
       const align = prop(b, "align", "left");
+      if (source === "company") {
+        return `<div style="text-align:${esc(align)};margin-bottom:16px;">{{company.logo}}</div>`;
+      }
+      if (source === "provider") {
+        return `<div style="text-align:${esc(align)};margin-bottom:16px;">{{provider.logo}}</div>`;
+      }
       if (!url) return `<!-- logo: configure a URL -->`;
       return `<div style="text-align:${esc(align)};margin-bottom:16px;"><img src="${esc(url)}" alt="logo" style="max-width:${width}px;height:auto;" /></div>`;
     }

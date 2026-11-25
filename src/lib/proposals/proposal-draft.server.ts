@@ -16,6 +16,7 @@ import type {
   ProposalDraftSource,
 } from "./proposal-draft-types";
 import { tryParseVisualDesign } from "./visual-design";
+import { resolveCompanyLogoUrl } from "@/lib/sales/company-logo-token";
 
 const QUOTE_ITEM_COLUMNS = DEAL_LINE_ITEM_COLUMNS + ", position";
 
@@ -79,7 +80,7 @@ async function names(
     ids.company
       ? supabase
           .from("companies")
-          .select("name, cnpj, custom_fields")
+          .select("name, cnpj, custom_fields, logo_url, logo_source, domain, website")
           .eq("id", ids.company)
           .maybeSingle()
       : null,
@@ -102,12 +103,20 @@ async function names(
   ]);
   const contact = p?.data as SignerCandidate | null;
   const signer = chooseProposalSigner((s?.data ?? []) as SignerCandidate[], contact);
+  const companyRow = c?.data as {
+    name: string;
+    cnpj: string | null;
+    custom_fields: Record<string, unknown> | null;
+    logo_url: string | null;
+    logo_source: string | null;
+    domain: string | null;
+    website: string | null;
+  } | null;
   return {
-    company_name: (c?.data as { name: string } | null)?.name ?? null,
-    company_cnpj: (c?.data as { cnpj: string | null } | null)?.cnpj ?? null,
-    company_legal_name:
-      ((c?.data as { custom_fields: Record<string, unknown> | null } | null)?.custom_fields
-        ?.razao_social as string | undefined) ?? null,
+    company_name: companyRow?.name ?? null,
+    company_cnpj: companyRow?.cnpj ?? null,
+    company_legal_name: (companyRow?.custom_fields?.razao_social as string | undefined) ?? null,
+    company_logo_url: resolveCompanyLogoUrl(companyRow),
     contact_name: contact
       ? `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim() || null
       : null,

@@ -692,16 +692,39 @@ function BlockInspector({
 
       {block.type === "logo" && (
         <>
-          <Field label="Imagem">
-            <ImageInput value={String(p.url ?? "")} onChange={(v) => setProp("url", v ?? "")} />
-          </Field>
-          <Field label="Largura (px)">
-            <Input
-              type="number"
-              value={Number(p.width ?? 140)}
-              onChange={(e) => setProp("width", Number(e.target.value))}
+          <Field label="Origem do logo">
+            <SelectGroup
+              value={String(p.source ?? "custom")}
+              options={[
+                ["custom", "Imagem enviada"],
+                ["company", "Empresa cliente"],
+                ["provider", "Prestadora"],
+              ]}
+              onChange={(v) => setProp("source", v)}
             />
           </Field>
+          {String(p.source ?? "custom") === "custom" ? (
+            <>
+              <Field label="Imagem">
+                <ImageInput value={String(p.url ?? "")} onChange={(v) => setProp("url", v ?? "")} />
+              </Field>
+              <Field label="Largura (px)">
+                <Input
+                  type="number"
+                  value={Number(p.width ?? 140)}
+                  onChange={(e) => setProp("width", Number(e.target.value))}
+                />
+              </Field>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Usa automaticamente{" "}
+              <code className="rounded bg-muted px-1">
+                {String(p.source) === "company" ? "{{company.logo}}" : "{{provider.logo}}"}
+              </code>
+              . Sem logo cadastrado, o espaço fica oculto.
+            </p>
+          )}
           <Field label="Alinhamento">
             <SelectGroup
               value={String(p.align ?? "left")}

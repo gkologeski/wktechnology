@@ -136,6 +136,7 @@ export const VISUAL_FONTS = [
 
 export const VISUAL_VARIABLES = [
   { key: "{{company.name}}", label: "Nome da empresa cliente", group: "Cliente" },
+  { key: "{{company.logo}}", label: "Logo da empresa cliente", group: "Cliente" },
   { key: "{{counterparty.name}}", label: "Nome da contraparte (cliente)", group: "Cliente" },
   { key: "{{company_legal_name}}", label: "Razão social do cliente", group: "Cliente" },
   { key: "{{company_cnpj}}", label: "CNPJ do cliente", group: "Cliente" },
@@ -154,6 +155,7 @@ export const VISUAL_VARIABLES = [
   { key: "{{installments_summary}}", label: "Resumo do parcelamento", group: "Financeiro" },
   { key: "{{payment_terms_summary}}", label: "Condições comerciais", group: "Financeiro" },
   { key: "{{contracting.name}}", label: "Empresa prestadora (WK)", group: "Prestadora" },
+  { key: "{{provider.logo}}", label: "Logo da empresa prestadora", group: "Prestadora" },
   { key: "{{contracting.cnpj}}", label: "CNPJ da prestadora", group: "Prestadora" },
   { key: "{{agent.name}}", label: "Responsável comercial", group: "Prestadora" },
   { key: "{{page.number_padded}}", label: "Número da página (01, 02...)", group: "Página" },
@@ -230,7 +232,7 @@ export const VisualElementSchema = z.discriminatedUnion("type", [
       storagePath: z.string().max(500).nullable().optional(),
       alt: z.string().max(200).default("Imagem"),
       fit: z.enum(["contain", "cover"]).default("contain"),
-      bindLogo: z.enum(["none", "contracting", "workspace"]).default("none"),
+      bindLogo: z.enum(["none", "contracting", "workspace", "client"]).default("none"),
     }),
   }),
   BaseElementSchema.extend({

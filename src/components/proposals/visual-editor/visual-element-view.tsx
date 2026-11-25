@@ -184,6 +184,27 @@ export function VisualElementView({
   }
 
   if (el.type === "image") {
+    if (el.props.bindLogo === "client") {
+      return (
+        <div
+          style={{
+            ...common,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            border: "1px dashed #94A3B8",
+            color: "#64748B",
+            fontFamily: `'${brandKit.bodyFont}', system-ui, sans-serif`,
+            fontWeight: 500,
+            fontSize: `${ptToPx(8.5)}px`,
+            textAlign: "center",
+            padding: "2px 4px",
+          }}
+        >
+          Logo do cliente (automático)
+        </div>
+      );
+    }
     const src =
       (el.props.bindLogo === "contracting" && brandKit.logoUrl) ||
       (el.props.storagePath ? signedUrls[el.props.storagePath] : undefined) ||

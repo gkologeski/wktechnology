@@ -846,6 +846,33 @@ export function VisualLeftSidebar({
               Inserir logo da prestadora
             </Button>
 
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="w-full text-xs"
+              disabled={!editable}
+              onClick={() => {
+                const el = makeEl("image");
+                if (el.type === "image") {
+                  onAddElement({
+                    ...el,
+                    name: "Logo da empresa cliente",
+                    w: 44,
+                    h: 14,
+                    props: {
+                      ...el.props,
+                      alt: "Logo da empresa cliente",
+                      fit: "contain",
+                      bindLogo: "client",
+                    },
+                  });
+                }
+              }}
+            >
+              Inserir logo da empresa cliente
+            </Button>
+
             {uploadedPaths.length > 0 && (
               <div className="space-y-1.5">
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">

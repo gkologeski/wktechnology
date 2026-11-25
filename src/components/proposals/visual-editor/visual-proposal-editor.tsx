@@ -202,6 +202,25 @@ export function VisualProposalEditor({
         );
         return;
       }
+      if (token === "{{company.logo}}" || token === "{{provider.logo}}") {
+        const imgBase = createDefaultElement("image", dims.width, dims.height, 1, value.brandKit);
+        if (imgBase.type === "image") {
+          const isClient = token === "{{company.logo}}";
+          handleAddElement({
+            ...imgBase,
+            name: label,
+            w: 44,
+            h: 14,
+            props: {
+              ...imgBase.props,
+              alt: label,
+              fit: "contain",
+              bindLogo: isClient ? "client" : "contracting",
+            },
+          });
+        }
+        return;
+      }
       const base = createDefaultElement("text", dims.width, dims.height, 1, value.brandKit);
       if (base.type === "text") {
         handleAddElement({

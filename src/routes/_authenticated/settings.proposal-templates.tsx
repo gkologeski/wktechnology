@@ -97,6 +97,7 @@ function toDraft(t: ProposalTemplateItem): Draft {
 
 const VARIABLES = [
   "{{company.name}}",
+  "{{company.logo}}",
   "{{contact.name}}",
   "{{deal.name}}",
   "{{total}}",
@@ -106,6 +107,7 @@ const VARIABLES = [
   "{{company_cnpj}}",
   "{{contracting.name}}",
   "{{contracting.cnpj}}",
+  "{{provider.logo}}",
 ];
 
 function ProposalTemplatesPage() {

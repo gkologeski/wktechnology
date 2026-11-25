@@ -12474,14 +12474,14 @@
         "src/lib/contracts/contract-create.server.ts": "773a356a646938842dcd1ab4d34984d5c64143bd0e77bb68b0f0032155bb84a3",
         "src/lib/contracts/template-merge.server.ts": "732fa6eba5cdf2c462b59692f65ad725ff630b28e7fc64df094639562fac0feb",
         "src/lib/contracts/templates.functions.ts": "56ec7226789a5aff861cd6354e4102cc1d5c94189c47bd6caf86a534fbcda4ec",
-        "src/lib/proposals/proposal-document.server.ts": "ccfa70f844701aa7e6063b51605e6ebb719bdb771d329af77fe3d90ada61fd12",
+        "src/lib/proposals/proposal-document.server.ts": "62d9947758e03d7dab717921ca4bccd9761cca06f4ea3afa59f40120e2202a76",
         "src/lib/sales-flow.server.ts": "a8995103874a5940e1c3a28d67dbba44a1395eeb2a0a1a6515442e2ce150ae82",
         "src/lib/contracts/accepted-proposal.server.ts": "d49d8bcf9bee5c0ea89fadb2bf672f4341f0aee216f6b2b46c05b74f0bc17366",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "acb9e2e990a5f17064c2756374f46aa20af8dfcac0473af85261ec2182625ca7",
-        "src/lib/sales-flow.functions.ts": "972fcf9ee4660d6a3218eaec49f54691d0c32d5a145bd79a553fac81829014b9",
-        "src/components/proposals/proposal-wizard.tsx": "207606d68fd99f6cb228ade29f6017dcd55a90224aa21877afef3cfb90b93ad1",
-        "src/lib/proposals/proposal-draft.server.ts": "20841da9c339eed0a02fe486ddc8456201a10ca9a8bcfb1427764df47653eb0f",
+        "src/lib/sales-flow.functions.ts": "05c7c1905198cb686d1d0b0b223f9cd2cf96b1bb1f10f687ddf866c0f9501c6e",
+        "src/components/proposals/proposal-wizard.tsx": "2676b15ba8fdd6d923c5f651d56c73a4b2b1f249a00dc1e2845b34fefcf45a8e",
+        "src/lib/proposals/proposal-draft.server.ts": "18f697ab06685194d37a3f244e1a9f43623547bbb38c7a506350f11fbf62f9fa",
         "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
         "drizzle/migrations/0321_proposal_versions_cascade.sql": "d74b28603f0279e6cb749f1af8ae34658c561ed0f659964fea8d6f4a2b257bcf",
         "drizzle/migrations/0323_proposal_payment_method.sql": "cf944cd4385707aeb616275a4e4a84839911ae49e6f3a50c3446c3f216bf9a99",
@@ -12667,7 +12667,7 @@
       "kind": "presentation",
       "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping. TEXTO-PROPOSTA: pure proposal terms block helper. TEXTO-CONSULTORIA: pure signer choice helper. TABELA-FINAL: pure items-table placement helper and proposal document/PDF ordering (presentation only; same data, same token gate). PROPOSTA-COMPLETA: pure payment-terms completeness check; wizards require installments/due day (UI validation only, writes unchanged). EMPRESA-PROPOSTA: pure issuing legal entity preselection and friendly error message. CONTAS-A-PAGAR-COMPRA: pure purchase payables proposal and sum check (no I/O); generation stays under purchase-contract-payables.",
       "files": {
-        "src/lib/proposals/proposal-draft-types.ts": "d8533d8684fd59cab28b900be609ecf5dbf031bf631b10a8651ac7d452693be4",
+        "src/lib/proposals/proposal-draft-types.ts": "cd9cf5aac4fb2a7f93598f018ec97287ad1cbf1dbb22d4dd86b45b06adea74e9",
         "src/lib/contracts/contract-terms-defaults.ts": "4243429565dc9b855faf2b73986e8044ef2ad746a9582ee841e0f85b42583463",
         "src/components/word-editor-lazy.tsx": "4f6e7ef7880aa6b35c94c9bb6b2caacba43d380473fd193ab6adc1a0ed428e8d",
         "src/lib/proposals/proposal-terms-block.ts": "5621b6a6e969fcefa16a9474adad912378338c750c3a5683f2779dcb74e5478b",
@@ -12677,7 +12677,7 @@
         "src/lib/proposals/proposal-pdf-rules.ts": "8bdfc0a514dcc11b1798d5bab756ddf63569fad299f46f8ac0af12d2dc1c9f15",
         "src/lib/proposals/proposal-terms-check.ts": "0d102ff46a544c4c0082238a7c1812340e56b161b72baadf206f5a18432b86a7",
         "src/lib/contracts/payment-schedule-text.ts": "c5c25669c1678812bee6b8a4194cac1962265f97659eb784f9fa0195795ada59",
-        "src/lib/proposals/proposal-legal-entity.ts": "9f165dbb22552ece4dc4c0bd0fc88e0aaed4ebc7b3f821a02fbbbbff5bc7ca7a",
+        "src/lib/proposals/proposal-legal-entity.ts": "4d093a2c5f4c8a55afe12e994c3ba95f273dad2dc084333272de2d3a3797d45d",
         "src/lib/contracts/purchase-payables.ts": "c7b456b840d8ab1fb1719e6f07eedf60e7a6c122e093d02bdb757973459643af",
         "src/lib/contracts/purchase-term.ts": "f5fa2d4c7b396e8d8c21fae270a911650e5d3e37269a024d24a58054186307ea"
       }
@@ -15497,7 +15497,7 @@
         "drizzle/migrations/0366_contract_attachments.sql": "572bbe652ee2afe4a50a84d785ba6c633b44d522cfa34f4947a2844944d9ddd7",
         "src/lib/contracts/signature-package.server.ts": "0ce2a44e6d6a9fdc358cd00901608235a93e399df9914bd471833dcc880f9938",
         "src/lib/contracts/signature-package-pdf.server.ts": "3fdc7bc18c0a461c9c4ed10c7780f9b9152c4af11324b3d9b1bedf6c120f17e7",
-        "src/lib/contracts/quote-pdf.server.ts": "989695b7a69f55577314fc0535ce4dafb540f729f9c263b555ceaa1bbdb5ab19",
+        "src/lib/contracts/quote-pdf.server.ts": "0320649038b611e37d23a9d1b5b7244746a7c26744eaa1da0e6ac5ff48543b13",
         "src/lib/contracts/proposal-pdf.server.ts": "ea3850ccbcab518c80728ebb25dc5894c06d6422bd85cf82f5882921617a6033",
         "drizzle/migrations/0367_contract_signature_packages.sql": "2479a6a3f1af4f49c966969646e32b901b75922cd15649e2b798794d8fd91acf",
         "src/components/contracts/signature-attachments-summary.tsx": "2a0e06fa6cba5466c4d92f2e1830e01593effa3377a6c4790f5dc2f62c5efd03",
@@ -15519,7 +15519,7 @@
       "permission_keys": [
         "techsales.quotes.view.workspace"
       ],
-      "rationale": "Existing public quote PDF keeps its random token lookup and published/sent/accepted/declined/expired status gate; only renderer moved to a shared server module used by the authorized signature assembler. No new public data or identifier query.",
+      "rationale": "Existing public quote PDF keeps its random token lookup and published/sent/accepted/declined/expired status gate; only renderer moved to a shared server module used by the authorized signature assembler. No new public data or identifier query. Public quote page (/quote/$token) receives only sanitized HTTPS company.logo and provider.logo resolved server-side for the same workspace and matching published token.",
       "controls": [
         {
           "file": "src/lib/proposals/proposal-pdf-rules.ts",
@@ -15532,6 +15532,10 @@
         {
           "file": "src/lib/contracts/proposal-pdf.server.ts",
           "symbol": "renderProposalPdf"
+        },
+        {
+          "file": "src/lib/quotes.functions.ts",
+          "symbol": "getQuoteByToken"
         }
       ],
       "database": [
@@ -15563,7 +15567,8 @@
         }
       },
       "files": {
-        "src/routes/api/public/quotes/$token.pdf.ts": "6cc59258bf60a1b47575bf1b65552dc7dd347aefb90f8d1b97acd925ff2b7aa0"
+        "src/routes/api/public/quotes/$token.pdf.ts": "6cc59258bf60a1b47575bf1b65552dc7dd347aefb90f8d1b97acd925ff2b7aa0",
+        "src/routes/quote.$token.tsx": "fc93ba419ce34df5ff18b111ec0b7c93a8b30aadab266d89f569f92b7ee7d9be"
       },
       "exception": {
         "mechanism": "Random quote public_token matched exactly by the server; only published status permits rendering.",
@@ -26640,7 +26645,7 @@
       "files": {
         "src/lib/proposals/proposal-templates.functions.ts": "772eca9296ff361ba7b72fcc723d4c5ed60f6606838af842ba155953d2eb3fa5",
         "src/components/proposals/proposal-template-list.tsx": "58a2f77700a08fa85c4d37f40f904031129fc66ba67bd9fc2aa4749ab0750c66",
-        "src/routes/_authenticated/settings.proposal-templates.tsx": "3ac2bf77dd6518ba1c14382491bfab873008cbabbbf64638d6cf75eaa0747655",
+        "src/routes/_authenticated/settings.proposal-templates.tsx": "35fb9221996871a47073f309cf1cbbf371a5ae907e1037e1ca77cafc36e5120a",
         "drizzle/migrations/0456_proposal_template_contract_model.sql": "65e79b97e4585fef45390294a63311c9fa401138285fa90a825965c719c7bffb"
       },
       "resources": [
@@ -27208,7 +27213,7 @@
         "src/components/contracts/contract-form/use-contract-form.ts": "4146cb6f52a6badcf15b6ecc573821a86f1d4d59ca1bba0f0dca7a3a9c87f4e4",
         "src/components/finance/legal-entity-select.tsx": "fbed075385de5611b2b9bd32380d8f27eae6dd8cbac6630993bd6e75b3906f22",
         "src/lib/finance-references.functions.ts": "c92bbbdfd38e7dadb918e6fc8e439266c7b1d5ed89307dc2103bc692204b3448",
-        "src/lib/quotes.functions.ts": "cb0f10ac0e6bdb0a6b2a1b52e90f27ec316333db8265d449844421f4e5bd2904",
+        "src/lib/quotes.functions.ts": "a9b8d5821a6ceda13b6931a4ef38dffe6b4cc1f955bb505603059b1edf612c96",
         "src/components/contracts/contract-links-history-card.tsx": "fb96a36c0d4ccd7b64f8bdc9d276c40ca7acf882cd70e6c522eb28277ad1d65f"
       }
     },
@@ -27376,15 +27381,15 @@
       "files": {
         "drizzle/migrations/0472_proposal_visual_templates_schema.sql": "685dfe312963a52bfbef153a20b85167d82026671ccc819818c1d52dd8470049",
         "drizzle/migrations/0473_proposal_assets_storage_policies.sql": "b8fcbc0ff60d53a8cc088b7bb31c41681dcd01d83afadb4adf87c233d865da8b",
-        "src/lib/proposals/proposal-assets.functions.ts": "d3fb81af0bbf9e9ca84c2b56dedc75247a190bc5d8a53ceeadcbfdfb6d60ddd4",
-        "src/lib/proposals/proposal-assets.server.ts": "b66f456677f2dea9096522d012f66659740b0227bbfb996e32ecb458d058a66f",
+        "src/lib/proposals/proposal-assets.functions.ts": "f23a05a4a94aa7aa62e12512e817def23f655bce396e10325f0396698ffec11a",
+        "src/lib/proposals/proposal-assets.server.ts": "7c374c0d1ab03b5411e40bec4eb23424451965c6d6252bc1adc46790c30e76f4",
         "src/components/proposals/visual-editor/visual-canvas.tsx": "43f2d06ebce8938e69bc42819e926af4ea7b5c9ed98fba4c1508e604e911ff10",
-        "src/components/proposals/visual-editor/visual-element-view.tsx": "0ee63683334c123faa7e326917f9391cb50fe5520261bed0212fc6bf61524539",
-        "src/components/proposals/visual-editor/visual-inspector.tsx": "7638b7a99077cb68eb189e4ee97c5d45603151acb475639a0a07c7943d6a4984",
-        "src/components/proposals/visual-editor/visual-left-sidebar.tsx": "a2d03679444b04c7e688cefc9592abefea170f23b1a3baf1da35fe9a5c9cdf00",
+        "src/components/proposals/visual-editor/visual-element-view.tsx": "9df66e91d0296f51aca5859af41a519e76f29633d72bcf6abff583db59beee9b",
+        "src/components/proposals/visual-editor/visual-inspector.tsx": "616b2ad35ec92b37e0c6e0d22b0116ed03869c1aec1f2a3afc134bd3824432b7",
+        "src/components/proposals/visual-editor/visual-left-sidebar.tsx": "288a3a70a41926722b8795932ac84d22d5844f7d9b6b5a49f34e79797520ebad",
         "src/components/proposals/visual-editor/visual-page-strip.tsx": "e415ca149a54ea8d02a7bae911b342bdbf0eaefecf55f8138731288a2d4ea193",
         "src/components/proposals/visual-editor/visual-preview-modal.tsx": "f87e698574ee3f2df336580041de5ea6f8f2dd4085e3a933e20ee0a9c8b9623f",
-        "src/components/proposals/visual-editor/visual-proposal-editor.tsx": "043351ff52afd6ed951d69bf158fade43bc2df4ce4df064b1d25c8b2241cb7fb"
+        "src/components/proposals/visual-editor/visual-proposal-editor.tsx": "139e9af312dbc0a4c13c70b4e9dcf63b77e518c6e149e98f1b3583ece5edd80b"
       },
       "resources": [
         "techsales.proposal_templates",
@@ -27492,12 +27497,88 @@
       "kind": "presentation",
       "rationale": "Pure schema validation (Zod), escaped HTML/print rendering, editorial starter template data, document DTO types and pure canvas geometry/layer/alignment helpers. No database client, no server functions, no authorization logic; callers enforce permissions and RLS.",
       "files": {
-        "src/lib/proposals/visual-design.ts": "a1ce55764f5eac52a84e855f34cef68cad429359fd15956f52bf1e9aef1f1daa",
-        "src/lib/proposals/visual-renderer.ts": "3f3858f51fbc1cf2b36ea285e11d66f1c8dc986992dbd0c75b32a7483aec3e27",
+        "src/lib/proposals/visual-design.ts": "7605c574508bc7b1babb1f80623c5a272328c642ed728f3c705a224cd61bc842",
+        "src/lib/proposals/visual-renderer.ts": "65400c80a1f2a592a7c15ed0b11defdbc4d94fca1c04986fbfe8698e3c940cfd",
         "src/lib/proposals/nexxus-starter-template.ts": "4f5dd700fb673eff7a44129f2efce99576047af8f213cb50fdfd16dffed9e965",
         "src/lib/proposals/consultoria-starter-template.ts": "aca76663e385755ba707f2dfad473bf373ba6dd3505550954abf69fa36a4ad11",
         "src/lib/proposals/proposal-document-types.ts": "7d13f14cc3aa57f2f405cb5ff901fd80e99b26f768df4f7c3feba0d0142e7e4e",
         "src/components/proposals/visual-editor/visual-editor-state.ts": "144e94efbe63c6abec2c29172c3cd36cd5a1b5913a736a9b7f73ae1d251676dc"
+      }
+    },
+    {
+      "id": "sales-logo-token-rendering",
+      "kind": "presentation",
+      "rationale": "Pure HTTPS logo URL sanitization, company/provider fallback resolution, rich-text {{company.logo}}/{{provider.logo}} rendering, and quote block HTML compilation. No database client, no server functions, and no authorization logic; callers enforce workspace RLS, permissions, or published token gates.",
+      "files": {
+        "src/lib/sales/company-logo-token.ts": "db0191f849c7b89f378e00f5afa6e377eda027c6496aa3da61beffcdb171a9fd",
+        "src/lib/quote-template-renderer.ts": "78fee6075e36fa805e03b5254150713ebdb3274baabb8f99e281e6c3405b2e22",
+        "src/lib/quote-template-blocks.ts": "a37f767a31a0c1d12fc49e7ba19f7433724093193bed4cd75083b24d6f9c8fc5"
+      }
+    },
+    {
+      "id": "quote-template-visual-logo-block",
+      "kind": "business",
+      "rationale": "Visual block editor for quote templates adding dynamic logo source selection (custom upload, client company logo {{company.logo}}, or provider logo {{provider.logo}}). Presentation editor delegates persistence to permission-gated quote-templates.functions.ts (techsales.quote_templates) and reuses existing ImageInput upload boundary. No new permissions, grants, or RLS changes.",
+      "resources": [
+        "techsales.quote_templates"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.quote_templates.view.own",
+        "techsales.quote_templates.view.team",
+        "techsales.quote_templates.view.workspace",
+        "techsales.quote_templates.create.workspace",
+        "techsales.quote_templates.update.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/components/ui/image-input.tsx",
+          "symbol": "ImageInput"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "sales_view"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/sales/company-logo-token.test.ts",
+          "name": "quote template logo allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/sales/company-logo-token.test.ts",
+          "name": "quote template logo rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/sales/company-logo-token.test.ts",
+          "name": "quote template logo rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/sales/company-logo-token.test.ts",
+          "name": "quote template logo rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/sales/company-logo-token.test.ts",
+          "name": "quote template logo rejects inactive member"
+        }
+      },
+      "files": {
+        "src/components/quote-templates/visual-editor.tsx": "5bae79236449ebb0efbba704a373d8d2a7302c9af5914eaeba31045d472b1676"
       }
     }
   ],

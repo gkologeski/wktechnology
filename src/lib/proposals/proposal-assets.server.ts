@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { describePaymentTerms, parsePaymentTerms } from "@/lib/sales/payment-terms";
+import { sanitizeHttpsLogoUrl } from "@/lib/sales/company-logo-token";
 import { collectVisualStoragePaths, type VisualDesign } from "./visual-design";
 import type { VisualRenderContext, VisualRenderItem } from "./visual-renderer";
 
@@ -82,6 +83,7 @@ export type ProposalVisualSourceInput = {
   companyName: string | null;
   companyLegalName?: string | null;
   companyCnpj?: string | null;
+  clientLogoUrl?: string | null;
   contactName: string | null;
   contactEmail: string | null;
   dealName?: string | null;
@@ -153,6 +155,7 @@ export async function buildProposalVisualContext(
   return {
     proposalTitle: input.title,
     companyName: input.companyName,
+    clientLogoUrl: sanitizeHttpsLogoUrl(input.clientLogoUrl),
     companyLegalName: input.companyLegalName ?? input.companyName,
     companyCnpj: input.companyCnpj ?? "",
     contactName: input.contactName,

@@ -56,12 +56,19 @@ export const getProposalDraft = createServerFn({ method: "POST" })
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: entities, error } = await supabaseAdmin
-      .from("legal_entities")
-      .select("id, name, cnpj")
-      .eq("workspace_id", workspaceId)
-      .eq("active", true)
-      .order("name");
+    const [{ data: entities, error }, { data: branding }] = await Promise.all([
+      supabaseAdmin
+        .from("legal_entities")
+        .select("id, name, cnpj, logo_url")
+        .eq("workspace_id", workspaceId)
+        .eq("active", true)
+        .order("name"),
+      context.supabase
+        .from("workspace_branding")
+        .select("logo_url")
+        .eq("workspace_id", workspaceId)
+        .maybeSingle(),
+    ]);
     if (error) throw new Error(error.message);
     // Negócios são lidos por uma visão protegida sem a coluna: a empresa vem de uma RPC que confere o acesso.
     let originEntity = result.draft.legal_entity_id ?? null;
@@ -79,6 +86,7 @@ export const getProposalDraft = createServerFn({ method: "POST" })
         ...result.draft,
         legal_entity_id: originEntity,
         legal_entity_options: entities ?? [],
+        workspace_logo_url: (branding as { logo_url?: string | null } | null)?.logo_url ?? null,
       },
     };
   });

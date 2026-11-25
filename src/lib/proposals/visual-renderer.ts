@@ -6,6 +6,11 @@ import {
   type VisualIconName,
   type VisualPage,
 } from "./visual-design";
+import {
+  renderLogoImgTag,
+  resolveProviderLogoUrl,
+  sanitizeHttpsLogoUrl,
+} from "@/lib/sales/company-logo-token";
 
 export type VisualRenderItem = {
   id?: string;
@@ -16,6 +21,7 @@ export type VisualRenderItem = {
 export type VisualRenderContext = {
   proposalTitle?: string | null;
   companyName?: string | null;
+  clientLogoUrl?: string | null;
   counterpartyName?: string | null;
   companyLegalName?: string | null;
   companyCnpj?: string | null;
@@ -135,6 +141,9 @@ function resolveImageSrc(
   design: VisualDesign,
   ctx: VisualRenderContext,
 ): string {
+  if (el.props.bindLogo === "client") {
+    return sanitizeHttpsLogoUrl(ctx.clientLogoUrl) ?? "";
+  }
   if (el.props.bindLogo === "contracting") {
     if (ctx.contractingLogoUrl) return safeUrl(ctx.contractingLogoUrl);
     if (design.brandKit.logoStoragePath && ctx.signedUrls?.[design.brandKit.logoStoragePath]) {
@@ -151,6 +160,49 @@ function resolveImageSrc(
     return safeUrl(ctx.signedUrls[el.props.storagePath]);
   }
   return safeUrl(el.props.src);
+}
+
+function resolveProviderLogoForVisual(
+  design: VisualDesign,
+  ctx: VisualRenderContext,
+): string | null {
+  const signedBrand =
+    design.brandKit.logoStoragePath && ctx.signedUrls?.[design.brandKit.logoStoragePath]
+      ? ctx.signedUrls[design.brandKit.logoStoragePath]
+      : null;
+  return resolveProviderLogoUrl(
+    ctx.contractingLogoUrl || signedBrand || design.brandKit.logoUrl,
+    ctx.workspaceLogoUrl,
+  );
+}
+
+function formatTextWithInlineLogos(
+  raw: string,
+  design: VisualDesign,
+  ctx: VisualRenderContext,
+): string {
+  let formatted = formatSafeText(raw);
+  if (formatted.includes("company.logo")) {
+    const alt = ctx.companyName?.trim()
+      ? `Logo de ${ctx.companyName.trim()}`
+      : "Logo da empresa cliente";
+    formatted = formatted.replace(
+      /\{\{\s*company\.logo\s*\}\}/g,
+      renderLogoImgTag(ctx.clientLogoUrl, alt),
+    );
+  }
+  if (formatted.includes("provider.logo")) {
+    const providerName = ctx.contractingName || design.brandKit.legalEntityName || "";
+    const alt = providerName.trim()
+      ? `Logo de ${providerName.trim()}`
+      : "Logo da empresa prestadora";
+    const providerUrl = resolveProviderLogoForVisual(design, ctx);
+    formatted = formatted.replace(
+      /\{\{\s*provider\.logo\s*\}\}/g,
+      renderLogoImgTag(providerUrl, alt),
+    );
+  }
+  return formatted;
 }
 
 function boxStyle(el: VisualElement, yOverride?: number): string {
@@ -210,7 +262,7 @@ function renderElementHtml(
       ]
         .filter(Boolean)
         .join(";");
-      return `<div class="vp-el" data-el-id="${escHtml(el.id)}" style="${boxStyle(el)};${typo}">${formatSafeText(resolved)}</div>`;
+      return `<div class="vp-el" data-el-id="${escHtml(el.id)}" style="${boxStyle(el)};${typo}">${formatTextWithInlineLogos(resolved, design, ctx)}</div>`;
     }
 
     case "rect": {
@@ -246,6 +298,9 @@ function renderElementHtml(
     case "image": {
       const src = resolveImageSrc(el, design, ctx);
       if (!src) {
+        if (el.props.bindLogo === "client") {
+          return `<div class="vp-el" data-el-id="${escHtml(el.id)}" style="${boxStyle(el)}" aria-hidden="true"></div>`;
+        }
         const fallbackLabel =
           el.props.bindLogo !== "none"
             ? escHtml(ctx.contractingName || design.brandKit.legalEntityName || "LOGO")

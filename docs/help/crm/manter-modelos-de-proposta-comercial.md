@@ -8,7 +8,7 @@ route_pattern: /settings/proposal-templates
 min_permission: techsales.proposal_templates.view.workspace
 audience: internal
 sort_order: 158
-version: 9
+version: 10
 is_published: true
 ---
 
@@ -34,7 +34,7 @@ is_published: true
 
 Além do formato em **Texto rico**, é possível criar modelos **Visual (páginas)** em formato A4 (retrato ou paisagem) com múltiplos quadros e páginas:
 
-- **Painel esquerdo:** aplique um modelo pronto como ponto de partida — **Proposta Editorial (5 págs.)** ou **Consultoria (6 págs.)** —, adicione formas, cartões comerciais, ícones, tipografia, campos dinâmicos (`{{company.name}}`, `{{counterparty.name}}`, `{{signer.full_name}}`, `{{total}}`, `{{valid_until}}`, etc.), configure o **Kit da Marca** (cores, fontes e empresa prestadora) ou envie imagens privadas (PNG, JPG, WebP, GIF ou SVG até 5 MB).
+- **Painel esquerdo:** aplique um modelo pronto como ponto de partida — **Proposta Editorial (5 págs.)** ou **Consultoria (6 págs.)** —, adicione formas, cartões comerciais, ícones, tipografia, campos dinâmicos (`{{company.name}}`, `{{company.logo}}`, `{{provider.logo}}`, `{{counterparty.name}}`, `{{signer.full_name}}`, `{{total}}`, `{{valid_until}}`, etc.), configure o **Kit da Marca** (cores, fontes e empresa prestadora) ou envie imagens privadas (PNG, JPG, WebP, GIF ou SVG até 5 MB). Em elementos de imagem, você pode vincular a origem dinâmica ao **Logo da empresa cliente** (puxado do cadastro de **Empresas**) ou ao **Logo da prestadora**.
 - **Canvas e Página Mestre:** arraste, redimensione, gire, alinhe com guias magnéticas, dê duplo clique nos textos para editar inline, controle camadas/grupos e edite a **Página mestre** para repetir cabeçalho, rodapé e numeração automática (`{{page.number_padded}}`) nas páginas internas.
 - **Blocos dinâmicos:** tabelas vinculadas aos itens da proposta e cartões repetíveis por serviço preenchem automaticamente os dados reais da cotação/proposta.
 - **Pré-visualização e saída única:** clique em **Pré-visualizar** para testar com uma proposta real do workspace. A renderização é a mesma na ficha interna, no link público `/proposal/<token>` e no PDF.
@@ -64,7 +64,7 @@ Modelos de proposta são próprios e podem se vincular ao catálogo de serviços
 
 ## Variáveis de condições comerciais
 
-Além das variáveis da lista, os modelos aceitam: `{{company_legal_name}}` (razão social), `{{company_cnpj}}`, `{{payment_method}}`, `{{installments_count}}`, `{{installments_due_day}}`, `{{installment_value}}`, `{{validity_days}}`, `{{counterparty.name}}` (empresa cliente), `{{signer.full_name}}`, `{{signer.cpf}}`, `{{signer.email}}` (signatário legal único da empresa ou, na falta, o contato da proposta) e `{{{terms_block}}}` (seção "Condições comerciais" completa, atualizada automaticamente no assistente). Os modelos oficiais já trazem `{{{terms_block}}}` antes da validade.
+Além das variáveis da lista, os modelos aceitam: `{{company.logo}}` (logo da empresa cliente cadastrada em **Empresas**, seguindo logo manual → domínio → oculto), `{{provider.logo}}` (logo da empresa prestadora selecionada, com fallback para o workspace), `{{company_legal_name}}` (razão social), `{{company_cnpj}}`, `{{payment_method}}`, `{{installments_count}}`, `{{installments_due_day}}`, `{{installment_value}}`, `{{validity_days}}`, `{{counterparty.name}}` (empresa cliente), `{{signer.full_name}}`, `{{signer.cpf}}`, `{{signer.email}}` (signatário legal único da empresa ou, na falta, o contato da proposta) e `{{{terms_block}}}` (seção "Condições comerciais" completa, atualizada automaticamente no assistente). Os modelos oficiais já trazem `{{{terms_block}}}` antes da validade. Quando a empresa não tem logo cadastrado, a imagem é omitida no texto rico e fica como espaço vazio discreto no editor visual.
 
 ## Tabela de itens no final
 

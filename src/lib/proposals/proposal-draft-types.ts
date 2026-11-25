@@ -27,6 +27,8 @@ export type ProposalDraft = {
   company_name: string | null;
   company_legal_name?: string | null;
   company_cnpj?: string | null;
+  company_logo_url?: string | null;
+  workspace_logo_url?: string | null;
   contact_name: string | null;
   deal_name: string | null;
   /** Signatário da contratante (TEXTO-CONSULTORIA). */

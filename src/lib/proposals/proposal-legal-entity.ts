@@ -1,5 +1,10 @@
 // Empresa emissora (CNPJ) da proposta — EMPRESA-PROPOSTA. Regra pura.
-export type LegalEntityOption = { id: string; name: string; cnpj: string | null };
+export type LegalEntityOption = {
+  id: string;
+  name: string;
+  cnpj: string | null;
+  logo_url?: string | null;
+};
 
 export const LEGAL_ENTITY_REQUIRED_MESSAGE = "Escolha a empresa emissora (CNPJ) da proposta.";
 export const LEGAL_ENTITY_INACTIVE_HINT =

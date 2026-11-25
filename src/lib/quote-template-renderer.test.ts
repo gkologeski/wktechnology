@@ -65,3 +65,28 @@ describe("renderQuoteTemplate — identificação dos itens", () => {
     }
   });
 });
+
+describe("renderQuoteTemplate — variáveis de logo", () => {
+  it("renderiza {{company.logo}} e {{provider.logo}} como <img> sanitizado", () => {
+    const html = renderQuoteTemplate("<div>{{company.logo}} {{provider.logo}}</div>", {
+      company: { name: "Acme", logo: "https://cdn.acme.com/logo.png" },
+      provider: { name: "WK Technology", logo: "https://cdn.wk.com/logo.png" },
+    });
+    expect(html).toContain('<img src="https://cdn.acme.com/logo.png"');
+    expect(html).toContain('alt="Logo de Acme"');
+    expect(html).toContain('<img src="https://cdn.wk.com/logo.png"');
+    expect(html).toContain('alt="Logo de WK Technology"');
+  });
+
+  it("omite imagem quando sem logo ou quando a URL não é https", () => {
+    const html = renderQuoteTemplate(
+      "{{#if company.logo}}<span>{{company.logo}}</span>{{/if}}|{{provider.logo}}",
+      {
+        company: { name: "Acme", logo: "javascript:alert(1)" },
+        provider: { name: "WK", logo: null },
+      },
+    );
+    expect(html).toBe("|");
+    expect(html).not.toContain("<img");
+  });
+});

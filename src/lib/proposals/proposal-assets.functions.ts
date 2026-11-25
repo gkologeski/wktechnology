@@ -157,6 +157,7 @@ export const loadProposalPreviewContext = createServerFn({ method: "POST" })
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const { loadProposalDocument } = await import("./proposal-document.server");
     const { buildProposalVisualContext } = await import("./proposal-assets.server");
+    const { resolveCompanyLogoUrl } = await import("@/lib/sales/company-logo-token");
     const workspaceId = await resolveActiveWorkspace(context.userId);
     await assertSalesArea(context.supabase, "techsales.proposal_templates", "view");
     await assertSalesRecord(context.supabase, "proposals", data.proposalId, "view");
@@ -173,7 +174,7 @@ export const loadProposalPreviewContext = createServerFn({ method: "POST" })
       extra?.company_id
         ? context.supabase
             .from("companies")
-            .select("cnpj, custom_fields")
+            .select("cnpj, custom_fields, logo_url, logo_source, domain, website")
             .eq("id", extra.company_id)
             .eq("workspace_id", workspaceId)
             .maybeSingle()
@@ -190,6 +191,10 @@ export const loadProposalPreviewContext = createServerFn({ method: "POST" })
     const companyExtra = companyRes.data as {
       cnpj: string | null;
       custom_fields: Record<string, unknown> | null;
+      logo_url: string | null;
+      logo_source: string | null;
+      domain: string | null;
+      website: string | null;
     } | null;
     return buildProposalVisualContext(context.supabase, {
       workspaceId,
@@ -206,6 +211,7 @@ export const loadProposalPreviewContext = createServerFn({ method: "POST" })
       companyLegalName:
         (companyExtra?.custom_fields?.["razao_social"] as string | undefined) ?? doc.company,
       companyCnpj: companyExtra?.cnpj ?? null,
+      clientLogoUrl: resolveCompanyLogoUrl(companyExtra),
       contactName: doc.contact,
       contactEmail: doc.contactEmail,
       dealName: (dealRes.data as { name?: string } | null)?.name ?? doc.proposal.title,

@@ -13,6 +13,12 @@ import { buildProposalVisualContext } from "./proposal-assets.server";
 import { tryParseVisualDesign } from "./visual-design";
 import { renderVisualDesignPagesHtml } from "./visual-renderer";
 import type { ProposalDocumentData } from "./proposal-document-types";
+import {
+  replaceRichTextLogoTokens,
+  resolveCompanyLogoUrl,
+  resolveProviderLogoUrl,
+  type CompanyLogoSourceRow,
+} from "@/lib/sales/company-logo-token";
 
 const PROPOSAL_COLUMNS =
   "id, workspace_id, title, body, design_json, status, locked, version, total_amount, currency, expires_at, sent_at, decided_at, created_at, owner_id, company_id, contact_id, deal_id, quote_id, legal_entity_id, payment_method, installments_count, validity_days, payment_terms";
@@ -75,7 +81,7 @@ export async function loadProposalDocument(
       : p.company_id
         ? sb
             .from("companies")
-            .select("name, cnpj, custom_fields")
+            .select("name, cnpj, custom_fields, logo_url, logo_source, domain, website")
             .eq("id", p.company_id)
             .eq("workspace_id", p.workspace_id)
             .maybeSingle()
@@ -103,6 +109,10 @@ export async function loadProposalDocument(
     name?: string | null;
     cnpj?: string | null;
     custom_fields?: Record<string, unknown> | null;
+    logo_url?: string | null;
+    logo_source?: string | null;
+    domain?: string | null;
+    website?: string | null;
   } | null;
   const mappedItems = rows.map((li) => ({
     id: li.id,
@@ -115,6 +125,27 @@ export async function loadProposalDocument(
   const companyName = companyData?.name ?? null;
   const contactName = c ? `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || null : null;
   const agentName = (agent.data as { full_name: string | null } | null)?.full_name ?? null;
+
+  let clientLogoUrl: string | null = resolveCompanyLogoUrl(companyData);
+  const companyIdForLogo = content.company_id ?? p.company_id;
+  const needsLogoLookup =
+    preserved &&
+    companyIdForLogo &&
+    !clientLogoUrl &&
+    (Boolean(
+      (preserved?.proposal as { design_json?: unknown } | undefined)?.design_json ??
+      (p as { design_json?: unknown }).design_json,
+    ) ||
+      (content.body ?? "").includes("company.logo"));
+  if (needsLogoLookup && companyIdForLogo) {
+    const { data: logoRow } = await sb
+      .from("companies")
+      .select("logo_url, logo_source, domain, website")
+      .eq("id", companyIdForLogo)
+      .eq("workspace_id", p.workspace_id)
+      .maybeSingle();
+    clientLogoUrl = resolveCompanyLogoUrl(logoRow as CompanyLogoSourceRow | null);
+  }
 
   const rawDesign =
     (preserved?.proposal as { design_json?: unknown } | undefined)?.design_json ??
@@ -151,6 +182,7 @@ export async function loadProposalDocument(
         companyLegalName:
           (companyData?.custom_fields?.["razao_social"] as string | undefined) ?? companyName,
         companyCnpj: companyData?.cnpj ?? null,
+        clientLogoUrl,
         contactName,
         contactEmail: c?.email ?? null,
         dealName,
@@ -164,11 +196,54 @@ export async function loadProposalDocument(
     visualOrientation = parsedDesign.orientation;
   }
 
+  let renderedBody = content.body ?? "";
+  if (
+    !parsedDesign &&
+    (renderedBody.includes("company.logo") || renderedBody.includes("provider.logo"))
+  ) {
+    let providerLogoUrl: string | null = null;
+    let providerName: string | null = null;
+    if (renderedBody.includes("provider.logo")) {
+      const [entityRes, brandingRes] = await Promise.all([
+        p.legal_entity_id
+          ? sb
+              .from("legal_entities")
+              .select("name, trade_name, logo_url")
+              .eq("id", p.legal_entity_id)
+              .eq("workspace_id", p.workspace_id)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+        sb
+          .from("workspace_branding")
+          .select("brand_name, logo_url")
+          .eq("workspace_id", p.workspace_id)
+          .maybeSingle(),
+      ]);
+      const ent = entityRes.data as {
+        name?: string | null;
+        trade_name?: string | null;
+        logo_url?: string | null;
+      } | null;
+      const brand = brandingRes.data as {
+        brand_name?: string | null;
+        logo_url?: string | null;
+      } | null;
+      providerName = ent?.trade_name || ent?.name || brand?.brand_name || null;
+      providerLogoUrl = resolveProviderLogoUrl(ent?.logo_url, brand?.logo_url);
+    }
+    renderedBody = replaceRichTextLogoTokens(renderedBody, {
+      companyLogoUrl: clientLogoUrl,
+      companyName,
+      providerLogoUrl,
+      providerName,
+    });
+  }
+
   return {
     proposal: {
       id: p.id,
       title: content.title,
-      body: content.body ?? "",
+      body: renderedBody,
       status: p.status,
       locked: !!p.locked,
       version: content.version,

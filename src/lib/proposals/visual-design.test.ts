@@ -175,6 +175,38 @@ describe("visual-design schema e template editorial", () => {
     expect(html).not.toContain("{{signer.full_name}}");
   });
 
+  it("suporta bindLogo='client' e variáveis {{company.logo}}/{{provider.logo}} no renderizador visual", () => {
+    const design = createBlankVisualDesign();
+    const clientImg = createDefaultElement("image", 210, 297, 1, design.brandKit);
+    const textWithLogos = createDefaultElement("text", 210, 297, 2, design.brandKit);
+    if (clientImg.type !== "image" || textWithLogos.type !== "text") {
+      throw new Error("Elementos inválidos no teste");
+    }
+    design.pages[0]!.elements = [
+      { ...clientImg, props: { ...clientImg.props, bindLogo: "client", alt: "Logo cliente" } },
+      { ...textWithLogos, props: { text: "Logos: {{company.logo}} {{provider.logo}}" } },
+    ];
+    const parsed = parseVisualDesign(design);
+
+    const withLogos = renderVisualDesignPagesHtml(parsed, {
+      companyName: "Cliente Alpha",
+      clientLogoUrl: "https://cdn.alpha.com/logo.png",
+      contractingName: "WK Technology",
+      contractingLogoUrl: "https://cdn.wk.com/logo.png",
+    });
+    expect(withLogos).toContain('src="https://cdn.alpha.com/logo.png"');
+    expect(withLogos).toContain('src="https://cdn.wk.com/logo.png"');
+
+    const withoutClientLogo = renderVisualDesignPagesHtml(parsed, {
+      companyName: "Cliente Sem Logo",
+      clientLogoUrl: null,
+      contractingName: "WK Technology",
+      contractingLogoUrl: "http://inseguro.local/logo.png",
+    });
+    expect(withoutClientLogo).not.toContain("<img");
+    expect(withoutClientLogo).not.toContain("WK Technology");
+  });
+
   it("rejeita JSON acima de 500 KB e cores inválidas", () => {
     const huge = {
       ...createBlankVisualDesign(),

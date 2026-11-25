@@ -449,10 +449,12 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (!isValidProposalToken(data.token)) throw new Error("Cotação indisponível.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { resolveCompanyLogoUrl, resolveProviderLogoUrl } =
+      await import("@/lib/sales/company-logo-token");
     const { data: quote, error } = await supabaseAdmin
       .from("quotes")
       .select(
-        "id,workspace_id,owner_id,company_id,contact_id,template_id,number,title,status,valid_until,currency,subtotal,discount_total,tax_total,total,notes,terms,view_count,created_at,accepted_at,declined_at,signature_name,payment_link_url,paid_at",
+        "id,workspace_id,owner_id,company_id,contact_id,template_id,legal_entity_id,number,title,status,valid_until,currency,subtotal,discount_total,tax_total,total,notes,terms,view_count,created_at,accepted_at,declined_at,signature_name,payment_link_url,paid_at",
       )
       .eq("public_token", data.token)
       .maybeSingle();
@@ -475,16 +477,56 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
       .eq("workspace_id", quote.workspace_id)
       .order("position");
 
-    let company = null;
+    let company: {
+      id: string;
+      name: string | null;
+      website: string | null;
+      logo: string | null;
+    } | null = null;
     if (quote.company_id) {
       const r = await supabaseAdmin
         .from("companies")
-        .select("id, name, website")
+        .select("id, name, website, domain, logo_url, logo_source")
         .eq("id", quote.company_id)
         .eq("workspace_id", quote.workspace_id)
         .maybeSingle();
-      company = r.data;
+      if (r.data) {
+        company = {
+          id: r.data.id,
+          name: r.data.name,
+          website: r.data.website,
+          logo: resolveCompanyLogoUrl(r.data),
+        };
+      }
     }
+    const [entityRes, brandingRes] = await Promise.all([
+      quote.legal_entity_id
+        ? supabaseAdmin
+            .from("legal_entities")
+            .select("name, trade_name, logo_url")
+            .eq("id", quote.legal_entity_id)
+            .eq("workspace_id", quote.workspace_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabaseAdmin
+        .from("workspace_branding")
+        .select("brand_name, logo_url")
+        .eq("workspace_id", quote.workspace_id)
+        .maybeSingle(),
+    ]);
+    const entityRow = entityRes.data as {
+      name?: string | null;
+      trade_name?: string | null;
+      logo_url?: string | null;
+    } | null;
+    const brandingRow = brandingRes.data as {
+      brand_name?: string | null;
+      logo_url?: string | null;
+    } | null;
+    const provider = {
+      name: entityRow?.trade_name || entityRow?.name || brandingRow?.brand_name || null,
+      logo: resolveProviderLogoUrl(entityRow?.logo_url, brandingRow?.logo_url),
+    };
     let contact = null;
     if (quote.contact_id) {
       const r = await supabaseAdmin
@@ -526,7 +568,7 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
       service_name: item.service?.name ?? null,
       preset_name: item.preset?.name ?? null,
     }));
-    return { quote, items: enrichedItems, company, contact, agent, template };
+    return { quote, items: enrichedItems, company, provider, contact, agent, template };
   });
 
 export const respondToQuote = createServerFn({ method: "POST" })
