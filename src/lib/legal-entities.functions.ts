@@ -7,6 +7,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { isValidCnpj, onlyDigits } from "@/lib/cnpj";
 import { normalizeEntityName } from "@/lib/contracts/link-suggest";
+import { legalEntityAddressSchema } from "@/lib/legal-entity-address";
+import { lookupLegalEntityCnpj, lookupLegalEntityCep } from "@/lib/legal-entity-lookup.server";
 
 const upsertSchema = z.object({
   id: z.string().uuid().optional(),
@@ -18,6 +20,7 @@ const upsertSchema = z.object({
   im: z.string().trim().max(30).nullable().optional(),
   is_default: z.boolean().optional(),
   active: z.boolean().optional(),
+  address_json: legalEntityAddressSchema.optional(),
 });
 
 /** Empresa completa do workspace (para o formulário de edição não perder campos). */
@@ -30,7 +33,7 @@ export const getLegalEntity = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(userId);
     const { data: row, error } = await supabase
       .from("legal_entities")
-      .select("id, code, name, trade_name, cnpj, ie, im, is_default, active")
+      .select("id, code, name, trade_name, cnpj, ie, im, is_default, active, address_json")
       .eq("id", data.id)
       .eq("workspace_id", workspaceId)
       .maybeSingle();
@@ -246,7 +249,7 @@ export const upsertLegalEntity = createServerFn({ method: "POST" })
     }
     const cnpj = cnpjDigits.length === 14 ? cnpjDigits : null;
     if (data.id) {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("legal_entities")
         .update({
           code: data.code ?? null,
@@ -256,11 +259,15 @@ export const upsertLegalEntity = createServerFn({ method: "POST" })
           ie: data.ie ?? null,
           im: data.im ?? null,
           active: data.active ?? true,
+          ...(data.address_json ? { address_json: data.address_json } : {}),
         })
 
         .eq("id", data.id)
-        .eq("workspace_id", workspaceId);
+        .eq("workspace_id", workspaceId)
+        .select("id");
       if (error) throw error;
+      // RLS can reject an UPDATE without raising an error.
+      if (!updated?.length) throw new Error("Sem permissão para alterar esta empresa.");
       return { id: data.id };
     }
     const { data: row, error } = await supabase
@@ -276,11 +283,31 @@ export const upsertLegalEntity = createServerFn({ method: "POST" })
         is_default: data.is_default ?? false,
         active: data.active ?? true,
         created_by: userId,
+        ...(data.address_json ? { address_json: data.address_json } : {}),
       })
       .select("id")
       .single();
     if (error) throw error;
     return row;
+  });
+
+/** Public registry suggestions only; persistence stays in the existing authorized save. */
+export const lookupCnpjForLegalEntity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid().optional(), cnpj: z.string().max(20) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    return lookupLegalEntityCnpj(context.supabase, data.cnpj, data.id);
+  });
+
+export const lookupCepForLegalEntity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid().optional(), cep: z.string().max(9) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    return lookupLegalEntityCep(context.supabase, data.cep, data.id);
   });
 
 export const setDefaultLegalEntity = createServerFn({ method: "POST" })

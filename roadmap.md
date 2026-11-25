@@ -1,3 +1,9 @@
+# ENDERECO-CNPJ-PRESTADORA (P, 30–45 min)
+
+- [x] Endereço estruturado no cadastro e consulta real por CNPJ/CEP com confirmação antes de substituir dados; campos ausentes são preservados.
+- [x] Permissões e isolamento preservados, Ajuda/catálogo/contratos atualizados; 35 testes, permissions:check, lint dirigido e compilação automática aprovados. Playwright autenticado validou consulta GM, confirmação/cancelamento, CEP, criação/edição e leitura; cadastro temporário e vínculo de grupo removidos.
+- [ ] Publicação e aplicação editorial da Ajuda aguardam revisão do usuário. Perf global bloqueado por artefatos incompletos/desatualizados; verify/build globais não executados manualmente (compilação e tipos automáticos OK).
+
 # REVISAO-VISUAL-PROPOSTA — pré-visualização visual na Revisão (P, 20–30 min)
 
 - [x] Exibir páginas visuais renderizadas em iframe sandbox na etapa Revisão do assistente de proposta, com botão Ver em tela cheia e dados reais do rascunho.

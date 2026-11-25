@@ -8,7 +8,7 @@ route_pattern: /finance/legal-entities
 min_permission: techfinance.legal_entities.view.workspace
 audience: internal
 sort_order: 160
-version: 4
+version: 5
 is_published: true
 ---
 # Gerenciar empresas e CNPJs
@@ -29,6 +29,9 @@ is_published: true
 5. Busque por nome, código ou CNPJ e filtre Todas, Ativas ou Inativas.
 6. Para desativar ou reativar, use o ícone de energia e confirme; os lançamentos e históricos são preservados.
 7. Para excluir, revise vínculos e a confirmação. Havendo registros, a exclusão é bloqueada e é possível desativar em vez disso.
+8. Em Nova empresa ou Editar, informe um CNPJ válido e clique em **Buscar dados do CNPJ**. Revise razão social, nome fantasia e endereço; confirme a substituição quando já houver dados. A consulta usa BrasilAPI, com ReceitaWS como alternativa, e não salva automaticamente.
+9. Na seção **Endereço da empresa**, informe CEP, logradouro, número, complemento, bairro, cidade e UF. Ao sair de um CEP completo ou usar o botão de busca, o ViaCEP sugere logradouro, bairro, cidade e UF; número e complemento permanecem como informados.
+10. Clique em **Salvar** e volte à revisão da minuta. Use **Preencher dados da proposta** novamente para incorporar o endereço atualizado; documentos já assinados não são modificados.
 
 ## Resultado esperado
 Empresa cadastrada ou atualizada no workspace, com identificadores revisados.
@@ -45,9 +48,11 @@ Empresa cadastrada ou atualizada no workspace, com identificadores revisados.
 
 ### Campos e controles
 Código; razão social; nome fantasia; CNPJ; IE; IM; ativa.
+Endereço: CEP; logradouro; número; complemento; bairro; cidade; UF. Buscar dados do CNPJ exige a mesma autorização de criação/edição do cadastro, incluindo membro ativo, workspace e deny. Campos ausentes na consulta não apagam informações já preenchidas.
 
 ## Erros comuns
 Se a tela ou ação estiver indisponível, confira permissões e acesso ao registro. Em falha de gravação, não presuma sucesso: recarregue a consulta antes de repetir. Ausência de resultados pode decorrer de filtros ou do escopo autorizado.
+Se a consulta por CNPJ/CEP falhar ou limitar acessos, tente novamente ou preencha manualmente; os dados atuais são preservados. Nome/CPF do representante legal são cadastrados no contato signatário, não obtidos pela consulta de CNPJ.
 
 ## Relacionados
 - [Campos e status](/ajuda/finance/campos-e-status)

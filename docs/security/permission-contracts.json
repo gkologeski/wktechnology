@@ -12093,7 +12093,7 @@
         "techfinance.legal_entities.update.workspace",
         "techfinance.legal_entities.delete.workspace"
       ],
-      "rationale": "Active membership and effective record authorization through finance_business_authorize; RLS preserved. Lifecycle triggers prevent deletion with any legal-entity links and cross-workspace/inactive reassignment; unchanged historical assignments remain valid. Summary resolves authoritative context once and applies the exact existing entity and financial-entry visibility predicates; no table policies or grants widened. Assignment filtering only removes inactive choices, not historical filters.",
+      "rationale": "Active membership and effective record authorization through finance_business_authorize; RLS preserved. Lifecycle triggers prevent deletion with any legal-entity links and cross-workspace/inactive reassignment; unchanged historical assignments remain valid. Summary resolves authoritative context once and applies the exact existing entity and financial-entry visibility predicates; no table policies or grants widened. Assignment filtering only removes inactive choices, not historical filters. Address/CNPJ: reads and saves address_json using the same user/RLS authorization; registry suggestions require record update or create via finance_business_authorize before fixed public CNPJ/CEP requests, contain no secrets, use bounded timeouts and never persist automatically. Existing values require confirmation and incomplete suggestions do not erase fields; no SQL, grant or RLS change.",
       "controls": [
         {
           "file": "src/lib/access-control/finance-business.server.ts",
@@ -12114,6 +12114,14 @@
         {
           "file": "src/lib/finance.functions.ts",
           "symbol": "createFinancialEntry"
+        },
+        {
+          "file": "src/lib/legal-entity-lookup.server.ts",
+          "symbol": "lookupLegalEntityCnpj"
+        },
+        {
+          "file": "src/lib/legal-entity-lookup.server.ts",
+          "symbol": "lookupLegalEntityCep"
         }
       ],
       "database": [
@@ -12140,29 +12148,29 @@
       ],
       "tests": {
         "allowed": {
-          "file": "src/lib/legal-entities-auth.test.ts",
-          "name": "CNPJ allows an authorized active member"
+          "file": "src/lib/legal-entity-registry-auth.test.ts",
+          "name": "registry allows authorized active member before public lookup"
         },
         "missing_permission": {
-          "file": "src/lib/legal-entities-auth.test.ts",
-          "name": "CNPJ denies missing permission"
+          "file": "src/lib/legal-entity-registry-auth.test.ts",
+          "name": "registry denies missing permission before CNPJ and CEP requests"
         },
         "explicit_deny": {
-          "file": "src/lib/legal-entities-auth.test.ts",
-          "name": "CNPJ denies explicit deny"
+          "file": "src/lib/legal-entity-registry-auth.test.ts",
+          "name": "registry denies explicit deny before public requests"
         },
         "foreign_workspace": {
-          "file": "src/lib/legal-entities-auth.test.ts",
-          "name": "CNPJ denies foreign workspace"
+          "file": "src/lib/legal-entity-registry-auth.test.ts",
+          "name": "registry denies foreign workspace record before public requests"
         },
         "inactive_member": {
-          "file": "src/lib/legal-entities-auth.test.ts",
-          "name": "CNPJ denies inactive membership"
+          "file": "src/lib/legal-entity-registry-auth.test.ts",
+          "name": "registry denies inactive member before public requests"
         }
       },
       "files": {
-        "src/components/finance/legal-entities-page.tsx": "3571c54cc1486df745a814e2996358a1ab638186697ec227f3329e51c7fd3910",
-        "src/lib/legal-entities.functions.ts": "4ae1688e21ab98419a58ecb6bd14c82869d8d142d03d88a6aaaf784f7f7045d0",
+        "src/components/finance/legal-entities-page.tsx": "e06e021072d84f49194c7be6a2bbf82d5ce39ae60cae322ed314376108aea834",
+        "src/lib/legal-entities.functions.ts": "33c160fc3d47a68ede8394a39b3815cc5da569ce4dd88e5a5eb5b469371e6273",
         "src/routes/_authenticated/finance.legal-entities.tsx": "c6db2c99bb89c7fc5261c1bcddce9dd2eb9c68b86a9180c479c477a0d99479fa",
         "src/routes/_authenticated/settings.legal-entities.tsx": "a08ec73ed922c796e60f4c5b19b28a659aefc3489b31605358b79c690b76b28e",
         "src/routes/_authenticated/finance.bank-accounts.tsx": "7a5cc9a70366f0ff55126f8b199408dffd680a1b5555edd9536546ad2dd6a27e",
@@ -12171,7 +12179,8 @@
         "drizzle/migrations/0314_legal_entity_safe_lifecycle.sql": "5624b4a265dad5519d86675fada734cafc878beaf6a6f228035ea5a7b879212a",
         "drizzle/migrations/0315_legal_entity_guard_workspace_cascade.sql": "350b426fc8a8a038d3eb2cb3d0f4590dd3a378b0e5d74c557eba69fff60155d5",
         "drizzle/migrations/0316_cnpj_operational_linkage_and_summary.sql": "e7f7e9845ed6834581f5fbca725a969a92ef561e5fef026e9759ec83ae7f5e75",
-        "drizzle/migrations/0317_cnpj_summary_scoped_performance.sql": "bca8c025b20c50b562e6f58af90ce258ec4ca7c104961c46fb8d20b30d2b0991"
+        "drizzle/migrations/0317_cnpj_summary_scoped_performance.sql": "bca8c025b20c50b562e6f58af90ce258ec4ca7c104961c46fb8d20b30d2b0991",
+        "src/lib/legal-entity-lookup.server.ts": "379d6a324c921a73f22bd3cff2eefaab14e827dab8a9879a1340f6f5b98f9215"
       }
     },
     {
@@ -27651,6 +27660,14 @@
           "file": "src/hooks/use-company-logo-actions.test.ts",
           "name": "logo save propagates inactive member refusal"
         }
+      }
+    },
+    {
+      "id": "legal-entity-address-pure",
+      "kind": "presentation",
+      "rationale": "Pure address normalization, validation and suggestion merge; no IO, identity, route or action. Save and lookup authorization remain in legal-entities.functions.ts.",
+      "files": {
+        "src/lib/legal-entity-address.ts": "74bc6961150b9bf0dd24fdae25e2806a53cdd1266157c218d321acd4a5022a79"
       }
     }
   ],

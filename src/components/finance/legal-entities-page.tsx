@@ -3,7 +3,17 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Plus, Star, Trash2, Pencil, Wand2, Power, PowerOff } from "lucide-react";
+import {
+  Plus,
+  Star,
+  Trash2,
+  Pencil,
+  Wand2,
+  Power,
+  PowerOff,
+  RefreshCw,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -21,7 +31,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { LegalEntityCnpjFillDialog } from "@/components/finance/legal-entity-cnpj-fill-dialog";
-import { formatCnpj } from "@/lib/cnpj";
+import { formatCnpj, isValidCnpj } from "@/lib/cnpj";
+import {
+  applyLegalEntityCnpjData,
+  readLegalEntityAddress,
+  formatLegalEntityCep,
+  type LegalEntityAddress,
+} from "@/lib/legal-entity-address";
 import {
   listLegalEntitiesSummary,
   upsertLegalEntity,
@@ -30,6 +46,8 @@ import {
   getLegalEntity,
   getLegalEntityUsage,
   setLegalEntityActive,
+  lookupCnpjForLegalEntity,
+  lookupCepForLegalEntity,
 } from "@/lib/legal-entities.functions";
 
 type LE = {
@@ -54,6 +72,12 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
   const getEntity = useServerFn(getLegalEntity);
   const getUsage = useServerFn(getLegalEntityUsage);
   const setActive = useServerFn(setLegalEntityActive);
+  const lookupCnpj = useServerFn(lookupCnpjForLegalEntity);
+  const lookupCep = useServerFn(lookupCepForLegalEntity);
+  const [lookingUp, setLookingUp] = useState<"cnpj" | "cep" | null>(null);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const lookupEpoch = useRef(0);
+  const cepEdited = useRef(false);
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("all");
   const [search, setSearch] = useState("");
 
@@ -101,11 +125,41 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
     ie: string;
     im: string;
     active: boolean;
-  }>({ code: "", name: "", trade_name: "", cnpj: "", ie: "", im: "", active: true });
+    address_json: LegalEntityAddress;
+  }>({
+    code: "",
+    name: "",
+    trade_name: "",
+    cnpj: "",
+    ie: "",
+    im: "",
+    active: true,
+    address_json: readLegalEntityAddress(null),
+  });
+  const canEditForm = form.id ? recordAccess.for(form.id).can_update : canCreate;
+
+  function changeOpen(next: boolean) {
+    // The global confirmation portal must not dismiss the form underneath it.
+    if (!next && (saving || lookingUp)) return;
+    lookupEpoch.current += 1;
+    cepEdited.current = false;
+    setLookingUp(null);
+    setLookupError(null);
+    setOpen(next);
+  }
 
   function openCreate() {
-    setForm({ code: "", name: "", trade_name: "", cnpj: "", ie: "", im: "", active: true });
-    setOpen(true);
+    setForm({
+      code: "",
+      name: "",
+      trade_name: "",
+      cnpj: "",
+      ie: "",
+      im: "",
+      active: true,
+      address_json: readLegalEntityAddress(null),
+    });
+    changeOpen(true);
   }
 
   // Carrega a empresa completa: o resumo da grid não traz trade_name/ie/im e
@@ -123,8 +177,9 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
         ie: full.ie ?? "",
         im: full.im ?? "",
         active: full.active,
+        address_json: readLegalEntityAddress(full.address_json),
       });
-      setOpen(true);
+      changeOpen(true);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao carregar empresa");
     } finally {
@@ -150,7 +205,7 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
   }, [editId, isLoading, isError, allRows, recordAccess.isLoading, recordAccess.isFetched]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function submit() {
-    if (saving) return;
+    if (saving || lookingUp || !canEditForm) return;
     if (!form.name.trim()) {
       toast.error("Informe o nome");
       return;
@@ -167,6 +222,7 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
           ie: form.ie.trim() || null,
           im: form.im.trim() || null,
           active: form.active,
+          address_json: form.address_json,
         },
       });
       toast.success(form.id ? "Empresa atualizada" : "Empresa criada");
@@ -176,6 +232,78 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
       toast.error(e instanceof Error ? e.message : "Falha");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function fetchRegistry(kind: "cnpj" | "cep") {
+    if (lookingUp || saving || !canEditForm) return;
+    if (kind === "cnpj" && !isValidCnpj(form.cnpj)) return;
+    if (kind === "cep" && form.address_json.zip_code.replace(/\D/g, "").length !== 8) return;
+    const epoch = ++lookupEpoch.current;
+    cepEdited.current = false;
+    setLookingUp(kind);
+    setLookupError(null);
+    try {
+      if (kind === "cnpj") {
+        const suggestion = await lookupCnpj({
+          data: { ...(form.id ? { id: form.id } : {}), cnpj: form.cnpj },
+        });
+        if (epoch !== lookupEpoch.current) return;
+        const next = applyLegalEntityCnpjData(form, suggestion);
+        const changed =
+          next.name !== form.name ||
+          next.trade_name !== form.trade_name ||
+          JSON.stringify(next.address_json) !== JSON.stringify(form.address_json);
+        const populated = Boolean(
+          form.name || form.trade_name || Object.values(form.address_json).some(Boolean),
+        );
+        if (
+          changed &&
+          populated &&
+          !(await confirmDialog(
+            "Substituir razão social, nome fantasia e endereço pelos dados do CNPJ? Campos não informados pela consulta serão mantidos. A alteração só será gravada ao salvar.",
+          ))
+        )
+          return;
+        if (epoch !== lookupEpoch.current) return;
+        setForm(next);
+        toast.success("Dados do CNPJ carregados. Revise antes de salvar.");
+      } else {
+        const suggestion = await lookupCep({
+          data: { ...(form.id ? { id: form.id } : {}), cep: form.address_json.zip_code },
+        });
+        if (epoch !== lookupEpoch.current) return;
+        const changes = (["street", "neighborhood", "city", "state"] as const).some(
+          (key) =>
+            suggestion[key] && form.address_json[key] && form.address_json[key] !== suggestion[key],
+        );
+        if (
+          changes &&
+          !(await confirmDialog(
+            "Substituir logradouro, bairro, cidade e UF pelos dados do CEP? Número e complemento serão mantidos.",
+          ))
+        )
+          return;
+        if (epoch !== lookupEpoch.current) return;
+        setForm((current) => ({
+          ...current,
+          address_json: {
+            ...current.address_json,
+            street: suggestion.street || current.address_json.street,
+            neighborhood: suggestion.neighborhood || current.address_json.neighborhood,
+            city: suggestion.city || current.address_json.city,
+            state: suggestion.state || current.address_json.state,
+          },
+        }));
+        toast.success("Endereço carregado pelo CEP.");
+      }
+    } catch (e) {
+      if (epoch === lookupEpoch.current)
+        setLookupError(
+          e instanceof Error ? e.message : "Consulta indisponível. Preencha manualmente.",
+        );
+    } finally {
+      if (epoch === lookupEpoch.current) setLookingUp(null);
     }
   }
 
@@ -422,13 +550,19 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
         </table>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={open} onOpenChange={changeOpen}>
+        <DialogContent
+          className="sm:max-w-2xl max-h-[90dvh] overflow-y-auto"
+          onInteractOutside={(event) => event.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>{form.id ? "Editar empresa" : "Nova empresa"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+          <fieldset
+            disabled={saving || lookingUp !== null || !canEditForm}
+            className="space-y-4 min-w-0"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="le-code">Código</Label>
                 <Input
@@ -438,7 +572,7 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
                   placeholder="Ex: WK"
                 />
               </div>
-              <div className="col-span-2 space-y-2">
+              <div className="sm:col-span-2 space-y-2">
                 <Label htmlFor="le-name">Razão social *</Label>
                 <Input
                   id="le-name"
@@ -455,7 +589,7 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
                 onChange={(e) => setForm({ ...form, trade_name: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="le-cnpj">CNPJ</Label>
                 <Input
@@ -465,6 +599,21 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
                   inputMode="numeric"
                   onChange={(e) => setForm({ ...form, cnpj: formatCnpj(e.target.value) })}
                 />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={!isValidCnpj(form.cnpj)}
+                  onClick={() => void fetchRegistry("cnpj")}
+                  className="w-full"
+                >
+                  {lookingUp === "cnpj" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  {lookingUp === "cnpj" ? "Consultando…" : "Buscar dados do CNPJ"}
+                </Button>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="le-ie">IE</Label>
@@ -483,6 +632,92 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
                 />
               </div>
             </div>
+            <section className="border-t pt-4 space-y-3" aria-labelledby="le-address-title">
+              <h3 id="le-address-title" className="text-sm font-semibold">
+                Endereço da empresa
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="le-zip">CEP</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="le-zip"
+                      inputMode="numeric"
+                      placeholder="00000-000"
+                      value={form.address_json.zip_code}
+                      onChange={(e) => {
+                        cepEdited.current = true;
+                        setForm({
+                          ...form,
+                          address_json: {
+                            ...form.address_json,
+                            zip_code: formatLegalEntityCep(e.target.value),
+                          },
+                        });
+                      }}
+                      onBlur={() => {
+                        if (cepEdited.current) void fetchRegistry("cep");
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      aria-label="Buscar endereço pelo CEP"
+                      title="Buscar endereço pelo CEP"
+                      disabled={form.address_json.zip_code.replace(/\D/g, "").length !== 8}
+                      onClick={() => void fetchRegistry("cep")}
+                    >
+                      {lookingUp === "cep" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <div className="sm:col-span-2 space-y-2">
+                  <Label htmlFor="le-street">Logradouro</Label>
+                  <Input
+                    id="le-street"
+                    value={form.address_json.street}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        address_json: { ...form.address_json, street: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+                {(
+                  [
+                    ["number", "Número"],
+                    ["complement", "Complemento"],
+                    ["neighborhood", "Bairro"],
+                    ["city", "Cidade"],
+                    ["state", "UF"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <div key={key} className="space-y-2">
+                    <Label htmlFor={`le-${key}`}>{label}</Label>
+                    <Input
+                      id={`le-${key}`}
+                      value={form.address_json[key]}
+                      maxLength={key === "state" ? 2 : undefined}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          address_json: {
+                            ...form.address_json,
+                            [key]: key === "state" ? e.target.value.toUpperCase() : e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
             <div className="flex items-center gap-2">
               <Switch
                 id="le-active"
@@ -491,15 +726,21 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
               />
               <Label htmlFor="le-active">Ativa</Label>
             </div>
-          </div>
+          </fieldset>
+          {lookupError && (
+            <p role="alert" className="text-sm text-destructive">
+              {lookupError}
+            </p>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              variant="outline"
+              disabled={saving || lookingUp !== null}
+              onClick={() => changeOpen(false)}
+            >
               Cancelar
             </Button>
-            <Button
-              disabled={saving || (form.id ? !recordAccess.for(form.id).can_update : !canCreate)}
-              onClick={submit}
-            >
+            <Button disabled={saving || lookingUp !== null || !canEditForm} onClick={submit}>
               {saving ? "Salvando…" : form.id ? "Salvar" : "Criar"}
             </Button>
           </DialogFooter>
