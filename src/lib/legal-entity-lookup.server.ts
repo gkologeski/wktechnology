@@ -1,6 +1,7 @@
-import { isValidCnpj, onlyDigits } from "./cnpj";
+import { onlyDigits } from "./cnpj";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { authorizeFinanceBusiness } from "./access-control/finance-business.server";
+import { lookupPublicCnpj } from "./integrations/cnpj-lookup.server";
 import {
   formatLegalEntityCep,
   readLegalEntityAddress,
@@ -22,41 +23,37 @@ async function publicJson(url: string): Promise<Record<string, unknown> | null> 
 
 /** Consulta bases públicas (BrasilAPI -> ReceitaWS) sem persistir dados. */
 export async function fetchPublicCnpjRegistry(rawCnpj: string): Promise<LegalEntityCnpjData> {
-  const cnpj = onlyDigits(rawCnpj);
-  if (!isValidCnpj(cnpj)) throw new Error("CNPJ inválido");
-  for (const source of ["brasilapi", "receitaws"] as const) {
-    const d = await publicJson(
-      source === "brasilapi"
-        ? `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`
-        : `https://receitaws.com.br/v1/cnpj/${cnpj}`,
+  const result = await lookupPublicCnpj(rawCnpj);
+  if (!result.ok) {
+    if (result.reason === "invalid_cnpj") throw new Error("CNPJ inválido");
+    if (result.reason === "not_found") {
+      throw new Error(
+        "CNPJ não encontrado nas bases públicas. Confira o número ou preencha os dados manualmente.",
+      );
+    }
+    if (result.reason === "rate_limited") {
+      throw new Error(
+        "Não foi possível consultar o CNPJ porque o serviço público atingiu o limite temporário de requisições. Tente novamente em instantes ou preencha os dados manualmente.",
+      );
+    }
+    throw new Error(
+      "Não foi possível consultar o CNPJ porque o serviço público está temporariamente instável. Tente novamente em instantes ou preencha os dados manualmente.",
     );
-    if (!d || d["status"] === "ERROR") continue;
-    const text = (key: string) => (typeof d[key] === "string" ? d[key].trim() : "");
-    const name = text(source === "brasilapi" ? "razao_social" : "nome");
-    if (!name) continue;
-    const prefix = text("descricao_tipo_de_logradouro");
-    const street = text("logradouro");
-    return {
-      name,
-      trade_name: text(source === "brasilapi" ? "nome_fantasia" : "fantasia"),
-      source,
-      address: readLegalEntityAddress({
-        street:
-          prefix && !street.toUpperCase().startsWith(prefix.toUpperCase())
-            ? `${prefix} ${street}`.trim()
-            : street,
-        number: text("numero"),
-        complement: text("complemento"),
-        neighborhood: text("bairro"),
-        city: text("municipio"),
-        state: text("uf"),
-        zip_code: formatLegalEntityCep(text("cep")),
-      }),
-    };
   }
-  throw new Error(
-    "Não foi possível consultar o CNPJ. Tente novamente ou preencha os dados manualmente.",
-  );
+  return {
+    name: result.data.razao_social,
+    trade_name: result.data.nome_fantasia,
+    source: result.data.source,
+    address: readLegalEntityAddress({
+      street: result.data.street,
+      number: result.data.number,
+      complement: result.data.complement,
+      neighborhood: result.data.neighborhood,
+      city: result.data.city,
+      state: result.data.state,
+      zip_code: formatLegalEntityCep(result.data.cep),
+    }),
+  };
 }
 
 export async function lookupLegalEntityCnpj(

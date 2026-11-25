@@ -6,7 +6,8 @@ import {
   runEnrichCompanyByCNPJ,
 } from "@/lib/integrations/brasilapi-cnpj.server";
 
-// Enrich a single company by its CNPJ (fills legal_name/trade_name separately, never overwrites name).
+// Enrich a single company by its CNPJ via BrasilAPI/ReceitaWS (normalizes 13-digit leading-zero CNPJs,
+// classifies lookup failures, fills legal_name/trade_name separately, and never overwrites name).
 export const enrichCompanyByCNPJ = createServerFn({ method: "POST" })
   .middleware([
     requireSalesPermission(

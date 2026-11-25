@@ -133,7 +133,7 @@ function CompanyDetail() {
     try {
       const res = await runEnrich({ data: { company_id: company.id } });
       if (!res?.ok) {
-        toast.error("CNPJ não encontrado nas bases públicas.");
+        toast.error(res?.message ?? "Não foi possível consultar o CNPJ nas bases públicas.");
         return;
       }
       if (res.needsConfirmation) {
@@ -149,16 +149,20 @@ function CompanyDetail() {
         }
         const appliedRes = await runEnrich({ data: { company_id: company.id, overwrite: true } });
         if (!appliedRes?.ok) {
-          toast.error("CNPJ não encontrado nas bases públicas.");
+          toast.error(
+            appliedRes?.message ?? "Não foi possível consultar o CNPJ nas bases públicas.",
+          );
           return;
         }
-        toast.success("Dados da empresa atualizados via CNPJ.");
+        const appliedProvider = appliedRes.source === "receitaws" ? "ReceitaWS" : "BrasilAPI";
+        toast.success(`Dados da empresa atualizados via ${appliedProvider}.`);
         await load();
         return;
       }
+      const providerLabel = res.source === "receitaws" ? "ReceitaWS" : "BrasilAPI";
       toast.success(
         res.applied > 0
-          ? "Empresa enriquecida via CNPJ."
+          ? `Empresa enriquecida via ${providerLabel}.`
           : "Os dados da empresa já estão alinhados ao CNPJ.",
       );
       await load();

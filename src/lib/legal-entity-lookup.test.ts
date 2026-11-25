@@ -60,6 +60,52 @@ describe("public registry lookup", () => {
       "Não foi possível consultar",
     );
   });
+  it("auto-pads valid 13-digit leading-zero CNPJ before calling BrasilAPI", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      Response.json({
+        cnpj: "03938048000133",
+        razao_social: "BROOKS AMBIENTAL LTDA",
+        nome_fantasia: "BROOKS",
+        logradouro: "CENTRAL",
+        numero: "100",
+        municipio: "PALHOCA",
+        uf: "SC",
+        cep: "88130000",
+      }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    expect(await lookupLegalEntityCnpj(client, "3938048000133")).toMatchObject({
+      name: "BROOKS AMBIENTAL LTDA",
+      source: "brasilapi",
+    });
+    expect(fetcher).toHaveBeenCalledWith("https://brasilapi.com.br/api/cnpj/v1/03938048000133", {
+      signal: expect.any(AbortSignal),
+      redirect: "manual",
+    });
+  });
+  it("distinguishes confirmed not_found from rate limit and service instability", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(new Response(null, { status: 404 }))
+        .mockResolvedValueOnce(new Response(null, { status: 404 })),
+    );
+    await expect(lookupLegalEntityCnpj(client, "03938048000133")).rejects.toThrow(
+      "CNPJ não encontrado nas bases públicas",
+    );
+
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(new Response(null, { status: 503 }))
+        .mockResolvedValueOnce(new Response(null, { status: 429 })),
+    );
+    await expect(lookupLegalEntityCnpj(client, "03938048000133")).rejects.toThrow(
+      "limite temporário de requisições",
+    );
+  });
   it("rejects invalid CNPJ before any request", async () => {
     const f = vi.fn();
     vi.stubGlobal("fetch", f);

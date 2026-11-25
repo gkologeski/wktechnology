@@ -12174,8 +12174,8 @@
         }
       },
       "files": {
-        "src/components/finance/legal-entities-page.tsx": "e06e021072d84f49194c7be6a2bbf82d5ce39ae60cae322ed314376108aea834",
-        "src/lib/legal-entities.functions.ts": "33c160fc3d47a68ede8394a39b3815cc5da569ce4dd88e5a5eb5b469371e6273",
+        "src/components/finance/legal-entities-page.tsx": "629f0c7d29f14d0d3712d8317ad8215fe9a93b39f7bf85edbd23edd619f49a00",
+        "src/lib/legal-entities.functions.ts": "284df1b19f6a7be08a86228383a14528f9b15e91071d9a775af9a08f7c1f8ea2",
         "src/routes/_authenticated/finance.legal-entities.tsx": "c6db2c99bb89c7fc5261c1bcddce9dd2eb9c68b86a9180c479c477a0d99479fa",
         "src/routes/_authenticated/settings.legal-entities.tsx": "a08ec73ed922c796e60f4c5b19b28a659aefc3489b31605358b79c690b76b28e",
         "src/routes/_authenticated/finance.bank-accounts.tsx": "7a5cc9a70366f0ff55126f8b199408dffd680a1b5555edd9536546ad2dd6a27e",
@@ -12185,7 +12185,7 @@
         "drizzle/migrations/0315_legal_entity_guard_workspace_cascade.sql": "350b426fc8a8a038d3eb2cb3d0f4590dd3a378b0e5d74c557eba69fff60155d5",
         "drizzle/migrations/0316_cnpj_operational_linkage_and_summary.sql": "e7f7e9845ed6834581f5fbca725a969a92ef561e5fef026e9759ec83ae7f5e75",
         "drizzle/migrations/0317_cnpj_summary_scoped_performance.sql": "bca8c025b20c50b562e6f58af90ce258ec4ca7c104961c46fb8d20b30d2b0991",
-        "src/lib/legal-entity-lookup.server.ts": "83e4a6e7e2969557a9e6e001e0eeeefcbdd8176486571bdd445f515235a9b17f"
+        "src/lib/legal-entity-lookup.server.ts": "635b473f4f422976baa8043fe91b5c73783e3af7d067b80012e48d0a23d44841"
       }
     },
     {
@@ -12486,7 +12486,7 @@
       "files": {
         "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
         "src/lib/contracts/contract-create.server.ts": "773a356a646938842dcd1ab4d34984d5c64143bd0e77bb68b0f0032155bb84a3",
-        "src/lib/contracts/template-merge.server.ts": "f40cdf0fab7fb8d1413924466be7fb0899d5b10678e5851e564c5c4e4c4f8cae",
+        "src/lib/contracts/template-merge.server.ts": "d567b977f2c1da91b711c4a5650f61f1621ad2b18dc7f2858e2b800322238df9",
         "src/lib/contracts/templates.functions.ts": "56ec7226789a5aff861cd6354e4102cc1d5c94189c47bd6caf86a534fbcda4ec",
         "src/lib/proposals/proposal-document.server.ts": "7f800eb81b841f995f5bfd12efa0563abbe9ca99c1849cde4f67882246275ee7",
         "src/lib/sales-flow.server.ts": "a8995103874a5940e1c3a28d67dbba44a1395eeb2a0a1a6515442e2ce150ae82",
@@ -27866,9 +27866,9 @@
       },
       "files": {
         "drizzle/migrations/0477_add_company_legal_and_trade_name.sql": "81e023adb6745aab7f88b51d0d8bfdc708f1fff3c51d9bcaf09c3d50f6908daf",
-        "src/lib/integrations/brasilapi-cnpj.functions.ts": "50c2d75652756f003c38c116931894d23ae21180944051ba95e3e68c51b96ef3",
-        "src/lib/integrations/brasilapi-cnpj.server.ts": "92922661783e2b795abcc13c8d5da8fed98a7428ff06091e5d3f748d096eb297",
-        "src/routes/_authenticated/companies.$id.tsx": "4765d484bb8642be6fb35ab7220b1f686fe17129c86cba82fe2aa0f4f43d7ef9"
+        "src/lib/integrations/brasilapi-cnpj.functions.ts": "370f4a61c1da893998b1845b49482ae9b790a7c1859c2dfc9538c7554a66a0fe",
+        "src/lib/integrations/brasilapi-cnpj.server.ts": "68187b602b206ad1bcfc1595e464b58ab98ab3891e36a062c30702cd9061b9bd",
+        "src/routes/_authenticated/companies.$id.tsx": "24e8a5caa832fd4af3ff2486fa58f097eb9d795043dc7f3eadfbebba7d963bb9"
       },
       "permission_keys": [
         "techsales.companies.view.own",
@@ -28047,6 +28047,83 @@
           "file": "src/lib/proposals/proposal-scope-ai.test.ts",
           "name": "rejects scope generation for an inactive workspace member"
         }
+      }
+    },
+    {
+      "id": "cnpj-pure-validation-and-normalization",
+      "kind": "presentation",
+      "rationale": "Pure CNPJ formatting, check-digit validation and 13-digit leading-zero normalization; no IO, identity, route, query or business action.",
+      "files": {
+        "src/lib/cnpj.ts": "b8fcbb506db0aa15098d35de205e9b84c5007f54949bdb4fe859123d86dde77c"
+      }
+    },
+    {
+      "id": "cnpj-public-lookup-and-enrichment",
+      "kind": "business",
+      "resources": [
+        "techsales.prospecting_enrichment",
+        "techsales.companies"
+      ],
+      "actions": [
+        "view",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.prospecting_enrichment.manage.own",
+        "techsales.prospecting_enrichment.manage.team",
+        "techsales.prospecting_enrichment.manage.workspace",
+        "techsales.companies.view.own",
+        "techsales.companies.view.workspace",
+        "techsales.companies.update.own",
+        "techsales.companies.manage.workspace"
+      ],
+      "rationale": "Public CNPJ lookup helper (BrasilAPI/ReceitaWS with 13-digit leading-zero normalization and rate-limit/instability classification) shared by CRM company enrichment, legal entity lookup and person PJ lookup. Direct CRM lookup enforces sales_area_authorize via assertSalesAnyArea before external requests, and callers enforce active workspace and per-record permissions before calling lookupPublicCnpj.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesAnyArea"
+        },
+        {
+          "file": "src/lib/integrations/cnpj-lookup.server.ts",
+          "symbol": "lookupPublicCnpj"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_area_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/integrations/cnpj-lookup.test.ts",
+          "name": "allows authorized active member to enrich and normalizes 13-digit CNPJ"
+        },
+        "missing_permission": {
+          "file": "src/lib/integrations/cnpj-lookup.test.ts",
+          "name": "denies missing permission before company query and public CNPJ request"
+        },
+        "explicit_deny": {
+          "file": "src/lib/integrations/cnpj-lookup.test.ts",
+          "name": "denies explicit deny before company query and public CNPJ request"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/integrations/cnpj-lookup.test.ts",
+          "name": "denies foreign workspace company without calling public CNPJ providers"
+        },
+        "inactive_member": {
+          "file": "src/lib/integrations/cnpj-lookup.test.ts",
+          "name": "denies inactive member before company query and public CNPJ request"
+        }
+      },
+      "files": {
+        "src/lib/integrations/cnpj-lookup.server.ts": "1de6459b17beb5b0088fe630df86e2c21febb7405e2a763b8ab7b5d77e3c7a57"
       }
     }
   ],

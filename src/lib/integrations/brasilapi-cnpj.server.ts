@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { onlyDigits } from "@/lib/cnpj";
 import { corporateDomainFromEmail } from "@/lib/domain-utils";
-import { sourcePhone } from "@/lib/phone/phone-boundary";
 import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import {
@@ -8,154 +8,59 @@ import {
   type CompanyCnpjConflict,
   type CompanyCnpjRecord,
 } from "@/lib/companies/company-legal-name";
-
-type BrasilApiResp = {
-  cnpj?: string;
-  razao_social?: string;
-  nome_fantasia?: string;
-  descricao_tipo_de_logradouro?: string;
-  logradouro?: string;
-  numero?: string;
-  complemento?: string;
-  bairro?: string;
-  municipio?: string;
-  uf?: string;
-  cep?: string;
-  ddd_telefone_1?: string;
-  email?: string;
-  cnae_fiscal_descricao?: string;
-  porte?: { descricao?: string } | string;
-};
-
-type ReceitaWsResp = {
-  status?: string;
-  nome?: string;
-  fantasia?: string;
-  logradouro?: string;
-  numero?: string;
-  complemento?: string;
-  bairro?: string;
-  municipio?: string;
-  uf?: string;
-  cep?: string;
-  telefone?: string;
-  email?: string;
-  atividade_principal?: Array<{ text?: string }>;
-  porte?: string;
-};
-
-function stripDigits(v: string): string {
-  return String(v ?? "").replace(/\D/g, "");
-}
-
-function formatCep(c?: string): string | null {
-  const d = stripDigits(c ?? "");
-  if (d.length !== 8) return null;
-  return `${d.slice(0, 5)}-${d.slice(5)}`;
-}
+import {
+  lookupPublicCnpj,
+  type CnpjLookupFailureReason,
+  type CnpjLookupSource,
+  type PublicCnpjRecord,
+} from "@/lib/integrations/cnpj-lookup.server";
 
 export type NormalizedCnpj = CompanyCnpjRecord & {
   email?: string;
 };
 
-async function lookupBrasilApi(cnpj: string): Promise<NormalizedCnpj | null> {
-  const c = stripDigits(cnpj);
-  if (c.length !== 14) return null;
-  const r = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${c}`, {
-    signal: AbortSignal.timeout(8000),
-    redirect: "manual",
-  });
-  if (!r.ok) return null;
-  const d = (await r.json()) as BrasilApiResp;
-  if (!d?.cnpj && !d?.razao_social) return null;
-  const prefix = d.descricao_tipo_de_logradouro?.trim();
-  const street = d.logradouro?.trim() ?? "";
-  const fullStreet =
-    prefix && street && !street.toUpperCase().startsWith(prefix.toUpperCase())
-      ? `${prefix} ${street}`
-      : street;
-  const address = [fullStreet, d.numero, d.complemento, d.bairro]
-    .filter((p) => typeof p === "string" && p.trim().length > 0)
+function toNormalizedCnpj(record: PublicCnpjRecord): NormalizedCnpj {
+  const emailDomain = corporateDomainFromEmail(record.email || undefined);
+  const address = [record.street, record.number, record.complement, record.neighborhood]
+    .filter((p) => p.trim().length > 0)
     .join(", ")
     .trim();
-  const emailDomain = corporateDomainFromEmail(d.email);
   return {
-    legal_name: d.razao_social?.trim() || undefined,
-    trade_name: d.nome_fantasia?.trim() || undefined,
-    address: address || undefined,
-    city: d.municipio?.trim() || undefined,
-    state: d.uf?.trim() || undefined,
-    cep: formatCep(d.cep) || undefined,
-    // Cadastro da Receita Federal: número brasileiro (país comprovado pela fonte).
-    phone: sourcePhone(d.ddd_telefone_1, "BR") || undefined,
-    email: d.email || undefined,
+    legal_name: record.razao_social || undefined,
+    trade_name: record.nome_fantasia || undefined,
+    address: address || record.address_line || undefined,
+    city: record.city || undefined,
+    state: record.state || undefined,
+    cep: record.cep || undefined,
+    phone: record.phone || undefined,
+    email: record.email || undefined,
     domain: emailDomain || undefined,
-    industry: d.cnae_fiscal_descricao?.trim() || undefined,
-    size:
-      typeof d.porte === "object"
-        ? d.porte?.descricao?.trim()
-        : typeof d.porte === "string"
-          ? d.porte.trim()
-          : undefined,
-  };
-}
-
-async function lookupReceitaWs(cnpj: string): Promise<NormalizedCnpj | null> {
-  const c = stripDigits(cnpj);
-  if (c.length !== 14) return null;
-  const r = await fetch(`https://receitaws.com.br/v1/cnpj/${c}`, {
-    signal: AbortSignal.timeout(8000),
-    redirect: "manual",
-  });
-  if (!r.ok) return null;
-  const d = (await r.json()) as ReceitaWsResp;
-  if (d?.status && d.status.toUpperCase() === "ERROR") return null;
-  const address = [d.logradouro, d.numero, d.complemento, d.bairro]
-    .filter((p) => typeof p === "string" && p.trim().length > 0)
-    .join(", ")
-    .trim();
-  const emailDomain = corporateDomainFromEmail(d.email);
-  return {
-    legal_name: d.nome?.trim() || undefined,
-    trade_name: d.fantasia?.trim() || undefined,
-    address: address || undefined,
-    city: d.municipio?.trim() || undefined,
-    state: d.uf?.trim() || undefined,
-    cep: formatCep(d.cep) || undefined,
-    phone: sourcePhone(d.telefone, "BR") || undefined,
-    email: d.email || undefined,
-    domain: emailDomain || undefined,
-    industry: d.atividade_principal?.[0]?.text?.trim() || undefined,
-    size: d.porte?.trim() || undefined,
+    industry: record.industry || undefined,
+    size: record.size || undefined,
   };
 }
 
 export async function lookupCompanyCnpjData(cnpj: string): Promise<NormalizedCnpj | null> {
-  try {
-    const primary = await lookupBrasilApi(cnpj);
-    if (primary) return primary;
-  } catch {
-    // fall through
-  }
-  try {
-    return await lookupReceitaWs(cnpj);
-  } catch {
-    return null;
-  }
+  const res = await lookupPublicCnpj(cnpj);
+  return res.ok ? toNormalizedCnpj(res.data) : null;
 }
 
 export type EnrichCompanyResult =
-  | { ok: false; reason: "not_found" }
+  | { ok: false; reason: CnpjLookupFailureReason; message: string }
   | {
       ok: true;
       needsConfirmation: true;
       conflicts: CompanyCnpjConflict[];
       emptyCount: number;
+      source: CnpjLookupSource;
+      cnpj: string;
     }
   | {
       ok: true;
       needsConfirmation: false;
       applied: number;
+      source: CnpjLookupSource;
+      cnpj: string;
     };
 
 type CompanyRowForCnpj = {
@@ -201,8 +106,11 @@ export async function runEnrichCompanyByCNPJ(
   if (!c) throw new Error("Empresa não encontrada.");
   if (!c.cnpj) throw new Error("Empresa sem CNPJ.");
 
-  const r = await lookupCompanyCnpjData(c.cnpj);
-  if (!r) return { ok: false, reason: "not_found" };
+  const lookupRes = await lookupPublicCnpj(c.cnpj);
+  if (!lookupRes.ok) {
+    return { ok: false, reason: lookupRes.reason, message: lookupRes.message };
+  }
+  const r = toNormalizedCnpj(lookupRes.data);
 
   const plan = planCompanyCnpjEnrichment(c, r, { overwrite: Boolean(input.overwrite) });
   if (input.overwrite === undefined && plan.conflicts.length > 0) {
@@ -211,11 +119,15 @@ export async function runEnrichCompanyByCNPJ(
       needsConfirmation: true,
       conflicts: plan.conflicts,
       emptyCount: Object.keys(plan.emptyUpdates).length,
+      source: lookupRes.data.source,
+      cnpj: lookupRes.data.cnpj,
     };
   }
 
+  const normalizedMissingZero = onlyDigits(c.cnpj).length === 13;
   const updatePayload: Record<string, unknown> = {
     ...plan.update,
+    ...(normalizedMissingZero ? { cnpj: lookupRes.data.cnpj } : {}),
     cnpj_enriched_at: new Date().toISOString(),
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -229,7 +141,13 @@ export async function runEnrichCompanyByCNPJ(
   if (!Array.isArray(updated) || updated.length === 0) {
     throw new Error("Sem permissão para atualizar esta empresa.");
   }
-  return { ok: true, needsConfirmation: false, applied: Object.keys(plan.update).length };
+  return {
+    ok: true,
+    needsConfirmation: false,
+    applied: Object.keys(plan.update).length + (normalizedMissingZero ? 1 : 0),
+    source: lookupRes.data.source,
+    cnpj: lookupRes.data.cnpj,
+  };
 }
 
 export async function runEnrichCompaniesByCNPJ(
@@ -281,14 +199,16 @@ export async function runEnrichCompaniesByCNPJ(
     }
     try {
       await assertSalesRecord(supabase, "companies", c.id, "update");
-      const r = await lookupCompanyCnpjData(c.cnpj);
-      if (!r) {
+      const lookupRes = await lookupPublicCnpj(c.cnpj);
+      if (!lookupRes.ok) {
         failed++;
         continue;
       }
+      const r = toNormalizedCnpj(lookupRes.data);
       const plan = planCompanyCnpjEnrichment(c, r, { overwrite });
       const updatePayload: Record<string, unknown> = {
         ...plan.update,
+        ...(onlyDigits(c.cnpj).length === 13 ? { cnpj: lookupRes.data.cnpj } : {}),
         cnpj_enriched_at: new Date().toISOString(),
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

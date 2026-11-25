@@ -79,7 +79,13 @@ describe("runEnrichCompanyByCNPJ authorization & behavior", () => {
     });
 
     const res = await runEnrichCompanyByCNPJ(supabase, USER_ID, { company_id: COMPANY_ID });
-    expect(res).toEqual({ ok: true, needsConfirmation: false, applied: 4 });
+    expect(res).toEqual({
+      ok: true,
+      needsConfirmation: false,
+      applied: 4,
+      source: "brasilapi",
+      cnpj: "19133530000136",
+    });
     expect(mocks.getActiveWorkspaceId).toHaveBeenCalledWith(supabase, USER_ID);
     expect(mocks.assertSalesRecord).toHaveBeenCalledWith(
       supabase,
@@ -147,7 +153,13 @@ describe("runEnrichCompanyByCNPJ authorization & behavior", () => {
       company_id: COMPANY_ID,
       overwrite: true,
     });
-    expect(second).toEqual({ ok: true, needsConfirmation: false, applied: 4 });
+    expect(second).toEqual({
+      ok: true,
+      needsConfirmation: false,
+      applied: 4,
+      source: "brasilapi",
+      cnpj: "19133530000136",
+    });
     expect(secondMock.updatePayloads[0]).toMatchObject({
       legal_name: "GM KOLOGESKI & CIA LTDA",
       trade_name: "WK TECHNOLOGY",

@@ -31,7 +31,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { LegalEntityCnpjFillDialog } from "@/components/finance/legal-entity-cnpj-fill-dialog";
-import { formatCnpj, isValidCnpj } from "@/lib/cnpj";
+import { formatCnpj, normalizeCnpj } from "@/lib/cnpj";
 import {
   applyLegalEntityCnpjData,
   readLegalEntityAddress,
@@ -237,7 +237,7 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
 
   async function fetchRegistry(kind: "cnpj" | "cep") {
     if (lookingUp || saving || !canEditForm) return;
-    if (kind === "cnpj" && !isValidCnpj(form.cnpj)) return;
+    if (kind === "cnpj" && !normalizeCnpj(form.cnpj)) return;
     if (kind === "cep" && form.address_json.zip_code.replace(/\D/g, "").length !== 8) return;
     const epoch = ++lookupEpoch.current;
     cepEdited.current = false;
@@ -245,11 +245,13 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
     setLookupError(null);
     try {
       if (kind === "cnpj") {
+        const normalizedCnpj = normalizeCnpj(form.cnpj);
         const suggestion = await lookupCnpj({
           data: { ...(form.id ? { id: form.id } : {}), cnpj: form.cnpj },
         });
         if (epoch !== lookupEpoch.current) return;
-        const next = applyLegalEntityCnpjData(form, suggestion);
+        const baseForm = normalizedCnpj ? { ...form, cnpj: formatCnpj(normalizedCnpj) } : form;
+        const next = applyLegalEntityCnpjData(baseForm, suggestion);
         const changed =
           next.name !== form.name ||
           next.trade_name !== form.trade_name ||
@@ -603,7 +605,7 @@ export function LegalEntitiesPage({ editId }: { editId?: string } = {}) {
                   type="button"
                   size="sm"
                   variant="outline"
-                  disabled={!isValidCnpj(form.cnpj)}
+                  disabled={!normalizeCnpj(form.cnpj)}
                   onClick={() => void fetchRegistry("cnpj")}
                   className="w-full"
                 >

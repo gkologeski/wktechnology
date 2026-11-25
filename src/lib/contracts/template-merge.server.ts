@@ -1,4 +1,5 @@
 import { parsePaymentTerms } from "@/lib/sales/payment-terms";
+import { normalizeCnpj } from "@/lib/cnpj";
 // Monta o contexto de variáveis ({{...}}) de um modelo de contrato.
 // Server-only: usado pelos modelos e pela conversão Proposta/Cotação -> Contrato.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -38,8 +39,8 @@ function title(s: unknown): string | null {
 }
 
 async function lookupCnpjAddress(cnpj: string | null | undefined): Promise<CnpjAddress | null> {
-  const digits = (cnpj ?? "").replace(/\D/g, "");
-  if (digits.length !== 14) return null;
+  const digits = normalizeCnpj(cnpj);
+  if (!digits) return null;
   try {
     const r = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
     if (!r.ok) return null;

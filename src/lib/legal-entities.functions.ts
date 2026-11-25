@@ -5,7 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
-import { isValidCnpj, onlyDigits } from "@/lib/cnpj";
+import { isValidCnpj, normalizeCnpj, onlyDigits } from "@/lib/cnpj";
 import { normalizeEntityName } from "@/lib/contracts/link-suggest";
 import { legalEntityAddressSchema } from "@/lib/legal-entity-address";
 import { lookupLegalEntityCnpj, lookupLegalEntityCep } from "@/lib/legal-entity-lookup.server";
@@ -156,7 +156,7 @@ export const fillLegalEntityCnpjsAndRecalc = createServerFn({ method: "POST" })
                 .string()
                 .trim()
                 .max(20)
-                .transform((v) => onlyDigits(v))
+                .transform((v) => normalizeCnpj(v) ?? onlyDigits(v))
                 .refine((v) => v.length === 0 || isValidCnpj(v), "CNPJ inválido"),
             }),
           )
@@ -243,7 +243,8 @@ export const upsertLegalEntity = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     // CNPJ é gravado sempre em dígitos e validado quando informado.
-    const cnpjDigits = onlyDigits(data.cnpj);
+    const rawCnpjDigits = onlyDigits(data.cnpj);
+    const cnpjDigits = normalizeCnpj(data.cnpj) ?? rawCnpjDigits;
     if (cnpjDigits.length > 0 && !isValidCnpj(cnpjDigits)) {
       throw new Error("CNPJ inválido");
     }

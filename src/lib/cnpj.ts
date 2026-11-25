@@ -36,3 +36,18 @@ export function isValidCnpj(value: string | null | undefined): boolean {
 
   return check(12) === Number(d[12]) && check(13) === Number(d[13]);
 }
+
+/**
+ * Normaliza um CNPJ para 14 dígitos canônicos quando válido.
+ * Tolera 13 dígitos (zero à esquerda perdido em planilhas/importações) somente
+ * quando o preenchimento com "0" à esquerda produz um CNPJ com dígitos válidos.
+ */
+export function normalizeCnpj(value: string | null | undefined): string | null {
+  const d = onlyDigits(value);
+  if (d.length === 14) return isValidCnpj(d) ? d : null;
+  if (d.length === 13) {
+    const padded = d.padStart(14, "0");
+    return isValidCnpj(padded) ? padded : null;
+  }
+  return null;
+}

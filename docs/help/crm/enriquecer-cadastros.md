@@ -8,7 +8,7 @@ route_pattern: /settings/enrichment
 min_permission: techsales.prospecting_enrichment.view.own
 audience: internal
 sort_order: 161
-version: 3
+version: 4
 is_published: true
 ---
 # Enriquecer contatos, leads e empresas
@@ -37,14 +37,17 @@ Os campos são preenchidos conforme o modo escolhido. Telefones pedidos ao Apoll
 - Foto colocada manualmente nunca é trocada.
 - Conta-se um crédito por retorno encontrado de cada provedor, mesmo sem mudança de campo.
 - A simulação não grava mudanças nem créditos, mas ainda consulta os provedores.
-- CNPJ: usa BrasilAPI e, se falhar, ReceitaWS. Exige 14 dígitos, preenche **Razão social** e **Nome fantasia** separadamente (além de setor, porte, telefone, endereço, cidade, estado, CEP e domínio) e nunca sobrescreve o campo **Nome**. Na ficha da empresa, quando já existir valor diferente, o sistema pede confirmação antes de substituir.
+- CNPJ: usa BrasilAPI e, se falhar, ReceitaWS. Aceita 14 dígitos válidos ou 13 dígitos com zero à esquerda omitido quando o preenchimento com `0` forma um CNPJ válido (corrigindo o CNPJ armazenado para 14 dígitos), preenche **Razão social** e **Nome fantasia** separadamente (além de setor, porte, telefone, endereço, cidade, estado, CEP e domínio) e nunca sobrescreve o campo **Nome**. Na ficha da empresa, quando já existir valor diferente, o sistema pede confirmação antes de substituir.
 
 ## Erros comuns
 - "Apollo não conectado: configure APOLLO_API_KEY em Integrações.": conecte o Apollo.
 - "Lusha não conectado: configure LUSHA_API_KEY em Integrações.": conecte o Lusha.
 - "Créditos do Apollo.io esgotados. Atualize o plano para voltar a enriquecer.": renove os créditos.
 - "Cadastre o CNPJ antes de enriquecer.": informe o CNPJ.
-- "CNPJ não encontrado nas bases públicas.": confira o número.
+- "CNPJ inválido. Confira os dígitos informados.": verifique os dígitos verificadores do CNPJ.
+- "CNPJ não encontrado nas bases públicas.": confirmado quando BrasilAPI e ReceitaWS informam que o CNPJ não existe; confira o número.
+- "O serviço público de consulta de CNPJ (BrasilAPI/ReceitaWS) atingiu o limite temporário de requisições. Tente novamente em instantes.": limite temporário das APIs públicas; aguarde alguns instantes e tente de novo.
+- "O serviço público de consulta de CNPJ (BrasilAPI/ReceitaWS) está temporariamente instável. Tente novamente em instantes.": indisponibilidade temporária das APIs públicas; tente novamente em instantes.
 
 ## Relacionados
 - [Visão geral do TechSales](/ajuda/crm)
