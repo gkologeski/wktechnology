@@ -27513,9 +27513,9 @@
     {
       "id": "sales-logo-token-rendering",
       "kind": "presentation",
-      "rationale": "Pure HTTPS logo URL sanitization, company/provider fallback resolution, rich-text {{company.logo}}/{{provider.logo}} rendering, and quote block HTML compilation. No database client, no server functions, and no authorization logic; callers enforce workspace RLS, permissions, or published token gates.",
+      "rationale": "Pure HTTPS and bounded signature-checked inline raster logo sanitization, company/provider fallback resolution, rich-text logo rendering, and quote block HTML compilation. No database client, server functions or authorization logic; callers enforce workspace RLS, permissions, or published token gates.",
       "files": {
-        "src/lib/sales/company-logo-token.ts": "db0191f849c7b89f378e00f5afa6e377eda027c6496aa3da61beffcdb171a9fd",
+        "src/lib/sales/company-logo-token.ts": "02750f733282b0b157a4e4cd46dc04084e2f8ce31a4b7bee50e62089a0777081",
         "src/lib/quote-template-renderer.ts": "78fee6075e36fa805e03b5254150713ebdb3274baabb8f99e281e6c3405b2e22",
         "src/lib/quote-template-blocks.ts": "a37f767a31a0c1d12fc49e7ba19f7433724093193bed4cd75083b24d6f9c8fc5"
       }
@@ -27584,6 +27584,68 @@
       },
       "files": {
         "src/components/quote-templates/visual-editor.tsx": "5bae79236449ebb0efbba704a373d8d2a7302c9af5914eaeba31045d472b1676"
+      }
+    },
+    {
+      "id": "company-logo-upload-resolution-only",
+      "kind": "business",
+      "rationale": "Existing company logo update through the authenticated browser client and unchanged companies RLS. Only image encoding resolution/quality changed; input limit, columns, queries and zero-row refusal unchanged. Reuses techsales.companies view/update own/team/workspace, active membership, workspace isolation and deny enforced by sales_update/sales_context_access. Five tests exercise the actual consumer against simulated RLS success/refusals; these are not new SQL authorization proofs. The unchanged zero-row denial is named assertCompanyLogoUpdate for explicit consumer control binding; actual authorization remains SQL/RLS.",
+      "files": {
+        "src/hooks/use-company-logo-actions.ts": "542959ed0ff03b2f6eb467c91aa3b4a3ac511a3538baa64e029c842581cae448"
+      },
+      "resources": [
+        "techsales.companies"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.companies.view.own",
+        "techsales.companies.view.team",
+        "techsales.companies.view.workspace",
+        "techsales.companies.update.own",
+        "techsales.companies.update.team",
+        "techsales.companies.update.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/hooks/use-company-logo-actions.ts",
+          "symbol": "assertCompanyLogoUpdate"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "sales_update"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/hooks/use-company-logo-actions.test.ts",
+          "name": "logo save accepts an authorized row"
+        },
+        "missing_permission": {
+          "file": "src/hooks/use-company-logo-actions.test.ts",
+          "name": "logo save rejects missing permission with zero rows"
+        },
+        "explicit_deny": {
+          "file": "src/hooks/use-company-logo-actions.test.ts",
+          "name": "logo save propagates explicit deny from RLS"
+        },
+        "foreign_workspace": {
+          "file": "src/hooks/use-company-logo-actions.test.ts",
+          "name": "logo save rejects foreign workspace with zero rows"
+        },
+        "inactive_member": {
+          "file": "src/hooks/use-company-logo-actions.test.ts",
+          "name": "logo save propagates inactive member refusal"
+        }
       }
     }
   ],

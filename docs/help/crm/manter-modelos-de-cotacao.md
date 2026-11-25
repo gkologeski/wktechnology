@@ -8,7 +8,7 @@ route_pattern: /settings/quote-templates
 min_permission: 
 audience: internal
 sort_order: 159
-version: 3
+version: 4
 is_published: true
 ---
 # Manter modelos de cotação
@@ -25,7 +25,8 @@ is_published: true
 1. Abra /settings/quote-templates.
 2. Abra o modelo no editor apresentado.
 3. Revise o conteúdo e avalie Converter para editor visual quando a ação estiver disponível.
-4. Para inserir o logotipo da empresa cliente ou da empresa prestadora, use as variáveis `{{company.logo}}` e `{{provider.logo}}` no editor HTML ou escolha a origem **Empresa cliente** / **Prestadora** no bloco **Logo** do editor visual. Quando não houver logo cadastrado (ou URL HTTPS válida), a imagem é omitida sem exibir ícone quebrado.
+4. Para inserir o logotipo da empresa cliente ou da empresa prestadora, use as variáveis `{{company.logo}}` e `{{provider.logo}}` no editor HTML ou escolha a origem **Empresa cliente** / **Prestadora** no bloco **Logo** do editor visual. O logo enviado no cadastro de Empresas tem prioridade sobre a imagem automática do domínio. São aceitos HTTPS e imagens incorporadas PNG, JPG ou WebP válidas de até 2 MB; SVG enviado no cadastro é convertido em WebP. Quando não houver imagem válida, o sistema tenta o domínio e, sem alternativa, omite a imagem.
+5. Novos envios no cadastro de Empresas mantêm até 512 px, preservando proporção e sem ampliar originais menores; o arquivo de envio continua limitado a 1 MB. Para melhorar a nitidez de um logo antigo, envie novamente a imagem original em alta resolução.
 
 ## Resultado esperado
 A tela apresenta o resultado da consulta ou da ação descrita. Confira a confirmação e o estado exibidos; uma configuração gravada não prova execução no provedor externo.

@@ -1,3 +1,9 @@
+# LOGO-CADASTRADO — propostas e cotações (P, 20–30 min)
+
+- [x] Aceitar logos raster inline seguros e priorizar imagem manual; novos uploads até 512 px, sem ampliar originais menores.
+- [x] 43 testes, permissions:check, Ajuda 256/256 e lint dirigido aprovados; navegador autenticado exibiu o logo NEXID, sem favicon, e codificou novo envio em 512×160 px.
+- [x] Diff revisado; sem publicar ou alterar cadastros/modelos reais. Ajuda v4/v11 preparada para aplicação editorial após revisão; PDF público não testado. Perf global bloqueado por artefatos de verificação desatualizados/incompletos.
+
 # RECONCILIA-INBOX (G, previsão inicial 1–3 h)
 
 - [x] Restaurar pelo CLI o teste exclusivo do draft; preservar a consolidação posterior do Codex nos arquivos compartilhados, sem reverter UI/Ajuda/contratos/harness.

@@ -8,8 +8,13 @@ import {
   sanitizeHttpsLogoUrl,
 } from "./company-logo-token";
 
+const INLINE_PNG =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=";
+const INLINE_JPEG = `data:image/jpeg;base64,${btoa("\xff\xd8\xff\xe0")}`;
+const INLINE_WEBP = `data:image/webp;base64,${btoa("RIFF\x04\x00\x00\x00WEBP")}`;
+
 describe("company-logo-token — resolução e sanitização", () => {
-  it("aceita apenas URLs https válidas e bloqueia protocolos inseguros", () => {
+  it("aceita URLs https válidas e bloqueia protocolos inseguros", () => {
     expect(sanitizeHttpsLogoUrl("https://cdn.empresa.com/logo.png")).toBe(
       "https://cdn.empresa.com/logo.png",
     );
@@ -20,6 +25,47 @@ describe("company-logo-token — resolução e sanitização", () => {
     expect(sanitizeHttpsLogoUrl("https://cdn.empresa.com/a\nb.png")).toBeNull();
     expect(sanitizeHttpsLogoUrl("")).toBeNull();
     expect(sanitizeHttpsLogoUrl(null)).toBeNull();
+  });
+
+  it("aceita logos inline PNG, JPEG e WebP com assinatura compatível", () => {
+    for (const logo of [INLINE_PNG, INLINE_JPEG, INLINE_WEBP]) {
+      expect(sanitizeHttpsLogoUrl(logo)).toBe(logo);
+    }
+  });
+
+  it("prioriza o logo enviado no cadastro sobre o favicon em documentos", () => {
+    expect(
+      resolveCompanyLogoUrl({
+        logo_url: INLINE_PNG,
+        logo_source: "manual",
+        domain: "nexidtech.com.br",
+      }),
+    ).toBe(INLINE_PNG);
+    expect(resolveProviderLogoUrl(INLINE_PNG, "https://cdn.wk.com/ws.png")).toBe(INLINE_PNG);
+    expect(replaceRichTextLogoTokens("{{company.logo}}", { companyLogoUrl: INLINE_PNG })).toContain(
+      `src="${INLINE_PNG}"`,
+    );
+  });
+
+  it("rejeita SVG/HTML inline, base64 inválido e assinatura divergente", () => {
+    for (const logo of [
+      `data:image/svg+xml;base64,${btoa('<svg onload="alert(1)"/>')}`,
+      `data:text/html;base64,${btoa("<script>alert(1)</script>")}`,
+      "data:image/png;base64,!!!!",
+      "data:image/png;base64,abc",
+      "data:image/png;base64,a===",
+      `data:image/png;base64,${btoa("<svg/>")}`,
+      INLINE_PNG.replace("image/png", "image/jpeg"),
+    ])
+      expect(sanitizeHttpsLogoUrl(logo)).toBeNull();
+  });
+
+  it("limita logos inline a 2 MB decodificados e HTTPS a 2048 caracteres", () => {
+    const atLimit = `data:image/png;base64,${btoa("\x89PNG\r\n\x1a\n" + "a".repeat(2 * 1024 * 1024 - 8))}`;
+    const aboveLimit = `data:image/png;base64,${btoa("\x89PNG\r\n\x1a\n" + "a".repeat(2 * 1024 * 1024 - 7))}`;
+    expect(sanitizeHttpsLogoUrl(atLimit)).toBe(atLimit);
+    expect(sanitizeHttpsLogoUrl(aboveLimit)).toBeNull();
+    expect(sanitizeHttpsLogoUrl(`https://cdn.example.com/${"a".repeat(2048)}`)).toBeNull();
   });
 
   it("segue a cascata do cliente: manual -> domínio -> nada, respeitando logo_source=none", () => {

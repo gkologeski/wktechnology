@@ -5,9 +5,9 @@ import { searchCompanyLogos } from "@/lib/companies/logo-search.functions";
 
 export const LOGO_MAX_BYTES = 1024 * 1024;
 export const LOGO_ACCEPT = "image/png,image/jpeg,image/svg+xml,image/webp";
-const OUTPUT_PX = 128;
+const OUTPUT_PX = 512;
 
-/** Redimensiona para 128px (WEBP) mantendo a proporção; resultado leve para listas. */
+/** Mantém até 512px (WEBP) para documentos, sem ampliar imagens menores. */
 export async function fileToLogoDataUrl(file: File): Promise<string> {
   if (!LOGO_ACCEPT.split(",").includes(file.type)) {
     throw new Error("Formato não suportado. Use PNG, JPG, SVG ou WEBP.");
@@ -30,7 +30,7 @@ export async function fileToLogoDataUrl(file: File): Promise<string> {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Não foi possível processar a imagem.");
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/webp", 0.85);
+    return canvas.toDataURL("image/webp", 0.95);
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -42,6 +42,11 @@ type Patch = {
   website?: string;
   domain?: string;
 };
+
+/** RLS negada pode retornar sucesso sem linhas: nunca confirmar essa gravação. */
+function assertCompanyLogoUpdate(rows: readonly { id: string }[] | null): void {
+  if (!rows?.length) throw new Error("Você não tem permissão para editar esta empresa.");
+}
 
 export function useCompanyLogoActions(companyId: string, onDone?: () => void) {
   const qc = useQueryClient();
@@ -55,8 +60,7 @@ export function useCompanyLogoActions(companyId: string, onDone?: () => void) {
         .eq("id", companyId)
         .select("id");
       if (error) throw error;
-      // RLS negada não gera erro: nenhuma linha atualizada.
-      if (!data?.length) throw new Error("Você não tem permissão para editar esta empresa.");
+      assertCompanyLogoUpdate(data);
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["company-logos"] });

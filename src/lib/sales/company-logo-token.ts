@@ -7,10 +7,35 @@ export type CompanyLogoSourceRow = {
   website?: string | null;
 };
 
-/** Aceita apenas URLs HTTPS válidas para incorporação de logotipo em documentos. */
+const MAX_INLINE_LOGO_BYTES = 2 * 1024 * 1024;
+
+/** Imagens raster inline: tamanho limitado, base64 estrito e assinatura compatível. */
+function sanitizeInlineLogoUrl(raw: string): string | null {
+  if (raw.length > Math.ceil(MAX_INLINE_LOGO_BYTES / 3) * 4 + 32) return null;
+  const match = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(raw);
+  const type = match?.[1];
+  const payload = match?.[2];
+  if (!type || !payload || payload.length % 4 !== 0) return null;
+  const padding = payload.endsWith("==") ? 2 : payload.endsWith("=") ? 1 : 0;
+  if ((payload.length / 4) * 3 - padding > MAX_INLINE_LOGO_BYTES) return null;
+  let bytes: string;
+  try {
+    bytes = atob(payload);
+  } catch {
+    return null;
+  }
+  const valid =
+    (type === "png" && bytes.startsWith("\x89PNG\r\n\x1a\n")) ||
+    (type === "jpeg" && bytes.startsWith("\xff\xd8\xff")) ||
+    (type === "webp" && bytes.startsWith("RIFF") && bytes.slice(8, 12) === "WEBP");
+  return valid ? raw : null;
+}
+
+/** Aceita HTTPS e imagens raster inline seguras; mantém o nome por compatibilidade. */
 export function sanitizeHttpsLogoUrl(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const trimmed = raw.trim();
+  if (trimmed.startsWith("data:")) return sanitizeInlineLogoUrl(trimmed);
   if (!trimmed || trimmed.length > 2048) return null;
   for (let i = 0; i < trimmed.length; i += 1) {
     const code = trimmed.charCodeAt(i);
@@ -29,7 +54,7 @@ export function sanitizeHttpsLogoUrl(raw: unknown): string | null {
 
 /**
  * Resolve o logotipo da empresa cliente seguindo a mesma cascata do sistema:
- * logo manual (HTTPS) -> logo pelo domínio -> nada.
+ * logo manual (HTTPS ou raster inline) -> logo pelo domínio -> nada.
  */
 export function resolveCompanyLogoUrl(company?: CompanyLogoSourceRow | null): string | null {
   if (!company) return null;
@@ -58,7 +83,7 @@ function escapeAttr(value: string): string {
     .replace(/>/g, "&gt;");
 }
 
-/** Renderiza a tag <img> sanitizada ou vazio quando não há URL HTTPS válida. */
+/** Renderiza a tag <img> sanitizada ou vazio quando não há imagem válida. */
 export function renderLogoImgTag(
   url: unknown,
   alt: string,

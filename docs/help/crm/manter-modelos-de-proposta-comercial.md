@@ -8,7 +8,7 @@ route_pattern: /settings/proposal-templates
 min_permission: techsales.proposal_templates.view.workspace
 audience: internal
 sort_order: 158
-version: 10
+version: 11
 is_published: true
 ---
 
@@ -45,6 +45,8 @@ Além do formato em **Texto rico**, é possível criar modelos **Visual (página
 A tela apresenta o resultado da consulta ou da ação descrita. Confira a confirmação e o estado exibidos; uma configuração gravada não prova execução no provedor externo.
 
 ## Regras e limites
+
+O logo enviado no cadastro de **Empresas** tem prioridade sobre a imagem automática do domínio. Documentos aceitam HTTPS e imagens incorporadas PNG, JPG ou WebP válidas de até 2 MB. SVG enviado no cadastro é convertido em WebP, não incorporado diretamente. Novos envios no cadastro mantêm até 512 px, preservando proporção, sem ampliar imagens menores, e continuam limitados a arquivos de 1 MB. Um logo antigo comprimido não recupera detalhes automaticamente: envie novamente o original em alta resolução para melhorar a nitidez na proposta e no PDF.
 
 Modelos de proposta são próprios e podem se vincular ao catálogo de serviços; não são cláusulas de contrato. Edição do documento final da proposta ocorre pelo ProposalWizard. As ações respeitam as permissões efetivas do cargo em `techsales.proposal_templates` (`update` para editar, `create` para criar ou duplicar e `delete` para excluir) no workspace ativo.
 
