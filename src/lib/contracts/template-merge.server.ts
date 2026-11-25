@@ -4,6 +4,7 @@ import { parsePaymentTerms } from "@/lib/sales/payment-terms";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { loadAcceptedProposalSource, legalEntityAddress } from "./accepted-proposal.server";
+import { resolveCompanyLegalName } from "@/lib/companies/company-legal-name";
 import { mergeCompanyParty } from "./company-party";
 import { usedTokens } from "./template-tokens";
 import { paymentScheduleText } from "./payment-schedule-text";
@@ -135,7 +136,9 @@ export async function buildMergeContext(
   if (companyId) {
     const { data } = await supabase
       .from("companies")
-      .select("id, name, cnpj, address, city, state, cep, phone")
+      .select(
+        "id, name, legal_name, trade_name, custom_fields, cnpj, address, city, state, cep, phone",
+      )
       .eq("workspace_id", workspaceId)
       .eq("id", companyId)
       .maybeSingle();
@@ -387,7 +390,7 @@ export async function buildMergeContext(
           state: (person.custom_fields?.state as string) ?? null,
         }
       : {
-          name: company?.name ?? null,
+          name: resolveCompanyLegalName(company),
           cnpj: company?.cnpj ?? null,
           address: company?.address ?? null,
           city: company?.city ?? null,

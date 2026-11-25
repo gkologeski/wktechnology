@@ -8,7 +8,7 @@ route_pattern: /people/$id
 min_permission: techpeople.people.view.own
 audience: internal
 sort_order: 11
-version: 2
+version: 3
 is_published: true
 ---
 # Usar a ficha da pessoa
@@ -19,8 +19,9 @@ is_published: true
 
 ## Passo a passo
 1. Na aba "Perfil", altere "Dados básicos", "Dados pessoa jurídica" e "Notas internas".
-2. "Financeiro (restrito)" só aparece para quem vê dados sensíveis.
-3. Clique em "Salvar". 
+2. Para prestadores PJ, informe o **CNPJ** e clique em **Buscar dados do CNPJ** para sugerir **Razão social** e **Nome fantasia** a partir das bases públicas (BrasilAPI / ReceitaWS). Se já houver valor diferente, confirme antes de substituir.
+3. "Financeiro (restrito)" só aparece para quem vê dados sensíveis.
+4. Clique em "Salvar" para gravar as alterações.
 ## Resultado esperado
 "Ficha atualizada". Cada aba confirma o que foi salvo, por exemplo "Alocação criada" ou "Documento adicionado".
 
@@ -44,6 +45,7 @@ is_published: true
 - Documento: até 20 MB (PDF, imagem ou Word). Alerta 30 dias antes da validade.
 - Na aba "Alocações", o painel "Contratação integrada e acessos" exige `techpeople.employment.view` (ver) e `.manage` (gerir). "Preparar convite de acesso" gera um link; o envio não é automático.
 - Encerrar vínculo e revisar modelo de acesso pedem motivo com pelo menos 10 caracteres.
+- A consulta **Buscar dados do CNPJ** em **Dados pessoa jurídica** exige permissão de edição da pessoa, apenas sugere **Razão social** e **Nome fantasia** na tela e só persiste ao clicar em **Salvar**.
 
 ## Erros comuns
 - "Pessoa indisponível ou sem acesso.": você não pode ver essa pessoa.

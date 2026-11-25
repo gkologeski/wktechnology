@@ -5970,6 +5970,7 @@ export type Database = {
           id: string
           industry: string | null
           is_target_account: boolean
+          legal_name: string | null
           lifecyclestage: string | null
           linkedin_company_page: string | null
           logo_source: string
@@ -5987,6 +5988,7 @@ export type Database = {
           state: string | null
           target_account_tier: string | null
           timezone: string | null
+          trade_name: string | null
           twitterhandle: string | null
           type: string | null
           updated_at: string
@@ -6020,6 +6022,7 @@ export type Database = {
           id?: string
           industry?: string | null
           is_target_account?: boolean
+          legal_name?: string | null
           lifecyclestage?: string | null
           linkedin_company_page?: string | null
           logo_source?: string
@@ -6037,6 +6040,7 @@ export type Database = {
           state?: string | null
           target_account_tier?: string | null
           timezone?: string | null
+          trade_name?: string | null
           twitterhandle?: string | null
           type?: string | null
           updated_at?: string
@@ -6070,6 +6074,7 @@ export type Database = {
           id?: string
           industry?: string | null
           is_target_account?: boolean
+          legal_name?: string | null
           lifecyclestage?: string | null
           linkedin_company_page?: string | null
           logo_source?: string
@@ -6087,6 +6092,7 @@ export type Database = {
           state?: string | null
           target_account_tier?: string | null
           timezone?: string | null
+          trade_name?: string | null
           twitterhandle?: string | null
           type?: string | null
           updated_at?: string

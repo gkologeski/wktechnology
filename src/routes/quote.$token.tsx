@@ -410,7 +410,12 @@ type TemplatedQuoteProps = {
   html: string;
   quote: QuoteForRender;
   items: LineItem[];
-  company: { name?: string | null; website?: string | null; logo?: string | null } | null;
+  company: {
+    name?: string | null;
+    legal_name?: string | null;
+    website?: string | null;
+    logo?: string | null;
+  } | null;
   provider?: { name?: string | null; logo?: string | null } | null;
   contact: { first_name?: string | null; last_name?: string | null; email?: string | null } | null;
   agent: { full_name?: string | null; email?: string | null } | null;
@@ -450,6 +455,7 @@ function TemplatedQuote(props: TemplatedQuoteProps) {
       },
       company: {
         name: company?.name ?? "",
+        legal_name: company?.legal_name ?? company?.name ?? "",
         domain: company?.website ?? "",
         logo: company?.logo ?? null,
       },

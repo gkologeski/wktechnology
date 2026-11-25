@@ -3340,6 +3340,13 @@
       "when": 1795618395112,
       "tag": "0476_optimize_sales_context_and_timeline_single_pass",
       "breakpoints": true
+    },
+    {
+      "idx": 477,
+      "version": "7",
+      "when": 1795632067686,
+      "tag": "0477_add_company_legal_and_trade_name",
+      "breakpoints": true
     }
   ]
 }

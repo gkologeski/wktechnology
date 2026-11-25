@@ -21,6 +21,8 @@ export type AcceptedProposalSource = {
   company: {
     id: string;
     name: string;
+    legal_name?: string | null;
+    trade_name?: string | null;
     cnpj: string | null;
     address: string | null;
     city: string | null;

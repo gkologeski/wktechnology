@@ -19,6 +19,7 @@ import {
   resolveProviderLogoUrl,
   type CompanyLogoSourceRow,
 } from "@/lib/sales/company-logo-token";
+import { resolveCompanyLegalName } from "@/lib/companies/company-legal-name";
 
 const PROPOSAL_COLUMNS =
   "id, workspace_id, title, body, design_json, status, locked, version, total_amount, currency, expires_at, sent_at, decided_at, created_at, owner_id, company_id, contact_id, deal_id, quote_id, legal_entity_id, payment_method, installments_count, validity_days, payment_terms";
@@ -81,7 +82,9 @@ export async function loadProposalDocument(
       : p.company_id
         ? sb
             .from("companies")
-            .select("name, cnpj, custom_fields, logo_url, logo_source, domain, website")
+            .select(
+              "name, legal_name, trade_name, cnpj, custom_fields, logo_url, logo_source, domain, website",
+            )
             .eq("id", p.company_id)
             .eq("workspace_id", p.workspace_id)
             .maybeSingle()
@@ -107,6 +110,8 @@ export async function loadProposalDocument(
   } | null;
   const companyData = company?.data as {
     name?: string | null;
+    legal_name?: string | null;
+    trade_name?: string | null;
     cnpj?: string | null;
     custom_fields?: Record<string, unknown> | null;
     logo_url?: string | null;
@@ -179,8 +184,7 @@ export async function loadProposalDocument(
         installmentsCount: p.installments_count ?? null,
         paymentTerms: p.payment_terms ?? null,
         companyName,
-        companyLegalName:
-          (companyData?.custom_fields?.["razao_social"] as string | undefined) ?? companyName,
+        companyLegalName: resolveCompanyLegalName(companyData) ?? companyName,
         companyCnpj: companyData?.cnpj ?? null,
         clientLogoUrl,
         contactName,

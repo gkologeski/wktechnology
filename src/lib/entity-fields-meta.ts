@@ -34,6 +34,8 @@ export const LABELS: Record<string, string> = {
   website: "Site",
   domain: "Domínio",
   cnpj: "CNPJ",
+  legal_name: "Razão social",
+  trade_name: "Nome fantasia",
   cnpj_enriched_at: "CNPJ enriquecido em",
   industry: "Setor",
   size: "Porte",

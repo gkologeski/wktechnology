@@ -451,6 +451,7 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { resolveCompanyLogoUrl, resolveProviderLogoUrl } =
       await import("@/lib/sales/company-logo-token");
+    const { resolveCompanyLegalName } = await import("@/lib/companies/company-legal-name");
     const { data: quote, error } = await supabaseAdmin
       .from("quotes")
       .select(
@@ -480,13 +481,16 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
     let company: {
       id: string;
       name: string | null;
+      legal_name: string | null;
       website: string | null;
       logo: string | null;
     } | null = null;
     if (quote.company_id) {
       const r = await supabaseAdmin
         .from("companies")
-        .select("id, name, website, domain, logo_url, logo_source")
+        .select(
+          "id, name, legal_name, trade_name, custom_fields, website, domain, logo_url, logo_source",
+        )
         .eq("id", quote.company_id)
         .eq("workspace_id", quote.workspace_id)
         .maybeSingle();
@@ -494,6 +498,7 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
         company = {
           id: r.data.id,
           name: r.data.name,
+          legal_name: resolveCompanyLegalName(r.data as Record<string, unknown>),
           website: r.data.website,
           logo: resolveCompanyLogoUrl(r.data),
         };

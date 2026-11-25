@@ -5,7 +5,7 @@ import { HrScreenAccess, HrRecordAccess, HrAccessError } from "@/components/hr-a
 import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 // /people/$id — ficha da pessoa (TechPeople).
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { NotificationTargetNotice } from "@/components/notifications/notification-target-notice";
 import { getNotificationDocumentTarget } from "@/lib/notifications/hr-targets.functions";
@@ -24,6 +24,8 @@ import {
   Eye,
   Pencil,
   Trash2,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
@@ -63,6 +65,7 @@ import {
   type PeopleStatus,
   type PeopleEmploymentType,
 } from "@/lib/people/people.functions";
+import { lookupCnpjForPerson } from "@/lib/people/person-cnpj-lookup.functions";
 import {
   listPersonDocuments,
   listPersonTimeline,
@@ -83,6 +86,8 @@ import { OnboardingPanel } from "@/components/people/onboarding-panel";
 import { OffboardingCompliancePanel } from "@/components/people/offboarding-compliance-panel";
 import { BenefitsPanel } from "@/components/people/benefits-panel";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { isValidCnpj } from "@/lib/cnpj";
+import { applyPersonCnpjSuggestion } from "@/lib/companies/company-legal-name";
 
 import { PhoneInput } from "@/components/ui/phone-input";
 export const Route = createFileRoute("/_authenticated/people/$id")({
@@ -350,6 +355,47 @@ function PersonForm({
   const [cnpj, setCnpj] = useState(p.cnpj ?? "");
   const [legalEntityName, setLegalEntityName] = useState(p.legal_entity_name ?? "");
   const [tradeName, setTradeName] = useState(p.trade_name ?? "");
+  const lookupCnpj = useServerFn(lookupCnpjForPerson);
+  const [lookingUpCnpj, setLookingUpCnpj] = useState(false);
+  const [cnpjLookupError, setCnpjLookupError] = useState<string | null>(null);
+  const cnpjLookupEpoch = useRef(0);
+
+  const fetchPersonCnpj = async () => {
+    if (!canWrite || lookingUpCnpj || !isValidCnpj(cnpj)) return;
+    const epoch = ++cnpjLookupEpoch.current;
+    setLookingUpCnpj(true);
+    setCnpjLookupError(null);
+    try {
+      const suggestion = await lookupCnpj({ data: { id: p.id, cnpj } });
+      if (epoch !== cnpjLookupEpoch.current) return;
+      const { next, changed, conflicts } = applyPersonCnpjSuggestion(
+        { legal_entity_name: legalEntityName, trade_name: tradeName },
+        suggestion,
+      );
+      if (!changed) {
+        toast.info("Razão social e nome fantasia já correspondem aos dados do CNPJ.");
+        return;
+      }
+      if (conflicts.length > 0) {
+        const labels = conflicts.map((item) => item.label.toLowerCase()).join(" e ");
+        const accepted = await confirmDialog(
+          `Substituir ${labels} pelos dados do CNPJ? Campos não informados pela consulta serão mantidos. A alteração só será gravada ao salvar.`,
+        );
+        if (!accepted || epoch !== cnpjLookupEpoch.current) return;
+      }
+      setLegalEntityName(next.legal_entity_name);
+      setTradeName(next.trade_name);
+      toast.success("Dados do CNPJ carregados. Revise antes de salvar.");
+    } catch (e) {
+      if (epoch !== cnpjLookupEpoch.current) return;
+      const msg = (e as { message?: string })?.message ?? "Não foi possível consultar o CNPJ.";
+      setCnpjLookupError(msg);
+      toast.error(msg);
+    } finally {
+      if (epoch === cnpjLookupEpoch.current) setLookingUpCnpj(false);
+    }
+  };
+
   const [simplesOptante, setSimplesOptante] = useState<"" | "yes" | "no">(
     p.simples_optante === true ? "yes" : p.simples_optante === false ? "no" : "",
   );
@@ -663,24 +709,60 @@ function PersonForm({
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>CNPJ</Label>
-                <Input
-                  value={cnpj}
-                  disabled={!canWrite}
-                  onChange={(e) => setCnpj(e.target.value)}
-                />
+                <Label htmlFor="person-cnpj">CNPJ</Label>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Input
+                    id="person-cnpj"
+                    value={cnpj}
+                    disabled={!canWrite}
+                    onChange={(e) => {
+                      setCnpj(e.target.value);
+                      setCnpjLookupError(null);
+                    }}
+                    placeholder="00.000.000/0000-00"
+                  />
+                  {canWrite ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={lookingUpCnpj || !isValidCnpj(cnpj)}
+                      onClick={() => void fetchPersonCnpj()}
+                      className="shrink-0 gap-1.5"
+                      title={
+                        isValidCnpj(cnpj)
+                          ? "Consultar Razão Social e Nome Fantasia pelo CNPJ"
+                          : "Informe um CNPJ válido com 14 dígitos"
+                      }
+                    >
+                      {lookingUpCnpj ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      Buscar dados do CNPJ
+                    </Button>
+                  ) : null}
+                </div>
+                {cnpjLookupError ? (
+                  <p className="text-xs text-destructive" role="alert">
+                    {cnpjLookupError}
+                  </p>
+                ) : null}
               </div>
               <div className="space-y-2">
-                <Label>Razão social</Label>
+                <Label htmlFor="person-legal-entity-name">Razão social</Label>
                 <Input
+                  id="person-legal-entity-name"
                   value={legalEntityName}
                   disabled={!canWrite}
                   onChange={(e) => setLegalEntityName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Nome fantasia</Label>
+                <Label htmlFor="person-trade-name">Nome fantasia</Label>
                 <Input
+                  id="person-trade-name"
                   value={tradeName}
                   disabled={!canWrite}
                   onChange={(e) => setTradeName(e.target.value)}

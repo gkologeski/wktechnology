@@ -3,6 +3,8 @@
 type Party = {
   id?: string;
   name?: string | null;
+  legal_name?: string | null;
+  trade_name?: string | null;
   cnpj?: string | null;
   address?: string | null;
   city?: string | null;
@@ -27,7 +29,15 @@ export function mergeCompanyParty<T extends Party>(
   if (!snapshot && !current) return null;
   const base = { ...(current ?? {}), ...(snapshot ?? {}) } as T;
   if (current) {
-    for (const k of ["cnpj", "address", "city", "state", "cep"] as const) {
+    for (const k of [
+      "legal_name",
+      "trade_name",
+      "cnpj",
+      "address",
+      "city",
+      "state",
+      "cep",
+    ] as const) {
       if (filled(current[k])) (base as Party)[k] = current[k];
     }
   }

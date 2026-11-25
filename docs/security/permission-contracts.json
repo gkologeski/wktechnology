@@ -10208,7 +10208,7 @@
         "src/lib/people/allocations.functions.ts": "462fc4923d9722430e112cd51965545af07896ee2bed5f14632051cf221c5053",
         "src/lib/workflows/engine/actions-hiring.server.ts": "ea623a453c25411c96888d09eae78cbe9da9d0e8f07ad4ec40ab32649c44f0a8",
         "src/lib/workspace-invites.functions.ts": "f8432694fbb9bca4170b6250dfb5e2d458c7f43086eda07c0a52823a9112d7ee",
-        "src/routes/_authenticated/people.$id.tsx": "4be6bedc763f65b6efed2a397eb143b3b21a7ac8f0d4d97d77dce7ae86e99552",
+        "src/routes/_authenticated/people.$id.tsx": "99e91eb48290e6e5132a83d2e924b11a80452ca790bedfe4bfa5172c9e16f024",
         "src/routes/_authenticated/settings.permissions.tsx": "a0950fe8296a5573020ae903b29b3db04c115de817a5635b71e154a024fd3b68",
         "src/routes/accept-invite.$token.tsx": "b9b9124eae7d92cd6463124ccfe75437e79df757c2e5de72be6fca6da10d31af",
         "drizzle/migrations/0311_hiring_employment_and_access_models.sql": "d32fedece1e49576737df425c0d42a3af7a827bc0599d914a8620a9686b33783",
@@ -11957,7 +11957,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: generated types add only the contract_purchase_payables_generate RPC signature; no table/grant change. 23/11/2026: regenerated for contract_purchase_sales table and contract_purchase_sale_set RPC (no new grants). | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
       "files": {
-        "src/integrations/supabase/types.ts": "b2077cc21f3da929f300319a37b897913ba71f75b3301d5ff5df5cc62ed2514b",
+        "src/integrations/supabase/types.ts": "668152afded6220d625c857f99a61babcbc30e8ad10c7ff2d9e43257c801d5ac",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -12185,7 +12185,7 @@
         "drizzle/migrations/0315_legal_entity_guard_workspace_cascade.sql": "350b426fc8a8a038d3eb2cb3d0f4590dd3a378b0e5d74c557eba69fff60155d5",
         "drizzle/migrations/0316_cnpj_operational_linkage_and_summary.sql": "e7f7e9845ed6834581f5fbca725a969a92ef561e5fef026e9759ec83ae7f5e75",
         "drizzle/migrations/0317_cnpj_summary_scoped_performance.sql": "bca8c025b20c50b562e6f58af90ce258ec4ca7c104961c46fb8d20b30d2b0991",
-        "src/lib/legal-entity-lookup.server.ts": "379d6a324c921a73f22bd3cff2eefaab14e827dab8a9879a1340f6f5b98f9215"
+        "src/lib/legal-entity-lookup.server.ts": "83e4a6e7e2969557a9e6e001e0eeeefcbdd8176486571bdd445f515235a9b17f"
       }
     },
     {
@@ -12486,16 +12486,16 @@
       "files": {
         "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
         "src/lib/contracts/contract-create.server.ts": "773a356a646938842dcd1ab4d34984d5c64143bd0e77bb68b0f0032155bb84a3",
-        "src/lib/contracts/template-merge.server.ts": "732fa6eba5cdf2c462b59692f65ad725ff630b28e7fc64df094639562fac0feb",
+        "src/lib/contracts/template-merge.server.ts": "f40cdf0fab7fb8d1413924466be7fb0899d5b10678e5851e564c5c4e4c4f8cae",
         "src/lib/contracts/templates.functions.ts": "56ec7226789a5aff861cd6354e4102cc1d5c94189c47bd6caf86a534fbcda4ec",
-        "src/lib/proposals/proposal-document.server.ts": "62d9947758e03d7dab717921ca4bccd9761cca06f4ea3afa59f40120e2202a76",
+        "src/lib/proposals/proposal-document.server.ts": "7f800eb81b841f995f5bfd12efa0563abbe9ca99c1849cde4f67882246275ee7",
         "src/lib/sales-flow.server.ts": "a8995103874a5940e1c3a28d67dbba44a1395eeb2a0a1a6515442e2ce150ae82",
-        "src/lib/contracts/accepted-proposal.server.ts": "d49d8bcf9bee5c0ea89fadb2bf672f4341f0aee216f6b2b46c05b74f0bc17366",
+        "src/lib/contracts/accepted-proposal.server.ts": "470308e0533ce6343af484fb0d955fdfee12919fcaf2f1ffebdcf1dea3519f23",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "acb9e2e990a5f17064c2756374f46aa20af8dfcac0473af85261ec2182625ca7",
         "src/lib/sales-flow.functions.ts": "05c7c1905198cb686d1d0b0b223f9cd2cf96b1bb1f10f687ddf866c0f9501c6e",
         "src/components/proposals/proposal-wizard.tsx": "4e1decddce55cdc60b182a0d49497fe748767ca18264dd71a1c445fbb4105d44",
-        "src/lib/proposals/proposal-draft.server.ts": "18f697ab06685194d37a3f244e1a9f43623547bbb38c7a506350f11fbf62f9fa",
+        "src/lib/proposals/proposal-draft.server.ts": "1dc72391104cbf53693d73d16408af467c32ee69dffcdf43d28ba593f19a2fbc",
         "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
         "drizzle/migrations/0321_proposal_versions_cascade.sql": "d74b28603f0279e6cb749f1af8ae34658c561ed0f659964fea8d6f4a2b257bcf",
         "drizzle/migrations/0323_proposal_payment_method.sql": "cf944cd4385707aeb616275a4e4a84839911ae49e6f3a50c3446c3f216bf9a99",
@@ -14239,7 +14239,7 @@
       "kind": "presentation",
       "rationale": "Pure merge/format of already-authorized current company data and accepted proposal snapshot. No I/O, query, action or grant. buildMergeContext retains workspace filters and user/RLS company access.",
       "files": {
-        "src/lib/contracts/company-party.ts": "f236d39ef765d9fdc551abd8556241baaa8cc2079b1623fde3b92bbab3b434ed"
+        "src/lib/contracts/company-party.ts": "7a3b31733b92421b1b0e42defdc8602d21b836388a27130460893e81f8fce88d"
       }
     },
     {
@@ -15511,7 +15511,7 @@
         "drizzle/migrations/0366_contract_attachments.sql": "572bbe652ee2afe4a50a84d785ba6c633b44d522cfa34f4947a2844944d9ddd7",
         "src/lib/contracts/signature-package.server.ts": "0ce2a44e6d6a9fdc358cd00901608235a93e399df9914bd471833dcc880f9938",
         "src/lib/contracts/signature-package-pdf.server.ts": "3fdc7bc18c0a461c9c4ed10c7780f9b9152c4af11324b3d9b1bedf6c120f17e7",
-        "src/lib/contracts/quote-pdf.server.ts": "0320649038b611e37d23a9d1b5b7244746a7c26744eaa1da0e6ac5ff48543b13",
+        "src/lib/contracts/quote-pdf.server.ts": "985afce0f405957c40f6aa34fd4f3bb2118041025b31873399cec7f619c74a61",
         "src/lib/contracts/proposal-pdf.server.ts": "ea3850ccbcab518c80728ebb25dc5894c06d6422bd85cf82f5882921617a6033",
         "drizzle/migrations/0367_contract_signature_packages.sql": "2479a6a3f1af4f49c966969646e32b901b75922cd15649e2b798794d8fd91acf",
         "src/components/contracts/signature-attachments-summary.tsx": "2a0e06fa6cba5466c4d92f2e1830e01593effa3377a6c4790f5dc2f62c5efd03",
@@ -15582,7 +15582,7 @@
       },
       "files": {
         "src/routes/api/public/quotes/$token.pdf.ts": "6cc59258bf60a1b47575bf1b65552dc7dd347aefb90f8d1b97acd925ff2b7aa0",
-        "src/routes/quote.$token.tsx": "fc93ba419ce34df5ff18b111ec0b7c93a8b30aadab266d89f569f92b7ee7d9be"
+        "src/routes/quote.$token.tsx": "1359d390ddd2c02333226bb43f695c4d3ddc6ec608f755cb8e812af18a0302d0"
       },
       "exception": {
         "mechanism": "Random quote public_token matched exactly by the server; only published status permits rendering.",
@@ -27227,7 +27227,7 @@
         "src/components/contracts/contract-form/use-contract-form.ts": "4146cb6f52a6badcf15b6ecc573821a86f1d4d59ca1bba0f0dca7a3a9c87f4e4",
         "src/components/finance/legal-entity-select.tsx": "fbed075385de5611b2b9bd32380d8f27eae6dd8cbac6630993bd6e75b3906f22",
         "src/lib/finance-references.functions.ts": "c92bbbdfd38e7dadb918e6fc8e439266c7b1d5ed89307dc2103bc692204b3448",
-        "src/lib/quotes.functions.ts": "a9b8d5821a6ceda13b6931a4ef38dffe6b4cc1f955bb505603059b1edf612c96",
+        "src/lib/quotes.functions.ts": "2841add00cf6870487efe1033d6de347cb127ff32f7f47426cce95ea69cf9e18",
         "src/components/contracts/contract-links-history-card.tsx": "fb96a36c0d4ccd7b64f8bdc9d276c40ca7acf882cd70e6c522eb28277ad1d65f"
       }
     },
@@ -27396,7 +27396,7 @@
         "drizzle/migrations/0472_proposal_visual_templates_schema.sql": "685dfe312963a52bfbef153a20b85167d82026671ccc819818c1d52dd8470049",
         "drizzle/migrations/0473_proposal_assets_storage_policies.sql": "b8fcbc0ff60d53a8cc088b7bb31c41681dcd01d83afadb4adf87c233d865da8b",
         "drizzle/migrations/0474_grant_proposals_design_json_columns.sql": "b58bdeacd874f23ac6b7aaee7e03105536753900e8d2927864bad1e903899f92",
-        "src/lib/proposals/proposal-assets.functions.ts": "f23a05a4a94aa7aa62e12512e817def23f655bce396e10325f0396698ffec11a",
+        "src/lib/proposals/proposal-assets.functions.ts": "804812f175f703eda8351757cb2b991826fdd8f92dc83c36e7b0dd89bfe07737",
         "src/lib/proposals/proposal-assets.server.ts": "7c374c0d1ab03b5411e40bec4eb23424451965c6d6252bc1adc46790c30e76f4",
         "src/components/proposals/visual-editor/visual-canvas.tsx": "742779d84d00e403ab821b640fd94411fa522e8909077c82351a446a908ecd38",
         "src/components/proposals/visual-editor/visual-element-view.tsx": "9b0fdb9266ad4f2073ecb4410f858b766fbe8228e359d2eb7076f2f9728d6a67",
@@ -27775,6 +27775,188 @@
       "files": {
         "src/lib/timeline/feed-merge.ts": "f9e41cb343d488d0e9124547fb19cb7fc8bc0168996135a2ddcc03ba179e4799"
       }
+    },
+    {
+      "id": "company-legal-name-pure-helper",
+      "kind": "presentation",
+      "rationale": "Pure deterministic helpers to resolve company legal name (legal_name -> custom_fields.razao_social -> name) and compute CNPJ enrichment diffs/conflicts without I/O, queries, credentials or business actions.",
+      "files": {
+        "src/lib/companies/company-legal-name.ts": "9d1e2ce6989605faa63cf1845bb4ef37d8b9ae0c6d257e661e23db190eec2bd6",
+        "src/lib/timeline/property-labels.ts": "7511f96f980b657f60ae4af4a18e2b8a5aefa30e531814f72fb3e13f513ca78e",
+        "src/lib/entity-fields-meta.ts": "2ef99fb54ea9c7a6b9f49bb64892741428d6eca467965f137c21ea61353188b3"
+      }
+    },
+    {
+      "id": "company-legal-name-cnpj-enrichment",
+      "kind": "business",
+      "resources": [
+        "techsales.companies",
+        "techsales.prospecting_enrichment"
+      ],
+      "actions": [
+        "view",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "rationale": "Adds nullable native legal_name and trade_name columns on public.companies with additive backfill from custom_fields.razao_social and preserves existing RLS/grants without widening anon access. Enriching a company by CNPJ requires requireSalesPermission, active workspace via getActiveWorkspaceId and per-record update authorization via assertSalesRecord before querying BrasilAPI/ReceitaWS; writes legal_name/trade_name without overwriting display name and asks confirmation before replacing conflicting values. Five executable unit tests cover allowed, missing permission, explicit deny, foreign workspace and inactive membership.",
+      "controls": [
+        {
+          "file": "src/lib/integrations/brasilapi-cnpj.functions.ts",
+          "symbol": "enrichCompanyByCNPJ"
+        },
+        {
+          "file": "src/lib/integrations/brasilapi-cnpj.server.ts",
+          "symbol": "runEnrichCompanyByCNPJ"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-sales-capabilities.ts",
+          "symbol": "useSalesCapabilities"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0477_add_company_legal_and_trade_name.sql",
+          "symbol": "capture_proposal_document_version"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_record_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/integrations/brasilapi-cnpj-auth.test.ts",
+          "name": "allows authorized active member and writes legal_name/trade_name without touching name"
+        },
+        "missing_permission": {
+          "file": "src/lib/integrations/brasilapi-cnpj-auth.test.ts",
+          "name": "denies missing permission before querying external CNPJ API"
+        },
+        "explicit_deny": {
+          "file": "src/lib/integrations/brasilapi-cnpj-auth.test.ts",
+          "name": "denies explicit deny before querying external CNPJ API"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/integrations/brasilapi-cnpj-auth.test.ts",
+          "name": "denies foreign workspace company before querying external CNPJ API"
+        },
+        "inactive_member": {
+          "file": "src/lib/integrations/brasilapi-cnpj-auth.test.ts",
+          "name": "denies inactive workspace member before querying external CNPJ API"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0477_add_company_legal_and_trade_name.sql": "81e023adb6745aab7f88b51d0d8bfdc708f1fff3c51d9bcaf09c3d50f6908daf",
+        "src/lib/integrations/brasilapi-cnpj.functions.ts": "50c2d75652756f003c38c116931894d23ae21180944051ba95e3e68c51b96ef3",
+        "src/lib/integrations/brasilapi-cnpj.server.ts": "92922661783e2b795abcc13c8d5da8fed98a7428ff06091e5d3f748d096eb297",
+        "src/routes/_authenticated/companies.$id.tsx": "4765d484bb8642be6fb35ab7220b1f686fe17129c86cba82fe2aa0f4f43d7ef9"
+      },
+      "permission_keys": [
+        "techsales.companies.view.own",
+        "techsales.companies.view.team",
+        "techsales.companies.view.workspace",
+        "techsales.companies.update.own",
+        "techsales.companies.update.team",
+        "techsales.companies.update.workspace",
+        "techsales.prospecting_enrichment.manage.own",
+        "techsales.prospecting_enrichment.manage.team",
+        "techsales.prospecting_enrichment.manage.workspace"
+      ]
+    },
+    {
+      "id": "person-pj-cnpj-lookup",
+      "kind": "business",
+      "resources": [
+        "techpeople.people"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "rationale": "Allows authorized TechPeople editors to query public CNPJ registries (BrasilAPI -> ReceitaWS) to suggest legal_entity_name and trade_name on /people/$id without writing to the database. Requires requireSupabaseAuth, active workspace via getActiveWorkspaceId and per-record update access via assertHrRecordAccess (or assertHrCreate for unsaved people) before any outbound request; persistence stays in the existing authorized upsertPerson flow. Five executable unit tests cover allowed, missing permission, explicit deny, foreign workspace and inactive membership.",
+      "controls": [
+        {
+          "file": "src/lib/people/person-cnpj-lookup.functions.ts",
+          "symbol": "lookupCnpjForPerson"
+        },
+        {
+          "file": "src/lib/people/person-cnpj-lookup.server.ts",
+          "symbol": "lookupPersonCnpj"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrCreate"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0203_interview_response_action_scope.sql",
+          "symbol": "hr_record_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/people/person-cnpj-lookup.test.ts",
+          "name": "allows authorized active member and returns PJ suggestion without writing to database"
+        },
+        "missing_permission": {
+          "file": "src/lib/people/person-cnpj-lookup.test.ts",
+          "name": "denies missing permission before calling public CNPJ API"
+        },
+        "explicit_deny": {
+          "file": "src/lib/people/person-cnpj-lookup.test.ts",
+          "name": "denies explicit deny before calling public CNPJ API"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/people/person-cnpj-lookup.test.ts",
+          "name": "denies foreign workspace person before calling public CNPJ API"
+        },
+        "inactive_member": {
+          "file": "src/lib/people/person-cnpj-lookup.test.ts",
+          "name": "denies inactive member before calling public CNPJ API"
+        }
+      },
+      "files": {
+        "src/lib/people/person-cnpj-lookup.functions.ts": "e3f5adaaf230776fff465ecacc1136851a1283954140271861abdb9de96a018f",
+        "src/lib/people/person-cnpj-lookup.server.ts": "ae506c9a7ba644cec9266b66e2594166795e560c1fd5c200622d2da31d60ee9e"
+      },
+      "permission_keys": [
+        "techpeople.people.view.own",
+        "techpeople.people.view.team",
+        "techpeople.people.view.workspace",
+        "techpeople.people.create.own",
+        "techpeople.people.create.workspace",
+        "techpeople.people.update.own",
+        "techpeople.people.update.team",
+        "techpeople.people.update.workspace"
+      ]
     }
   ],
   "retired": {

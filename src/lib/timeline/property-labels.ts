@@ -40,6 +40,8 @@ export const PROPERTY_LABELS: Record<string, string> = {
   stage_id: "Etapa",
   stage_substatus_id: "Substatus",
   name: "Nome",
+  legal_name: "Razão social",
+  trade_name: "Nome fantasia",
   value: "Valor",
   currency: "Moeda",
   expected_close_date: "Fechamento esperado",

@@ -8,7 +8,7 @@ route_pattern: /settings/enrichment
 min_permission: techsales.prospecting_enrichment.view.own
 audience: internal
 sort_order: 161
-version: 2
+version: 3
 is_published: true
 ---
 # Enriquecer contatos, leads e empresas
@@ -37,7 +37,7 @@ Os campos são preenchidos conforme o modo escolhido. Telefones pedidos ao Apoll
 - Foto colocada manualmente nunca é trocada.
 - Conta-se um crédito por retorno encontrado de cada provedor, mesmo sem mudança de campo.
 - A simulação não grava mudanças nem créditos, mas ainda consulta os provedores.
-- CNPJ: usa BrasilAPI e, se falhar, ReceitaWS. Exige 14 dígitos e só preenche campos vazios (nome, setor, porte, telefone, endereço, cidade, estado, CEP e domínio).
+- CNPJ: usa BrasilAPI e, se falhar, ReceitaWS. Exige 14 dígitos, preenche **Razão social** e **Nome fantasia** separadamente (além de setor, porte, telefone, endereço, cidade, estado, CEP e domínio) e nunca sobrescreve o campo **Nome**. Na ficha da empresa, quando já existir valor diferente, o sistema pede confirmação antes de substituir.
 
 ## Erros comuns
 - "Apollo não conectado: configure APOLLO_API_KEY em Integrações.": conecte o Apollo.

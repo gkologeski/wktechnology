@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Trash2, ExternalLink, Sparkles } from "lucide-react";
+import { ArrowLeft, Trash2, ExternalLink, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ActivityTimeline } from "@/components/activity-timeline";
@@ -14,6 +14,7 @@ import { LinkedProjectsCard } from "@/components/projects/linked-projects-card";
 import { CompanyLogoEditor } from "@/components/companies/company-logo-editor";
 import { RecordEnrichedBadge } from "@/components/enrichment/record-enriched-badge";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useSalesCapabilities } from "@/lib/access-control/use-sales-capabilities";
 import { useAuth } from "@/lib/auth";
 import { CompanyHierarchy } from "@/components/companies/company-hierarchy";
 import { enrichCompanyByCNPJ } from "@/lib/integrations/brasilapi-cnpj.functions";
@@ -75,11 +76,24 @@ function CompanyDetail() {
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.companies");
   const canDelete = !deletePermLoading && canDeleteRecord(company);
   const linkedOnly = useIsLinkedOnly(company);
-  const { can } = usePermissions();
+  const { can, canAny } = usePermissions();
   const { user } = useAuth();
+  const capabilities = useSalesCapabilities("companies", [id]);
+  const canUpdateCompany = capabilities.for(id).can_update;
   const isOwn = !!user && (company?.owner_id === user.id || company?.assigned_to === user.id);
   const canEditLogo =
     can("techsales.companies.manage.workspace") || (can("techsales.companies.update.own") && isOwn);
+  const canEnrichCnpj =
+    canUpdateCompany &&
+    (canAny([
+      "techsales.prospecting_enrichment.manage.own",
+      "techsales.prospecting_enrichment.manage.team",
+      "techsales.prospecting_enrichment.manage.workspace",
+      "techsales.companies.update.own",
+      "techsales.companies.update.team",
+      "techsales.companies.update.workspace",
+    ]) ||
+      canEditLogo);
 
   if (!company) return <p className="text-sm text-muted-foreground">Carregando...</p>;
   if (linkedOnly)
@@ -111,15 +125,43 @@ function CompanyDetail() {
       toast.error("Cadastre o CNPJ antes de enriquecer.");
       return;
     }
+    if (!canEnrichCnpj) {
+      toast.error("Você não tem permissão para enriquecer esta empresa.");
+      return;
+    }
     setEnriching(true);
     try {
       const res = await runEnrich({ data: { company_id: company.id } });
-      if (res?.ok) {
-        toast.success("Empresa enriquecida via BrasilAPI");
-        await load();
-      } else {
+      if (!res?.ok) {
         toast.error("CNPJ não encontrado nas bases públicas.");
+        return;
       }
+      if (res.needsConfirmation) {
+        const summary = res.conflicts
+          .map((item) => `${item.label} ("${item.current}" → "${item.incoming}")`)
+          .join("; ");
+        const accepted = await confirmDialog(
+          `A consulta do CNPJ retornou valores diferentes para: ${summary}. Deseja substituir os valores atuais? O campo Nome não será alterado.`,
+        );
+        if (!accepted) {
+          toast.info("Substituição cancelada. Nenhum campo foi alterado.");
+          return;
+        }
+        const appliedRes = await runEnrich({ data: { company_id: company.id, overwrite: true } });
+        if (!appliedRes?.ok) {
+          toast.error("CNPJ não encontrado nas bases públicas.");
+          return;
+        }
+        toast.success("Dados da empresa atualizados via CNPJ.");
+        await load();
+        return;
+      }
+      toast.success(
+        res.applied > 0
+          ? "Empresa enriquecida via CNPJ."
+          : "Os dados da empresa já estão alinhados ao CNPJ.",
+      );
+      await load();
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Falha ao enriquecer");
     } finally {
@@ -141,7 +183,7 @@ function CompanyDetail() {
             <h1 className="text-2xl font-bold text-foreground truncate">{company.name}</h1>
             <RecordEnrichedBadge entity="company" id={company.id} />
           </div>
-          <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
+          <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
             {company.industry && (
               <Badge variant="outline" className="rounded-full">
                 {translateFieldValue("industry", company.industry)}
@@ -163,7 +205,7 @@ function CompanyDetail() {
                 {company.website} <ExternalLink className="h-3 w-3" />
               </a>
             )}
-          </p>
+          </div>
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -171,10 +213,21 @@ function CompanyDetail() {
           variant="outline"
           size="sm"
           onClick={enrich}
-          disabled={enriching || !(company as unknown as { cnpj?: string | null }).cnpj}
+          disabled={enriching || !canEnrichCnpj || !company.cnpj}
+          title={
+            !canEnrichCnpj
+              ? "Sem permissão para atualizar esta empresa"
+              : !company.cnpj
+                ? "Cadastre o CNPJ antes de enriquecer"
+                : "Consultar Razão Social, Nome Fantasia e demais dados pelo CNPJ"
+          }
           className="gap-1.5"
         >
-          <Sparkles className="h-3.5 w-3.5" />
+          {enriching ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Sparkles className="h-3.5 w-3.5" />
+          )}
           {enriching ? "Enriquecendo…" : "Enriquecer via CNPJ"}
         </Button>
         <Button
@@ -205,6 +258,8 @@ function CompanyDetail() {
             row={company as unknown as Record<string, unknown> & { id: string }}
             props={[
               { key: "name", label: "Nome", primary: true },
+              { key: "legal_name", label: "Razão social", primary: true },
+              { key: "trade_name", label: "Nome fantasia", primary: true },
               { key: "domain", label: "Domínio", primary: true },
               { key: "website", label: "Website", type: "url", primary: true },
               { key: "industry", label: "Indústria", primary: true },

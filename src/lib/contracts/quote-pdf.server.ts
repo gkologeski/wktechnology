@@ -3,6 +3,7 @@ import { renderQuoteTemplate, type QuoteRenderContext } from "@/lib/quote-templa
 import { formatLineItemIdentity } from "@/lib/line-item-display";
 import { renderPdfViaBrowserless, wrapForPrint } from "@/lib/pdf/print-html.server";
 import { resolveCompanyLogoUrl, resolveProviderLogoUrl } from "@/lib/sales/company-logo-token";
+import { resolveCompanyLegalName } from "@/lib/companies/company-legal-name";
 function formatCurrencyBRL(value: number, currency: string): string {
   try {
     return new Intl.NumberFormat("pt-BR", {
@@ -159,22 +160,26 @@ export async function renderQuotePdf(sb: SupabaseClient, id: string, browserless
     .order("position");
 
   if (itemsError) throw new Error("Não foi possível carregar os itens da cotação.");
-  let company: {
+  type QuoteCompanyRow = {
     name: string | null;
+    legal_name: string | null;
+    trade_name: string | null;
+    custom_fields: Record<string, unknown> | null;
     website: string | null;
     domain: string | null;
     logo_url: string | null;
     logo_source: string | null;
-  } | null = null;
+  };
+  let company: QuoteCompanyRow | null = null;
   if (quote.company_id) {
     const r = await sb
       .from("companies")
-      .select("name, website, domain, logo_url, logo_source")
+      .select("name, legal_name, trade_name, custom_fields, website, domain, logo_url, logo_source")
       .eq("id", quote.company_id)
       .eq("workspace_id", quote.workspace_id)
       .maybeSingle();
     if (r.error || !r.data) throw new Error("Empresa da cotação indisponível.");
-    company = r.data;
+    company = r.data as unknown as QuoteCompanyRow;
   }
   const [entityRes, brandingRes] = await Promise.all([
     quote.legal_entity_id
@@ -278,6 +283,7 @@ export async function renderQuotePdf(sb: SupabaseClient, id: string, browserless
     },
     company: {
       name: company?.name ?? "",
+      legal_name: resolveCompanyLegalName(company) ?? "",
       domain: company?.website ?? "",
       logo: resolveCompanyLogoUrl(company),
     },

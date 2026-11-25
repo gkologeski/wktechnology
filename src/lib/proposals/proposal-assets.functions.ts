@@ -158,6 +158,7 @@ export const loadProposalPreviewContext = createServerFn({ method: "POST" })
     const { loadProposalDocument } = await import("./proposal-document.server");
     const { buildProposalVisualContext } = await import("./proposal-assets.server");
     const { resolveCompanyLogoUrl } = await import("@/lib/sales/company-logo-token");
+    const { resolveCompanyLegalName } = await import("@/lib/companies/company-legal-name");
     const workspaceId = await resolveActiveWorkspace(context.userId);
     await assertSalesArea(context.supabase, "techsales.proposal_templates", "view");
     await assertSalesRecord(context.supabase, "proposals", data.proposalId, "view");
@@ -174,7 +175,9 @@ export const loadProposalPreviewContext = createServerFn({ method: "POST" })
       extra?.company_id
         ? context.supabase
             .from("companies")
-            .select("cnpj, custom_fields, logo_url, logo_source, domain, website")
+            .select(
+              "name, legal_name, trade_name, cnpj, custom_fields, logo_url, logo_source, domain, website",
+            )
             .eq("id", extra.company_id)
             .eq("workspace_id", workspaceId)
             .maybeSingle()
@@ -189,6 +192,9 @@ export const loadProposalPreviewContext = createServerFn({ method: "POST" })
         : Promise.resolve({ data: null }),
     ]);
     const companyExtra = companyRes.data as {
+      name: string | null;
+      legal_name: string | null;
+      trade_name: string | null;
       cnpj: string | null;
       custom_fields: Record<string, unknown> | null;
       logo_url: string | null;
@@ -208,8 +214,7 @@ export const loadProposalPreviewContext = createServerFn({ method: "POST" })
       installmentsCount: extra?.installments_count ?? null,
       paymentTerms: extra?.payment_terms ?? null,
       companyName: doc.company,
-      companyLegalName:
-        (companyExtra?.custom_fields?.["razao_social"] as string | undefined) ?? doc.company,
+      companyLegalName: resolveCompanyLegalName(companyExtra) ?? doc.company,
       companyCnpj: companyExtra?.cnpj ?? null,
       clientLogoUrl: resolveCompanyLogoUrl(companyExtra),
       contactName: doc.contact,

@@ -20,12 +20,8 @@ async function publicJson(url: string): Promise<Record<string, unknown> | null> 
   }
 }
 
-export async function lookupLegalEntityCnpj(
-  client: SupabaseClient,
-  rawCnpj: string,
-  id?: string,
-): Promise<LegalEntityCnpjData> {
-  await authorizeFinanceBusiness(client, "legal_entities", id ? "update" : "create", id);
+/** Consulta bases públicas (BrasilAPI -> ReceitaWS) sem persistir dados. */
+export async function fetchPublicCnpjRegistry(rawCnpj: string): Promise<LegalEntityCnpjData> {
   const cnpj = onlyDigits(rawCnpj);
   if (!isValidCnpj(cnpj)) throw new Error("CNPJ inválido");
   for (const source of ["brasilapi", "receitaws"] as const) {
@@ -61,6 +57,15 @@ export async function lookupLegalEntityCnpj(
   throw new Error(
     "Não foi possível consultar o CNPJ. Tente novamente ou preencha os dados manualmente.",
   );
+}
+
+export async function lookupLegalEntityCnpj(
+  client: SupabaseClient,
+  rawCnpj: string,
+  id?: string,
+): Promise<LegalEntityCnpjData> {
+  await authorizeFinanceBusiness(client, "legal_entities", id ? "update" : "create", id);
+  return fetchPublicCnpjRegistry(rawCnpj);
 }
 
 export async function lookupLegalEntityCep(client: SupabaseClient, rawCep: string, id?: string) {
