@@ -29,6 +29,7 @@ import { getPublicAppUrl } from "@/lib/app-url";
 import { parseEmailList } from "@/lib/email-address";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { CONTRACT_DRAFT_APPROVE_KEY } from "@/lib/contracts/contract-draft-status";
+import { draftSendEmailCopy } from "@/lib/contracts/contract-draft-public-rules";
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -38,6 +39,8 @@ export function ContractDraftSendPanel(props: {
   title: string;
   dealId: string | null;
   sent: boolean;
+  hasLinkedProposal?: boolean;
+  linkedProposalTitle?: string | null;
   onDone: () => void;
 }) {
   const issue = useServerFn(issueContractDraftLink);
@@ -52,6 +55,11 @@ export function ContractDraftSendPanel(props: {
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const copySet = draftSendEmailCopy({
+    title: props.title,
+    hasLinkedProposal: Boolean(props.hasLinkedProposal),
+    linkedProposalTitle: props.linkedProposalTitle ?? null,
+  });
 
   const accountsQ = useQuery({
     queryKey: ["email-accounts", "mine"],
@@ -66,11 +74,9 @@ export function ContractDraftSendPanel(props: {
   }, [accounts, accountId]);
   useEffect(() => {
     if (!open) return;
-    setSubject(`Minuta de contrato — ${props.title}`);
-    setMessage(
-      "Olá,\n\nSegue a minuta do contrato para sua análise. Pelo link abaixo você pode aceitar a minuta ou pedir ajustes.",
-    );
-  }, [open, props.title]);
+    setSubject(copySet.subject);
+    setMessage(copySet.message);
+  }, [open, copySet.subject, copySet.message]);
 
   const linkFor = async () => {
     const { token } = await issue({ data: { id: props.draftId } });
@@ -83,7 +89,7 @@ export function ContractDraftSendPanel(props: {
       const link = await linkFor();
       await navigator.clipboard.writeText(link);
       await mark({ data: { id: props.draftId, to: null, channel: "link" } });
-      toast.success("Link copiado. A minuta foi marcada como enviada.");
+      toast.success(copySet.copiedToast);
       props.onDone();
     } catch (e) {
       toast.error((e as Error).message);
@@ -112,8 +118,8 @@ export function ContractDraftSendPanel(props: {
           account_id: accountId || undefined,
           to: list,
           subject,
-          body_html: `${paragraphs}<p><a href="${esc(link)}">Abrir a minuta do contrato</a></p>`,
-          body_text: `${message}\n\nAbrir a minuta: ${link}`,
+          body_html: `${paragraphs}<p><a href="${esc(link)}">${esc(copySet.linkLabel)}</a></p>`,
+          body_text: `${message}\n\n${copySet.linkLabel}: ${link}`,
           deal_id: props.dealId ?? undefined,
         }),
       });
@@ -158,9 +164,7 @@ export function ContractDraftSendPanel(props: {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Enviar minuta ao cliente</DialogTitle>
-            <DialogDescription>
-              O cliente recebe um link para aceitar a minuta ou pedir ajustes.
-            </DialogDescription>
+            <DialogDescription>{copySet.dialogDescription}</DialogDescription>
           </DialogHeader>
           {noAccount ? (
             <p className="text-sm text-muted-foreground" role="alert">

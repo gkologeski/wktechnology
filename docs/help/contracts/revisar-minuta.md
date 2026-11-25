@@ -8,7 +8,7 @@ route_pattern: /contracts/drafts/$id
 min_permission: techcontracts.contract_drafts.view.workspace
 audience: internal
 sort_order: 40
-version: 6
+version: 7
 is_published: true
 ---
 # Revisar e aprovar a minuta de contrato
@@ -23,8 +23,8 @@ is_published: true
 3. Em "Modelo de contrato", mantenha o modelo padrão ou escolha outro e clique em **Preencher dados da proposta** para inserir razão social, CNPJ, endereço, valores e prazos no texto. Se trocar a empresa prestadora, clique novamente em **Preencher dados da proposta** para atualizar o texto antes de aprovar. Quando faltar algum dado obrigatório, o alerta agrupa as pendências por origem (**Empresa prestadora**, **Cliente/signatário** ou **Fornecedor/signatário**, **Proposta comercial** e **Negócio**) com o link **Abrir cadastro** em nova aba para corrigir sem perder edições da minuta; depois basta voltar e clicar novamente em **Preencher dados da proposta**.
 4. Ajuste o texto no editor e clique em "Salvar edição" para guardar sem aprovar.
 5. Clique em "Aprovar envio" para liberar a minuta. Para não enviar, use "Recusar" e informe o motivo.
-6. Com a minuta aprovada, use "Enviar ao cliente por e-mail" (sai da sua conta Gmail conectada) ou "Copiar link para o cliente".
-7. O cliente abre o link, informa o nome e clica em "Aceitar minuta" ou "Pedir ajustes". Os aprovadores recebem um aviso com a resposta.
+6. Com a minuta aprovada, use "Enviar ao cliente por e-mail" (sai da sua conta Gmail conectada) ou "Copiar link para o cliente". Quando houver proposta comercial vinculada já enviada e selada, ela acompanha automaticamente a minuta no mesmo link (inclusive com botão para baixar a proposta em PDF).
+7. O cliente abre o link, confere o texto da minuta e a proposta comercial vinculada logo abaixo, informa o nome e clica em "Aceitar minuta" ou "Pedir ajustes". Os aprovadores recebem um aviso com a resposta.
 
 ## Resultado esperado
 Cada passo fica no histórico. Ao enviar, o negócio vai para "Minuta enviada". Quando o cliente aceita, o negócio vai para "Contrato em elaboração" e o workflow "Criar contrato" é liberado. Se o cliente pedir ajustes, a minuta volta a ser editável para nova aprovação.
@@ -34,7 +34,7 @@ Cada passo fica no histórico. Ao enviar, o negócio vai para "Minuta enviada". 
 - Minuta aprovada ou recusada não pode mais ser editada.
 - Trocar a empresa prestadora em minuta já decidida exige abrir uma nova revisão com motivo.
 - Só aprovadores jurídicos listados podem enviar a minuta, e somente depois de aprovada.
-- O link do cliente só funciona enquanto a minuta está enviada; depois da resposta ele mostra apenas o resultado.
+- O link do cliente só funciona enquanto a minuta está enviada; depois da resposta ele mostra apenas o resultado. Revogar ou abrir nova revisão invalida o link da minuta e o download da proposta vinculada por ele.
 - O workflow "Criar contrato" só inicia depois do aceite da minuta.
 
 ## Erros comuns

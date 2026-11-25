@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Check, Loader2, PencilLine } from "lucide-react";
+import { Check, Download, FileText, Loader2, PencilLine } from "lucide-react";
 import { toast } from "sonner";
 import DOMPurify from "isomorphic-dompurify";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ProposalDocument } from "@/components/proposals/proposal-document";
 import {
   decidePublicContractDraft,
   getPublicContractDraft,
@@ -106,17 +107,91 @@ function PublicContractDraftPage() {
 
   const d = q.data;
   const open = d.status === "sent";
+  const linkedProposal = d.linked_proposal ?? null;
+  const proposalPdfUrl = d.has_proposal_pdf
+    ? `/api/public/contract-drafts/${encodeURIComponent(token)}/proposal-pdf`
+    : null;
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-4 sm:p-8">
       <header className="space-y-2">
         <p className="text-sm text-muted-foreground">{d.workspace_name ?? "WK Technology"}</p>
-        <h1 className="text-2xl font-semibold">{d.title}</h1>
+        <h1 className="break-words text-2xl font-semibold">{d.title}</h1>
         <Badge variant="secondary">{STATUS[d.status] ?? d.status}</Badge>
       </header>
+      {linkedProposal && (
+        <section
+          aria-label="Proposta comercial vinculada"
+          className="flex flex-col gap-3 rounded-md border border-border bg-muted/40 p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex min-w-0 items-start gap-3">
+            <FileText className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+            <div className="min-w-0 space-y-0.5">
+              <p className="text-sm font-medium text-foreground">
+                Proposta comercial vinculada (Anexo)
+              </p>
+              <p className="break-words text-sm text-muted-foreground">
+                {linkedProposal.proposal.title} · Versão {linkedProposal.proposal.version} —
+                consulte os valores, prazos e escopo logo abaixo da minuta.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <a href="#proposta-comercial">Ver proposta abaixo</a>
+            </Button>
+            {proposalPdfUrl && (
+              <Button size="sm" variant="outline" asChild>
+                <a href={proposalPdfUrl}>
+                  <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                  Baixar PDF
+                </a>
+              </Button>
+            )}
+          </div>
+        </section>
+      )}
+      {d.linked_proposal_error && !linkedProposal && (
+        <p
+          className="rounded-md border border-border bg-muted p-3 text-sm text-muted-foreground"
+          role="alert"
+        >
+          Não foi possível carregar a proposta comercial vinculada agora. Recarregue a página ou
+          solicite uma cópia ao responsável antes de responder.
+        </p>
+      )}
       <article
         className="prose max-w-none rounded-md border border-border bg-card p-6 text-card-foreground dark:prose-invert"
         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(d.body_html) }}
       />
+      {linkedProposal && (
+        <section
+          id="proposta-comercial"
+          aria-labelledby="proposta-comercial-heading"
+          className="space-y-3 pt-2"
+        >
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 id="proposta-comercial-heading" className="text-lg font-semibold text-foreground">
+                Anexo — Proposta comercial
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Documento comercial de referência vinculado a esta minuta.
+              </p>
+            </div>
+            {proposalPdfUrl && (
+              <Button size="sm" variant="outline" asChild>
+                <a href={proposalPdfUrl}>
+                  <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                  Baixar PDF da proposta
+                </a>
+              </Button>
+            )}
+          </div>
+          <div className="min-w-0 overflow-x-auto">
+            <ProposalDocument doc={linkedProposal} />
+          </div>
+        </section>
+      )}
       {d.attachments?.map((a) => (
         <Button
           key={a.id}

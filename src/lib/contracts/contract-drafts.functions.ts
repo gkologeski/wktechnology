@@ -78,6 +78,7 @@ export const getContractDraft = createServerFn({ method: "POST" })
       { data: events },
       { data: canReview },
       { data: deal },
+      proposalResult,
       versionsResult,
       { data: legalEntitiesRaw },
     ] = await Promise.all([
@@ -91,6 +92,14 @@ export const getContractDraft = createServerFn({ method: "POST" })
       draft.deal_id
         ? sb.from("deals").select("id, name").eq("id", draft.deal_id).maybeSingle()
         : Promise.resolve({ data: null }),
+      draft.proposal_id
+        ? sb
+            .from("proposals")
+            .select("id, title, status, locked, sent_at, version")
+            .eq("id", draft.proposal_id)
+            .eq("workspace_id", workspaceId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
       sb
         .from("contract_draft_versions")
         .select("revision,captured_at")
@@ -101,6 +110,25 @@ export const getContractDraft = createServerFn({ method: "POST" })
       sb.rpc("finance_reference_list", { _resource: "legal_entities" }),
     ]);
     if (versionsResult.error) throw new Error(versionsResult.error.message);
+    const { isProposalEligibleForPublicDraft } = await import("./contract-draft-public-rules");
+    const rawProp = proposalResult.error
+      ? null
+      : (proposalResult.data as {
+          id: string;
+          title: string;
+          status: string;
+          locked: boolean;
+          sent_at: string | null;
+          version: number;
+        } | null);
+    const linkedProposal = rawProp
+      ? {
+          id: rawProp.id,
+          title: rawProp.title,
+          version: rawProp.version,
+          eligible: isProposalEligibleForPublicDraft(rawProp),
+        }
+      : null;
     const actorIds = [
       ...new Set(
         (events ?? []).map((e: { actor_id: string | null }) => e.actor_id).filter(Boolean),
@@ -130,6 +158,7 @@ export const getContractDraft = createServerFn({ method: "POST" })
       draft,
       versions: versionsResult.data ?? [],
       deal: (deal as { id: string; name: string | null } | null) ?? null,
+      linkedProposal,
       canReview: canReview === true,
       templates,
       legalEntities,

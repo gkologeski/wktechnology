@@ -11931,12 +11931,12 @@
         "drizzle/migrations/0311_0334_contract_draft_legal_review.sql": "34b15156ef6dd6be975fd1d42cfa7b47ef5fc1db73ab35486abe755b8a36a427",
         "drizzle/migrations/0312_contract_draft_legal_review.sql": "13ce7aa0ddad44bc26c81cccd662b1fb5a12f6cf606e87554beea542faed7e82",
         "src/components/contracts/contract-draft-approvers-page.tsx": "fd9f5b3f844bd1c641ae8f5cc67ee45bd354f9ef06ea3200e27f4027a7007376",
-        "src/components/contracts/contract-draft-review-page.tsx": "008d413b299992ae178b18c8b409ffeacb03f4ecadce89d0eaf1e1b92edc48cc",
-        "src/lib/contracts/contract-drafts.functions.ts": "8cbb99af55cb9f9df4e35e7c432c4cc5c937bdb9ad3abbeae2d8a3d5496c035f",
+        "src/components/contracts/contract-draft-review-page.tsx": "9dc46b18677f6b5ec14f0619b7991ec1e7a94f0ade519877e02cbfff8b903d2d",
+        "src/lib/contracts/contract-drafts.functions.ts": "9bfe32a9bc61be2832f729bf4ff12c1c0b82ba0fee559acfa06f7904fce6d938",
         "src/lib/workflows/engine/actions-contracts.server.ts": "ce77a960a2356639cd80d3245608044a2dabe2ef8d0dcd2dffa33f22ffb0c1d2",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
         "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "da7a3d3851d63c0e4409355465670d75feea86c2da22708494bc3851962b6d08",
-        "src/components/contracts/contract-draft-send-panel.tsx": "cc71a524961b2cf592173f12b40ea37ccd3c0d37b671fd61fe2f1153c95e67fa",
+        "src/components/contracts/contract-draft-send-panel.tsx": "08e53acd6108dfcc694ab30dfec1263caf7133034f6a76f2fec55dc842a10ba7",
         "drizzle/migrations/0313_contract_draft_client_acceptance.sql": "64d071e18989e467bbd1814dc101de073e6e85ca5eb195867879f101b1943a33",
         "src/routes/_authenticated/contracts.contracting-flow.tsx": "d1a63f047503b314a2bed68a549d9591edd02695bd0cc54f1f09af2d43a2f2c5",
         "drizzle/migrations/0460_contract_draft_merge_source_supplier.sql": "3da53e065a21ecd1bca87425a3fd4101a673d3bcb813fbfceffd04b2ff47ead4"
@@ -11948,7 +11948,7 @@
       "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass). | 24/11/2026 LINKS-CADASTRO-ORIGEM: pure missing-field grouping helper (no I/O or grants); draft review links to origin registries open in a new tab gated by existing view permissions while destination screens enforce full RLS/RBAC.",
       "files": {
         "src/lib/contracts/contract-draft-status.ts": "137f514e28ba87ad8a0a991be53566e3719507af37440ff3ab21902bbf7a0299",
-        "src/lib/contracts/contract-draft-public-rules.ts": "b0ba0ea6350890b9262061980ec7b66a72bd69ba0f97d254fab02a53c58a50b8",
+        "src/lib/contracts/contract-draft-public-rules.ts": "b792151450ec025c977f058d8280159b9c063e9e3010447f5fa7b81576b95551",
         "src/lib/contracts/missing-field-sources.ts": "cbb571ef4c305db857faa289ae54adcaeb0542c3c3ab68c07036b7bbd7fe0685"
       }
     },
@@ -11986,7 +11986,7 @@
         "techcontracts.contract_drafts.view.workspace",
         "techcontracts.contract_drafts.approve.workspace"
       ],
-      "rationale": "Client reads and accepts/requests changes to a sent contract draft via its capability link. Random uuid token issued only by a listed legal approver after approval; server-only RPCs (service_role) return/decide only drafts in status sent; one decision per send, no internal ids or other records exposed.",
+      "rationale": "Client reads and accepts/requests changes to a sent contract draft via its capability link. Random uuid token issued only by a listed legal approver after approval; server-only RPCs (service_role) return/decide only drafts in status sent; one decision per send, no internal ids or other records exposed. | 25/11/2026 PROPOSTA-COM-MINUTA: migration 0478 updates service-only contract_draft_public_get to join the draft's same-workspace locked/sent/accepted/rejected proposal token solely on the server; loadPublicContractDraft renders the sanitized ProposalDocument (stripping internal ids and proposal public_token) and /api/public/contract-drafts/$token/proposal-pdf authorizes the PDF strictly via the draft token so revoking/canceling the draft revokes both page and proposal PDF.",
       "controls": [
         {
           "file": "src/lib/contracts/contract-draft-public-rules.ts",
@@ -11995,6 +11995,18 @@
         {
           "file": "src/lib/contracts/contract-draft-public-rules.ts",
           "symbol": "isValidDraftToken"
+        },
+        {
+          "file": "src/lib/contracts/contract-draft-public-rules.ts",
+          "symbol": "sanitizePublicLinkedProposal"
+        },
+        {
+          "file": "src/lib/contracts/contract-draft-public.server.ts",
+          "symbol": "loadPublicContractDraft"
+        },
+        {
+          "file": "src/lib/contracts/contract-draft-public.server.ts",
+          "symbol": "loadPublicContractDraftProposalDoc"
         },
         {
           "file": "src/lib/access-control/work-core.server.ts",
@@ -12037,6 +12049,10 @@
         {
           "file": "drizzle/migrations/0313_contract_draft_client_acceptance.sql",
           "symbol": "contract_draft_public_decide"
+        },
+        {
+          "file": "drizzle/migrations/0478_contract_draft_public_linked_proposal.sql",
+          "symbol": "contract_draft_public_get"
         }
       ],
       "tests": {
@@ -12062,13 +12078,16 @@
         }
       },
       "files": {
-        "src/lib/contracts/contract-draft-public.functions.ts": "dba1601a77c4d025f27f9b1809c7047e4f3d9a36367f66528baa4be2210b926b",
-        "src/routes/minuta.$token.tsx": "b4a61523cd6be289f778c675c8965071a0019e5600da38a0414f444582654251"
+        "drizzle/migrations/0478_contract_draft_public_linked_proposal.sql": "7752d6c98600fee2f8b303991f7bcdedeab790acbf95cc28a4b2b1604fa9ea0e",
+        "src/lib/contracts/contract-draft-public.server.ts": "fd82157d7359cef80a29af22ca3374e4c3b3f149784e1bb3d290bf94603c2c0e",
+        "src/lib/contracts/contract-draft-public.functions.ts": "e4ae25cd5a5dccb4cb2e520552428ff0c59d82e84dea90a740318476afbba9e2",
+        "src/routes/minuta.$token.tsx": "97ae1aa38a0ce631972d578bab2bf9c5e87d2546275068b093181f2dd714a33f",
+        "src/routes/api/public/contract-drafts/$token.proposal-pdf.ts": "b7ff5ea747871f2c952cf5c6079a997b4cfee21324f5984e0de9256f12bfd570"
       },
       "exception": {
         "mechanism": "Random uuid token issued only by a listed legal approver after approval; server-only RPCs (service_role) return/decide only drafts in status sent; one decision per send, no internal ids or other records exposed.",
-        "boundary": "Token scopes access to a single draft; no session, no listing, no internal ids returned.",
-        "revocation": "Cancel or re-review the draft (status leaves sent) to invalidate the link.",
+        "boundary": "Token scopes access to a single draft and its same-workspace locked linked proposal document (sanitized of internal ids and proposal public_token); no session, no listing, no internal ids returned.",
+        "revocation": "Cancel or re-review the draft (status leaves sent) to invalidate both the draft link and its linked proposal PDF download.",
         "review_by": "2027-01-25"
       }
     },

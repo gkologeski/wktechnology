@@ -3347,6 +3347,13 @@
       "when": 1795632067686,
       "tag": "0477_add_company_legal_and_trade_name",
       "breakpoints": true
+    },
+    {
+      "idx": 478,
+      "version": "7",
+      "when": 1795641434698,
+      "tag": "0478_contract_draft_public_linked_proposal",
+      "breakpoints": true
     }
   ]
 }

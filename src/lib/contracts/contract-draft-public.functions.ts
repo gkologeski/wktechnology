@@ -7,40 +7,14 @@ import {
   clientDraftDecisionError,
   isValidDraftToken,
 } from "@/lib/contracts/contract-draft-public-rules";
+import type { PublicContractDraftDto } from "@/lib/contracts/contract-draft-public.server";
 
 export const getPublicContractDraft = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ token: z.string().uuid() }).parse(i))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<PublicContractDraftDto | null> => {
     if (!isValidDraftToken(data.token)) return null;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const hiring = await (supabaseAdmin as any).rpc("hiring_draft_public", { token: data.token });
-    if (hiring.data)
-      return hiring.data as {
-        title: string;
-        body_html: string;
-        status: string;
-        workspace_name: string | null;
-        client_decided_at: string | null;
-        client_name: string | null;
-        requires_code?: boolean;
-        expires_at?: string;
-        attachments?: Array<{ id: string; name: string; sha256: string }>;
-      };
-    const { data: doc, error } = await (supabaseAdmin as any).rpc("contract_draft_public_get", {
-      p_token: data.token,
-    });
-    if (error) throw new Error("Não foi possível carregar a minuta.");
-    return (doc ?? null) as {
-      title: string;
-      body_html: string;
-      status: string;
-      workspace_name: string | null;
-      client_decided_at: string | null;
-      client_name: string | null;
-      requires_code?: boolean;
-      expires_at?: string;
-      attachments?: Array<{ id: string; name: string; sha256: string }>;
-    } | null;
+    const { loadPublicContractDraft } = await import("./contract-draft-public.server");
+    return loadPublicContractDraft(data.token);
   });
 
 export const decidePublicContractDraft = createServerFn({ method: "POST" })

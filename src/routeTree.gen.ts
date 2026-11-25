@@ -430,6 +430,7 @@ import { Route as AuthenticatedProjectsSettingsImportsReconciliationRouteImport 
 import { Route as AuthenticatedProspectingQueuesQueueIdPlayRouteImport } from './routes/_authenticated/prospecting.queues.$queueId.play'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
 import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/public/booking/$slug/submit'
+import { Route as ApiPublicContractDraftsTokenProposalPdfRouteImport } from './routes/api/public/contract-drafts/$token.proposal-pdf'
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
@@ -2861,6 +2862,12 @@ const ApiPublicBookingSlugSubmitRoute =
     path: '/submit',
     getParentRoute: () => ApiPublicBookingSlugRoute,
   } as any)
+const ApiPublicContractDraftsTokenProposalPdfRoute =
+  ApiPublicContractDraftsTokenProposalPdfRouteImport.update({
+    id: '/api/public/contract-drafts/$token/proposal-pdf',
+    path: '/api/public/contract-drafts/$token/proposal-pdf',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicEmailClickMessageIdRoute =
   ApiPublicEmailClickMessageIdRouteImport.update({
     id: '/api/public/email/click/$messageId',
@@ -3391,6 +3398,7 @@ export interface FileRoutesByFullPath {
   '/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
+  '/api/public/contract-drafts/$token/proposal-pdf': typeof ApiPublicContractDraftsTokenProposalPdfRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -3826,6 +3834,7 @@ export interface FileRoutesByTo {
   '/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
+  '/api/public/contract-drafts/$token/proposal-pdf': typeof ApiPublicContractDraftsTokenProposalPdfRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -4269,6 +4278,7 @@ export interface FileRoutesById {
   '/_authenticated/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
+  '/api/public/contract-drafts/$token/proposal-pdf': typeof ApiPublicContractDraftsTokenProposalPdfRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -4712,6 +4722,7 @@ export interface FileRouteTypes {
     | '/prospecting/queues/$queueId/play'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
+    | '/api/public/contract-drafts/$token/proposal-pdf'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/email/unsubscribe/$token'
@@ -5147,6 +5158,7 @@ export interface FileRouteTypes {
     | '/prospecting/queues/$queueId/play'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
+    | '/api/public/contract-drafts/$token/proposal-pdf'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/email/unsubscribe/$token'
@@ -5589,6 +5601,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prospecting/queues/$queueId/play'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
+    | '/api/public/contract-drafts/$token/proposal-pdf'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/email/unsubscribe/$token'
@@ -5739,6 +5752,7 @@ export interface RootRouteChildren {
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   ApiPublicHealthIndexRoute: typeof ApiPublicHealthIndexRoute
+  ApiPublicContractDraftsTokenProposalPdfRoute: typeof ApiPublicContractDraftsTokenProposalPdfRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -8703,6 +8717,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBookingSlugSubmitRouteImport
       parentRoute: typeof ApiPublicBookingSlugRoute
     }
+    '/api/public/contract-drafts/$token/proposal-pdf': {
+      id: '/api/public/contract-drafts/$token/proposal-pdf'
+      path: '/api/public/contract-drafts/$token/proposal-pdf'
+      fullPath: '/api/public/contract-drafts/$token/proposal-pdf'
+      preLoaderRoute: typeof ApiPublicContractDraftsTokenProposalPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/email/click/$messageId': {
       id: '/api/public/email/click/$messageId'
       path: '/api/public/email/click/$messageId'
@@ -9913,6 +9934,8 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   ApiPublicHealthIndexRoute: ApiPublicHealthIndexRoute,
+  ApiPublicContractDraftsTokenProposalPdfRoute:
+    ApiPublicContractDraftsTokenProposalPdfRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,

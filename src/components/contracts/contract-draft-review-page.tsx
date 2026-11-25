@@ -402,6 +402,15 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
               </Link>
             </Button>
           )}
+          {draft.proposal_id && (
+            <p className="text-xs text-muted-foreground">
+              {q.data.linkedProposal
+                ? q.data.linkedProposal.eligible
+                  ? `A proposta comercial vinculada (${q.data.linkedProposal.title} · v${q.data.linkedProposal.version}) acompanhará automaticamente a minuta no link enviado ao cliente, com opção de baixar em PDF.`
+                  : "A proposta comercial vinculada ainda não foi enviada e selada; enquanto permanecer assim, ela não será exibida no link público da minuta."
+                : "A proposta comercial vinculada (quando já enviada e selada) acompanhará automaticamente a minuta no link enviado ao cliente."}
+            </p>
+          )}
         </div>
       )}
       {editable && preparedTerms && (
@@ -454,6 +463,12 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
             title={draft.title}
             dealId={draft.deal_id}
             sent={status === "sent"}
+            hasLinkedProposal={Boolean(
+              draft.proposal_id && (q.data.linkedProposal?.eligible ?? true),
+            )}
+            linkedProposalTitle={
+              q.data.linkedProposal?.eligible ? q.data.linkedProposal.title : null
+            }
             onDone={() => q.refetch()}
           />
           <div className="mt-2">
