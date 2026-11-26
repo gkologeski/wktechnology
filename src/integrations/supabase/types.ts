@@ -5209,6 +5209,41 @@ export type Database = {
           },
         ]
       }
+      clickup_import_connections: {
+        Row: {
+          key_ciphertext: string | null
+          key_last4: string | null
+          legacy_key: boolean
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          key_ciphertext?: string | null
+          key_last4?: string | null
+          legacy_key?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          key_ciphertext?: string | null
+          key_last4?: string | null
+          legacy_key?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clickup_import_connections_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clickup_import_created: {
         Row: {
           created_at: string
@@ -5424,6 +5459,51 @@ export type Database = {
           },
         ]
       }
+      clickup_import_list_targets: {
+        Row: {
+          decided_by: string
+          list_id: string
+          note: string
+          target_project_id: string
+          team_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          decided_by: string
+          list_id: string
+          note: string
+          target_project_id: string
+          team_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          decided_by?: string
+          list_id?: string
+          note?: string
+          target_project_id?: string
+          team_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clickup_import_list_targets_target_project_id_fkey"
+            columns: ["target_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clickup_import_list_targets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clickup_import_people: {
         Row: {
           clickup_user_id: number
@@ -5477,6 +5557,10 @@ export type Database = {
       clickup_import_runs: {
         Row: {
           applied_at: string | null
+          collect_coverage: Json
+          collect_cursor: Json | null
+          collect_error: string | null
+          collect_revision: number
           confirmed_at: string | null
           confirmed_by: string | null
           counts: Json
@@ -5486,12 +5570,17 @@ export type Database = {
           requested_by: string
           rolled_back_at: string | null
           rolled_back_by: string | null
+          source_team_ids: string[]
           status: string
           updated_at: string
           workspace_id: string
         }
         Insert: {
           applied_at?: string | null
+          collect_coverage?: Json
+          collect_cursor?: Json | null
+          collect_error?: string | null
+          collect_revision?: number
           confirmed_at?: string | null
           confirmed_by?: string | null
           counts?: Json
@@ -5501,12 +5590,17 @@ export type Database = {
           requested_by: string
           rolled_back_at?: string | null
           rolled_back_by?: string | null
+          source_team_ids?: string[]
           status?: string
           updated_at?: string
           workspace_id: string
         }
         Update: {
           applied_at?: string | null
+          collect_coverage?: Json
+          collect_cursor?: Json | null
+          collect_error?: string | null
+          collect_revision?: number
           confirmed_at?: string | null
           confirmed_by?: string | null
           counts?: Json
@@ -5516,6 +5610,7 @@ export type Database = {
           requested_by?: string
           rolled_back_at?: string | null
           rolled_back_by?: string | null
+          source_team_ids?: string[]
           status?: string
           updated_at?: string
           workspace_id?: string
@@ -5523,6 +5618,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "clickup_import_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clickup_import_source_bindings: {
+        Row: {
+          configured_at: string
+          configured_by: string
+          team_id: string
+          team_name: string
+          workspace_id: string
+        }
+        Insert: {
+          configured_at?: string
+          configured_by: string
+          team_id: string
+          team_name: string
+          workspace_id: string
+        }
+        Update: {
+          configured_at?: string
+          configured_by?: string
+          team_id?: string
+          team_name?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clickup_import_source_bindings_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -5565,6 +5692,72 @@ export type Database = {
           },
           {
             foreignKeyName: "clickup_import_tasks_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clickup_source_files: {
+        Row: {
+          attachment_id: string
+          bytes: number | null
+          content_type: string | null
+          created_at: string
+          file_key: string
+          id: string
+          issue: string | null
+          run_id: string
+          sha256: string | null
+          status: string
+          storage_path: string | null
+          team_id: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          attachment_id: string
+          bytes?: number | null
+          content_type?: string | null
+          created_at?: string
+          file_key: string
+          id?: string
+          issue?: string | null
+          run_id: string
+          sha256?: string | null
+          status: string
+          storage_path?: string | null
+          team_id: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          attachment_id?: string
+          bytes?: number | null
+          content_type?: string | null
+          created_at?: string
+          file_key?: string
+          id?: string
+          issue?: string | null
+          run_id?: string
+          sha256?: string | null
+          status?: string
+          storage_path?: string | null
+          team_id?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clickup_source_files_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "clickup_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clickup_source_files_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -17147,6 +17340,75 @@ export type Database = {
         }
         Relationships: []
       }
+      jibble_source_files: {
+        Row: {
+          bytes: number | null
+          content_type: string | null
+          created_at: string
+          file_key: string
+          id: string
+          issue: string | null
+          run_id: string
+          screenshot_id: string
+          sha256: string | null
+          source_hash: string
+          source_org_id: string
+          status: string
+          storage_path: string | null
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          bytes?: number | null
+          content_type?: string | null
+          created_at?: string
+          file_key: string
+          id?: string
+          issue?: string | null
+          run_id: string
+          screenshot_id: string
+          sha256?: string | null
+          source_hash: string
+          source_org_id: string
+          status: string
+          storage_path?: string | null
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          bytes?: number | null
+          content_type?: string | null
+          created_at?: string
+          file_key?: string
+          id?: string
+          issue?: string | null
+          run_id?: string
+          screenshot_id?: string
+          sha256?: string | null
+          source_hash?: string
+          source_org_id?: string
+          status?: string
+          storage_path?: string | null
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jibble_source_files_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "time_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jibble_source_files_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_profiles: {
         Row: {
           active: boolean
@@ -23357,6 +23619,335 @@ export type Database = {
           },
           {
             foreignKeyName: "project_folders_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_import_journeys: {
+        Row: {
+          backfill_cursor: string | null
+          backfill_done: boolean
+          counts: Json
+          coverage: Json
+          created_at: string
+          delegation_authorized_by: string | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          lease_token: string | null
+          lease_until: string | null
+          native_run_id: string | null
+          preview_run_id: string | null
+          provider: string
+          requested_by: string
+          source_id: string
+          source_name: string
+          stage: string
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          backfill_cursor?: string | null
+          backfill_done?: boolean
+          counts?: Json
+          coverage?: Json
+          created_at?: string
+          delegation_authorized_by?: string | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          lease_token?: string | null
+          lease_until?: string | null
+          native_run_id?: string | null
+          preview_run_id?: string | null
+          provider: string
+          requested_by: string
+          source_id: string
+          source_name: string
+          stage?: string
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          backfill_cursor?: string | null
+          backfill_done?: boolean
+          counts?: Json
+          coverage?: Json
+          created_at?: string
+          delegation_authorized_by?: string | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          lease_token?: string | null
+          lease_until?: string | null
+          native_run_id?: string | null
+          preview_run_id?: string | null
+          provider?: string
+          requested_by?: string
+          source_id?: string
+          source_name?: string
+          stage?: string
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_import_journeys_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_import_record_events: {
+        Row: {
+          action: string
+          actor_id: string
+          assignee_id: string | null
+          created_at: string
+          id: string
+          note: string
+          provider: string
+          record_id: string
+          target_id: string | null
+          target_type: string | null
+          version_id: string
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          assignee_id?: string | null
+          created_at?: string
+          id?: string
+          note: string
+          provider: string
+          record_id: string
+          target_id?: string | null
+          target_type?: string | null
+          version_id: string
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          assignee_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          provider?: string
+          record_id?: string
+          target_id?: string | null
+          target_type?: string | null
+          version_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_import_record_events_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "project_import_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_import_record_events_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "project_import_record_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_import_record_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_import_record_receipts: {
+        Row: {
+          provider: string
+          received_at: string
+          record_id: string
+          run_id: string
+          workspace_id: string
+        }
+        Insert: {
+          provider: string
+          received_at?: string
+          record_id: string
+          run_id: string
+          workspace_id: string
+        }
+        Update: {
+          provider?: string
+          received_at?: string
+          record_id?: string
+          run_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_import_record_receipts_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "project_import_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_import_record_receipts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_import_record_versions: {
+        Row: {
+          from_legacy: boolean
+          id: string
+          payload: Json
+          payload_hash: string
+          provider: string
+          received_at: string
+          record_id: string
+          run_id: string
+          source_observed_at: string
+          version_number: number
+          workspace_id: string
+        }
+        Insert: {
+          from_legacy?: boolean
+          id?: string
+          payload: Json
+          payload_hash: string
+          provider: string
+          received_at?: string
+          record_id: string
+          run_id: string
+          source_observed_at?: string
+          version_number: number
+          workspace_id: string
+        }
+        Update: {
+          from_legacy?: boolean
+          id?: string
+          payload?: Json
+          payload_hash?: string
+          provider?: string
+          received_at?: string
+          record_id?: string
+          run_id?: string
+          source_observed_at?: string
+          version_number?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_import_record_versions_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "project_import_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_import_record_versions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_import_records: {
+        Row: {
+          current_from_legacy: boolean
+          current_version_number: number
+          entity_type: string
+          external_id: string
+          first_seen_at: string
+          id: string
+          issues: string[]
+          label: string
+          last_run_id: string
+          last_seen_at: string
+          payload: Json
+          payload_hash: string
+          provider: string
+          review_assignee_id: string | null
+          source_id: string
+          source_issues: string[]
+          source_observed_at: string
+          source_person_id: string | null
+          status: string
+          target_id: string | null
+          target_type: string | null
+          version_count: number
+          workspace_id: string
+        }
+        Insert: {
+          current_from_legacy?: boolean
+          current_version_number?: number
+          entity_type: string
+          external_id: string
+          first_seen_at?: string
+          id?: string
+          issues?: string[]
+          label: string
+          last_run_id: string
+          last_seen_at?: string
+          payload: Json
+          payload_hash: string
+          provider: string
+          review_assignee_id?: string | null
+          source_id: string
+          source_issues?: string[]
+          source_observed_at?: string
+          source_person_id?: string | null
+          status?: string
+          target_id?: string | null
+          target_type?: string | null
+          version_count?: number
+          workspace_id: string
+        }
+        Update: {
+          current_from_legacy?: boolean
+          current_version_number?: number
+          entity_type?: string
+          external_id?: string
+          first_seen_at?: string
+          id?: string
+          issues?: string[]
+          label?: string
+          last_run_id?: string
+          last_seen_at?: string
+          payload?: Json
+          payload_hash?: string
+          provider?: string
+          review_assignee_id?: string | null
+          source_id?: string
+          source_issues?: string[]
+          source_observed_at?: string
+          source_person_id?: string | null
+          status?: string
+          target_id?: string | null
+          target_type?: string | null
+          version_count?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_import_records_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -37480,9 +38071,23 @@ export type Database = {
         Args: { p_payload: Json; p_ws: string }
         Returns: string[]
       }
+      clickup_import_checkpoint: {
+        Args: {
+          p_actor: string
+          p_cursor: Json
+          p_error?: string
+          p_expected: number
+          p_run: string
+        }
+        Returns: number
+      }
       clickup_import_delegate: {
         Args: { p_actor: string; p_args: Json; p_fn: string }
         Returns: Json
+      }
+      clickup_import_file_authorize: {
+        Args: { p_run: string; p_source: string; p_workspace: string }
+        Returns: undefined
       }
       clickup_import_finish_collect: {
         Args: { p_counts: Json; p_run: string }
@@ -37515,6 +38120,10 @@ export type Database = {
           p_user: string
           p_ws: string
         }
+        Returns: undefined
+      }
+      clickup_import_sources_set: {
+        Args: { p_sources: Json; p_ws: string }
         Returns: undefined
       }
       clickup_import_stage: {
@@ -40005,6 +40614,10 @@ export type Database = {
         Returns: boolean
       }
       iso8601_duration_seconds: { Args: { p: string }; Returns: number }
+      jibble_import_file_authorize: {
+        Args: { p_run: string; p_source: string; p_workspace: string }
+        Returns: undefined
+      }
       job_role_usable_in_workspace: {
         Args: { _role: string; _workspace: string }
         Returns: boolean
@@ -40850,6 +41463,136 @@ export type Database = {
           p_stopped: string
         }
         Returns: number
+      }
+      project_import_access: {
+        Args: {
+          p_action: string
+          p_provider: string
+          p_user?: string
+          p_ws: string
+        }
+        Returns: boolean
+      }
+      project_import_entity_counts: {
+        Args: { p_provider: string; p_run: string; p_workspace: string }
+        Returns: Json
+      }
+      project_import_evidence_page: {
+        Args: {
+          p_cursor?: string
+          p_kind: string
+          p_record: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      project_import_journey_begin: {
+        Args: {
+          p_name: string
+          p_provider: string
+          p_source: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      project_import_journey_checkpoint: {
+        Args: {
+          p_id: string
+          p_lease: string
+          p_patch: Json
+          p_workspace: string
+        }
+        Returns: boolean
+      }
+      project_import_journey_claim: {
+        Args: { p_id: string; p_provider?: string; p_workspace: string }
+        Returns: Json
+      }
+      project_import_member_targets: {
+        Args: {
+          p_provider: string
+          p_query?: string
+          p_review?: boolean
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      project_import_preserve_legacy_step: {
+        Args: {
+          p_after?: string
+          p_journey?: string
+          p_limit?: number
+          p_provider: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      project_import_preserve_records: {
+        Args: {
+          p_provider: string
+          p_records: Json
+          p_run: string
+          p_source: string
+          p_workspace: string
+        }
+        Returns: number
+      }
+      project_import_ready_step: {
+        Args: { p_journey: string; p_limit?: number; p_workspace: string }
+        Returns: Json
+      }
+      project_import_record_counts: {
+        Args: { p_provider?: string; p_run?: string; p_workspace: string }
+        Returns: Json
+      }
+      project_import_record_review: {
+        Args: {
+          p_action?: string
+          p_assignee?: string
+          p_id: string
+          p_note: string
+          p_target?: string
+          p_target_type?: string
+          p_version?: string
+          p_workspace: string
+        }
+        Returns: undefined
+      }
+      project_import_records_page: {
+        Args: {
+          p_assignee?: string
+          p_page?: number
+          p_provider?: string
+          p_query?: string
+          p_status?: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      project_import_review_recipient: {
+        Args: { p_provider: string; p_user: string; p_ws: string }
+        Returns: boolean
+      }
+      project_import_run_actor: {
+        Args: {
+          p_provider: string
+          p_run: string
+          p_source: string
+          p_ws: string
+        }
+        Returns: string
+      }
+      project_import_sanitize: { Args: { p: Json }; Returns: Json }
+      project_import_source_issues: {
+        Args: { p: Json; p_entity: string; p_provider: string }
+        Returns: string[]
+      }
+      project_import_visible_scopes: {
+        Args: never
+        Returns: {
+          provider: string
+          workspace_id: string
+        }[]
       }
       project_is_link_backfill: {
         Args: { new_row: Json; old_row: Json; p_fields: string[] }
