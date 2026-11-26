@@ -100,7 +100,7 @@ export const JB_ENTITY_LABEL: Record<string, string> = {
   time_off: "Ausências",
   calendar: "Calendários de feriados",
   calendar_day: "Feriados",
-  screenshot: "Capturas de tela (só inventário)",
+  screenshot: "Capturas de tela",
   interval: "Intervalos reconstruídos",
 };
 
@@ -110,11 +110,6 @@ export const JB_NOT_IMPORTED: Array<{ entity: string; reason: string }> = [
     entity: "Selfies e reconhecimento facial",
     reason:
       "A API pública não documenta exportação de selfies/biometria; nada é baixado nem ativado.",
-  },
-  {
-    entity: "Arquivos de capturas de tela",
-    reason:
-      "Só inventário (quantidade e data). Download exige armazenamento privado aprovado; o link assinado não é guardado.",
   },
   {
     entity: "Geolocalização e endereço do ponto",

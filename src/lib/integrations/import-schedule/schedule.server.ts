@@ -179,7 +179,7 @@ async function stepClickUp(db: SupabaseClient, r: Row, state: ClickUpJobState | 
       .from("import_connector_schedules")
       .update({
         last_status: res.status,
-        last_error: null,
+        last_error: res.error ?? null,
         job_state: { heldLists: res.heldLists } as never,
       })
       .eq("id", r.id);

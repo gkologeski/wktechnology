@@ -1,6 +1,6 @@
 // Execução automática do importador ClickUp pelo agendador: cada etapa roda pela RPC
 // `clickup_import_delegate` em nome do dono da agenda (a etapa reconfere a permissão dele).
-// Listas nunca importadas antes ficam fora (marcadas "não importar") e aguardam revisão humana.
+// Todas as listas das origens explicitamente autorizadas são preservadas, inclusive novas e arquivadas.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { assertClickUpImport } from "@/lib/integrations/clickup/clickup-import.server";
 
@@ -10,10 +10,15 @@ export type ClickUpJobState = {
   cursor?: unknown;
   waitUntil?: number;
   heldLists?: number;
+  coverageComplete?: boolean;
 };
 export type ClickUpTickResult =
   | { status: "running"; state: ClickUpJobState }
-  | { status: "preview_ready" | "import_done"; heldLists: number };
+  | {
+      status: "preview_ready" | "import_done" | "collection_incomplete";
+      heldLists: number;
+      error?: string;
+    };
 
 /** Cliente que só encaminha as etapas oficiais e lê o staging já filtrado por execução. */
 export function delegatingClient(admin: SupabaseClient, actor: string): SupabaseClient {
@@ -27,12 +32,12 @@ export function delegatingClient(admin: SupabaseClient, actor: string): Supabase
   } as unknown as SupabaseClient;
 }
 
-/** Regra pura: lista sem vínculo anterior não entra automaticamente. */
+/** Compatibilidade: nenhuma lista autorizada é descartada por ainda não ter vínculo. */
 export function groupsToHold(
-  groups: { id: string; list_ext_id: string; action: string }[],
-  linkedListIds: Set<string>,
-) {
-  return groups.filter((g) => g.action === "import" && !linkedListIds.has(g.list_ext_id));
+  _groups: { id: string; list_ext_id: string; action: string }[],
+  _linkedListIds: Set<string>,
+): { id: string; list_ext_id: string; action: string }[] {
+  return [];
 }
 
 export async function advanceClickUpSchedule(
@@ -71,9 +76,17 @@ export async function advanceClickUpSchedule(
       }
       if (!r.done) continue;
       await s.finishCollect(ctx, st.runId, r.cursor);
-      st.heldLists = await holdNewLists(ctx, opts, st.runId);
+      st.heldLists = 0;
+      st.coverageComplete = r.coverageComplete;
       st.cursor = undefined;
-      if (opts.mode === "preview") return { status: "preview_ready", heldLists: st.heldLists };
+      if (opts.mode === "preview")
+        return {
+          status: st.coverageComplete ? "preview_ready" : "collection_incomplete",
+          heldLists: 0,
+          ...(st.coverageComplete
+            ? {}
+            : { error: "Coleta incompleta: confira as lacunas registradas na execução." }),
+        };
       st.phase = "apply";
     } else if (st.phase === "apply") {
       const r = await s.runStep(ctx, "apply", st.runId);
@@ -81,38 +94,17 @@ export async function advanceClickUpSchedule(
     } else {
       const r = await s.runStep(ctx, "assignees", st.runId);
       if (Number(r["updated"] ?? 0) === 0)
-        return { status: "import_done", heldLists: st.heldLists ?? 0 };
+        return {
+          status: st.coverageComplete ? "import_done" : "collection_incomplete",
+          heldLists: 0,
+          ...(st.coverageComplete
+            ? {}
+            : {
+                error:
+                  "Registros recebidos preservados; faltam capacidades ou arquivos da origem. Confira a execução.",
+              }),
+        };
     }
   }
   return { status: "running", state: st };
-}
-
-async function holdNewLists(
-  ctx: { client: SupabaseClient; workspaceId: string; userId: string },
-  opts: { admin: SupabaseClient; workspaceId: string },
-  runId: string,
-) {
-  const { data: groups } = await opts.admin
-    .from("clickup_import_groups" as never)
-    .select("id, list_ext_id, action, erp_list_name")
-    .eq("run_id", runId);
-  const { data: links } = await opts.admin
-    .from("clickup_import_links" as never)
-    .select("external_id")
-    .eq("workspace_id", opts.workspaceId)
-    .eq("entity_type", "list");
-  const linked = new Set(((links ?? []) as { external_id: string }[]).map((l) => l.external_id));
-  const hold = groupsToHold((groups ?? []) as never, linked);
-  const { setGroup } = await import("@/lib/integrations/clickup/clickup-import.server");
-  for (const g of hold)
-    await setGroup(ctx, {
-      groupId: g.id,
-      action: "skip",
-      spaceId: null,
-      newSpace: null,
-      projectId: null,
-      newProject: null,
-      listName: null,
-    });
-  return hold.length;
 }

@@ -21,6 +21,7 @@ import {
   type ClockifyAccess,
 } from "./clockify-access";
 import { ClockifyEngine, defaultOptions, type Db, type RunOptions } from "./clockify-engine.server";
+import { preserveImportRecords } from "@/lib/projects/imports/import-preservation.server";
 
 const BAN_FOREVER = "876000h";
 const LEASE_MS = 45_000;
@@ -460,12 +461,17 @@ export async function advanceClockifyRun(workspaceId: string, runId: string) {
       return { advanced: false };
     }
     const conn = await loadConn(workspaceId);
-    if (!conn?.key_ciphertext) {
+    if (
+      !conn?.key_ciphertext ||
+      conn.source_workspace_id !== claimed.source_workspace_id ||
+      !canReadWholeWorkspace(conn.source_access)
+    ) {
       await db
         .from("clockify_import_runs")
         .update({
           status: "paused",
-          error: "Chave do Clockify removida. Cadastre de novo para retomar.",
+          error:
+            "A conexão foi removida, a origem mudou ou o acesso integral foi revogado. Confira a conexão para retomar.",
         })
         .eq("id", runId);
       return { advanced: false };
@@ -477,6 +483,7 @@ export async function advanceClockifyRun(workspaceId: string, runId: string) {
       subdomain: conn.subdomain,
       plan: conn.source_plan,
       memberEmails,
+      preserveRecords: (input) => preserveImportRecords(db, input),
     });
     await engine.advance(claimed as never);
     return { advanced: true };

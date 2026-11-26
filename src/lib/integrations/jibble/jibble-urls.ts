@@ -101,8 +101,10 @@ export function monthWindows(
   const out: Array<{ from: string; to: string }> = [];
   const start = new Date(`${fromDate.slice(0, 7)}-01T00:00:00Z`);
   const end = new Date(`${toDate}T00:00:00Z`);
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start > end)
+    throw new Error("Período da origem inválido; a cobertura histórica não pode ser presumida.");
   let cur = start;
-  while (cur <= end && out.length < 600) {
+  while (cur <= end) {
     const next = new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth() + 1, 1));
     out.push({ from: cur.toISOString().slice(0, 10), to: next.toISOString().slice(0, 10) });
     cur = next;

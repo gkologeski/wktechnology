@@ -38,6 +38,7 @@ import {
   type WorkspaceMember,
 } from "./clockify-map";
 import { epochToIso, parseIsoDuration } from "./clockify-time";
+import type { preserveImportRecords } from "@/lib/projects/imports/import-preservation.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Db = SupabaseClient<any, "public", any>;
@@ -56,7 +57,8 @@ export type StagingEntity =
   | "expense"
   | "invoice"
   | "holiday"
-  | "time_off_policy";
+  | "time_off_policy"
+  | "time_off_request";
 
 export type Capability =
   | "collected"
@@ -64,6 +66,7 @@ export type Capability =
   | "forbidden"
   | "not_available"
   | "failed"
+  | "partial"
   | "not_collected";
 
 type Q = Record<string, string | number | boolean | string[] | undefined>;
@@ -204,16 +207,6 @@ export const COLLECT_SPECS: CollectSpec[] = [
 /** Dados que esta versão não coleta, com o motivo (mostrados no inventário). */
 export const NOT_COLLECTED: Array<{ entity: string; label: string; reason: string }> = [
   {
-    entity: "time_off_requests",
-    label: "Pedidos de folga",
-    reason: "A leitura no Clockify é por POST de consulta; fica para uma próxima versão.",
-  },
-  {
-    entity: "attendance",
-    label: "Presença (attendance)",
-    reason: "Disponível só como relatório; não é importado.",
-  },
-  {
     entity: "logins",
     label: "Logins e senhas",
     reason: "Autenticação do Clockify não é transferível.",
@@ -232,6 +225,8 @@ export const DRY_PHASES = [
   ...COLLECT_SPECS.map((s) => s.phase).slice(4),
   "time_entries",
   "in_progress",
+  "time_off_requests",
+  "attendance",
   "reconcile",
   "mappings",
   "plan",
@@ -335,6 +330,8 @@ export type EngineDeps = {
   sleep?: (ms: number) => Promise<void>;
   /** E-mails dos membros do workspace (servidor resolve via Auth). */
   memberEmails: (userIds: string[]) => Promise<Map<string, string>>;
+  /** Production always supplies the durable source ledger; fixtures may capture it in memory. */
+  preserveRecords?: (input: Parameters<typeof preserveImportRecords>[1]) => Promise<void>;
 };
 
 const BUDGET_MS = 18_000;
@@ -342,15 +339,15 @@ const BUDGET_MS = 18_000;
 class Pause extends Error {}
 
 // ------------------------------------------------------------------ helpers de banco
-async function fetchAll<T>(
+export async function fetchAll<T>(
   build: (
     from: number,
     to: number,
   ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
-  max = 200_000,
 ): Promise<T[]> {
   const out: T[] = [];
-  for (let from = 0; from < max; from += 1000) {
+  // Every page is consumed. A budget must pause the caller, never silently truncate data.
+  for (let from = 0; ; from += 1000) {
     const { data, error } = await build(from, from + 999);
     if (error) throw new Error(error.message);
     out.push(...(data ?? []));
@@ -376,6 +373,62 @@ function itemId(item: unknown): string | null {
   const o = item as { id?: unknown; approvalRequest?: { id?: unknown } } | null;
   const id = o?.id ?? o?.approvalRequest?.id;
   return isClockifyId(id) ? (id as string).toLowerCase() : null;
+}
+
+/** Preserve malformed source objects as evidence; these issues never create payable hours. */
+export function clockifySourceIssues(entity: string, payload: unknown): string[] {
+  const issues: string[] = [];
+  if (!itemId(payload)) issues.push("missing_external_id");
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    issues.push("invalid_source_record");
+    return issues;
+  }
+  if (entity === "time_entry") {
+    const entry = payload as Partial<CkTimeEntry>;
+    const start = Date.parse(entry.timeInterval?.start ?? "");
+    const end = Date.parse(entry.timeInterval?.end ?? "");
+    if (!entry.userId) issues.push("unmapped_user");
+    if (!entry.projectId) issues.push("no_project");
+    if (!Number.isFinite(start)) issues.push("invalid_interval");
+    else if (entry.timeInterval?.end == null) issues.push("running_timer");
+    else if (!Number.isFinite(end) || end < start) issues.push("invalid_interval");
+    else if (end === start) issues.push("zero_duration");
+  }
+  return issues;
+}
+
+/** A finished worker is not evidence that every source capability was accessible. */
+export function clockifyCoverage(counts: Record<string, unknown>) {
+  const caps = (counts.capabilities ?? {}) as Record<
+    string,
+    { status?: string; detail?: string | null }
+  >;
+  const gaps = Object.entries(caps)
+    .filter(([, cap]) => !["collected", "empty"].includes(cap.status ?? ""))
+    .map(([entity, cap]) => ({ entity, reason: cap.detail || cap.status || "unknown" }));
+  for (const entity of [
+    "workspace",
+    ...COLLECT_SPECS.map((spec) => spec.entity),
+    "task",
+    "time_entry",
+    "running_time_entry",
+    "time_off_request",
+    "attendance",
+    "report_summary",
+  ]) {
+    if (!caps[entity])
+      gaps.push({ entity, reason: "A entidade ainda não foi consultada nesta execução." });
+  }
+  for (const entry of NOT_COLLECTED) {
+    if (!["logins", "roles"].includes(entry.entity))
+      gaps.push({ entity: entry.entity, reason: entry.reason });
+  }
+  if (!Object.keys(caps).length)
+    gaps.push({
+      entity: "inventory",
+      reason: "Inventário da origem ainda não comprovado nesta execução.",
+    });
+  return { complete: gaps.length === 0, gaps };
 }
 
 // ------------------------------------------------------------------ motor
@@ -468,6 +521,7 @@ export class ClockifyEngine {
 
   private async save(extra: Record<string, unknown>) {
     this.cp.lastRequestAt = this.client.lastRequestAt;
+    this.run.counts.coverage = clockifyCoverage(this.run.counts);
     const base = {
       phase: this.run.phase,
       checkpoint: this.cp,
@@ -574,17 +628,34 @@ export class ClockifyEngine {
     if (spec) return this.collect(spec);
     if (phase === "tasks") return this.collectTasks();
     if (phase === "time_entries") return this.collectEntries();
+    if (phase === "time_off_requests") return this.collectTimeOffRequests();
+    if (phase === "attendance") return this.collectAttendance();
     if (phase === "in_progress") {
       try {
         const r = await this.client.page<unknown>(
           `/workspaces/${this.ws}/time-entries/status/in-progress`,
-          1,
+          this.cp.page ?? 1,
           1000,
         );
-        this.cp.inProgress = r.items.length;
+        await this.stage("time_entry", r.items);
+        this.cp.inProgress = (this.cp.inProgress ?? 0) + r.items.length;
+        this.setCapability(
+          "running_time_entry",
+          this.cp.inProgress ? "collected" : "empty",
+          this.cp.inProgress,
+        );
+        if (!r.lastPage) {
+          this.cp.page = (this.cp.page ?? 1) + 1;
+          return false;
+        }
       } catch (e) {
-        if (!(e instanceof ClockifyApiError) || e.code === "rate_limited") throw e;
+        if (
+          !(e instanceof ClockifyApiError) ||
+          ["rate_limited", "network", "server"].includes(e.code)
+        )
+          throw e;
         this.cp.inProgress = undefined;
+        this.setCapability("running_time_entry", "failed", undefined, e.message);
       }
       this.nextPhase(DRY_PHASES);
       return false;
@@ -600,7 +671,27 @@ export class ClockifyEngine {
     return false;
   }
 
-  private async stage(entity: StagingEntity, items: unknown[]) {
+  private async stage(entity: StagingEntity, items: unknown[], originals: unknown[] = items) {
+    await this.deps.preserveRecords?.({
+      workspaceId: this.run.workspace_id,
+      provider: "clockify",
+      sourceId: this.ws,
+      runId: this.run.id,
+      records: originals.map((payload, index) => {
+        const externalId = itemId(payload);
+        const issues = clockifySourceIssues(entity, payload);
+        const person = (payload as { userId?: unknown } | null)?.userId;
+        return {
+          entity,
+          externalId,
+          payload,
+          status: issues.length ? ("pending" as const) : ("received" as const),
+          issues,
+          sourcePersonId: typeof person === "string" ? person : null,
+          observationKey: `${this.run.phase}:${this.cp.ids?.[this.cp.index ?? 0] ?? this.cp.index ?? 0}:${this.cp.variant ?? 0}:${this.cp.page ?? 1}:${index}`,
+        };
+      }),
+    });
     const rows = [];
     for (const item of items) {
       const id = itemId(item);
@@ -675,8 +766,12 @@ export class ClockifyEngine {
           page > 1 &&
           items.length &&
           items.every((i) => (this.cp.ids ?? []).includes(itemId(i) ?? ""))
-        )
-          last = true;
+        ) {
+          await this.stage(spec.entity, items);
+          throw new Error(
+            `${spec.label}: a origem repetiu uma página sem confirmar o fim. Os registros recebidos foram preservados; a cobertura está incompleta.`,
+          );
+        }
         this.cp.ids = items.map((i) => itemId(i) ?? "").slice(0, 200);
       } else {
         const { data } = await this.client.get<unknown>(spec.path(this.ws), spec.variants[variant]);
@@ -703,7 +798,8 @@ export class ClockifyEngine {
       const caps = (this.run.counts.capabilities ?? {}) as Record<string, { count?: number }>;
       if ((caps[spec.entity]?.count ?? 0) > 0) {
         // Uma variação do filtro falhou, mas outra já trouxe dados: registra sem zerar.
-        const c = caps[spec.entity] as { detail?: string | null };
+        const c = caps[spec.entity] as { status?: string; detail?: string | null };
+        c.status = "partial";
         c.detail = `Filtro ${variant + 1}: ${e.message}`;
       } else {
         const cap: Capability =
@@ -756,7 +852,10 @@ export class ClockifyEngine {
       );
       const n = await this.stage(
         "task",
-        r.items.map((t) => ({ ...t, projectId: t.projectId ?? ids[i] })),
+        r.items.map((t) =>
+          t && typeof t === "object" ? { ...t, projectId: t.projectId ?? ids[i] } : t,
+        ),
+        r.items,
       );
       this.bumpCount("task", n);
       if (r.lastPage) {
@@ -804,15 +903,23 @@ export class ClockifyEngine {
       const n = await this.stage("time_entry", r.items);
       this.bumpCount("time_entry", n);
       for (const e of r.items) {
+        if (!e || typeof e !== "object" || !itemId(e)) continue;
         const s = e.timeInterval?.start
           ? Math.round(Date.parse(e.timeInterval.start) / 1000)
           : null;
         const en = e.timeInterval?.end ? Math.round(Date.parse(e.timeInterval.end) / 1000) : null;
-        if (s !== null) {
+        if (s !== null && Number.isFinite(s)) {
           this.cp.minStart = this.cp.minStart == null ? s : Math.min(this.cp.minStart, s);
           this.cp.maxStart = this.cp.maxStart == null ? s : Math.max(this.cp.maxStart, s);
         }
-        if (s !== null && en !== null && en > s) {
+        if (
+          s !== null &&
+          en !== null &&
+          Number.isFinite(s) &&
+          Number.isFinite(en) &&
+          en > s &&
+          typeof e.userId === "string"
+        ) {
           const byU = (this.cp.collectedByUser ??= {});
           byU[e.userId] = (byU[e.userId] ?? 0) + (en - s);
         }
@@ -842,12 +949,141 @@ export class ClockifyEngine {
       failed.push({ user: ids[i], error: e.message });
       this.setCapability(
         "time_entry",
-        "collected",
+        "partial",
         undefined,
         `${failed.length} pessoa(s) sem acesso aos apontamentos`,
       );
       this.cp.index = i + 1;
       this.cp.page = 1;
+    }
+    return false;
+  }
+
+  /** POST documented as a read query. Explicit user batches avoid the API's 5,000-user default. */
+  private async collectTimeOffRequests(): Promise<boolean> {
+    if (!this.cp.ids) {
+      this.cp.ids = await this.stagingIds("user");
+      this.cp.index = 0;
+      this.cp.page = 1;
+      this.setCapability("time_off_request", "empty", 0);
+    }
+    const index = this.cp.index ?? 0;
+    const users = this.cp.ids.slice(index, index + 200);
+    if (index >= this.cp.ids.length && index > 0) {
+      this.nextPhase(DRY_PHASES);
+      return false;
+    }
+    const page = this.cp.page ?? 1;
+    try {
+      const data = await this.client.timeOffRequests<{
+        requests?: unknown[] | null;
+        count?: number;
+      }>(this.ws, { page, pageSize: 200, users, statuses: ["ALL"] });
+      if (
+        !data ||
+        typeof data !== "object" ||
+        (data.requests != null && !Array.isArray(data.requests))
+      )
+        throw new Error("Resposta de pedidos de folga inválida; cobertura não comprovada.");
+      const items = data.requests ?? [];
+      const total = typeof data.count === "number" ? data.count : null;
+      if (!items.length && total != null && total > (page - 1) * 200)
+        throw new Error(
+          "Pedidos de folga: a origem informou registros que não entregou nesta página.",
+        );
+      this.bumpCount("time_off_request", await this.stage("time_off_request", items));
+      if (items.length < 200 || (total !== null && page * 200 >= total)) {
+        if (!users.length) this.nextPhase(DRY_PHASES);
+        else {
+          this.cp.index = index + users.length;
+          this.cp.page = 1;
+        }
+      } else {
+        if (page >= 1000)
+          throw new Error(
+            "Pedidos de folga atingiram o limite de páginas da origem. Os registros recebidos estão preservados e a cobertura está incompleta.",
+          );
+        this.cp.page = page + 1;
+      }
+    } catch (err) {
+      if (
+        !(err instanceof ClockifyApiError) ||
+        ["rate_limited", "network", "server"].includes(err.code)
+      )
+        throw err;
+      this.setCapability("time_off_request", "failed", undefined, err.message);
+      this.nextPhase(DRY_PHASES);
+    }
+    return false;
+  }
+
+  /** Attendance is source evidence only; it never creates additional operational hours. */
+  private async collectAttendance(): Promise<boolean> {
+    const origin = Date.UTC(1970, 0, 1) / 1000;
+    const end = Math.max(this.now() / 1000, this.cp.maxStart ?? 0) + 86400;
+    const year = 365 * 86400;
+    const index = this.cp.index ?? 0;
+    const start = origin + index * year;
+    if (start >= end) {
+      this.nextPhase(DRY_PHASES);
+      return false;
+    }
+    const stop = Math.min(start + year, end);
+    const page = this.cp.page ?? 1;
+    try {
+      const data = await this.client.report<Record<string, unknown>>(
+        `/workspaces/${this.ws}/reports/attendance`,
+        {
+          dateRangeStart: new Date(start * 1000).toISOString(),
+          dateRangeEnd: new Date(stop * 1000 - 1).toISOString(),
+          attendanceFilter: { page, pageSize: 200 },
+          timeZone: "UTC",
+          exportType: "JSON",
+          amountShown: "HIDE_AMOUNT",
+        },
+      );
+      // Keep the complete report envelope, not a normalized/truncated first array.
+      await this.deps.preserveRecords?.({
+        workspaceId: this.run.workspace_id,
+        provider: "clockify",
+        sourceId: this.ws,
+        runId: this.run.id,
+        records: [
+          {
+            entity: "attendance",
+            externalId: `${start}:${stop}:${page}`,
+            payload: data,
+            status: "received",
+          },
+        ],
+      });
+      const rows = extractItems(data);
+      if (
+        !Array.isArray(data) &&
+        (!data || typeof data !== "object" || !Object.values(data).some(Array.isArray))
+      ) {
+        this.setCapability(
+          "attendance",
+          "partial",
+          undefined,
+          "Envelope preservado, mas o formato retornado não comprova a paginação do relatório.",
+        );
+        this.nextPhase(DRY_PHASES);
+        return false;
+      }
+      this.bumpCount("attendance", rows.length);
+      if (rows.length < 200) {
+        this.cp.index = index + 1;
+        this.cp.page = 1;
+      } else this.cp.page = page + 1;
+    } catch (err) {
+      if (
+        !(err instanceof ClockifyApiError) ||
+        ["rate_limited", "network", "server"].includes(err.code)
+      )
+        throw err;
+      this.setCapability("attendance", "failed", undefined, err.message);
+      this.nextPhase(DRY_PHASES);
     }
     return false;
   }
@@ -963,11 +1199,19 @@ export class ClockifyEngine {
     );
     const ids = members.map((m) => m.user_id);
     const emails = await this.deps.memberEmails(ids);
-    const profiles = ids.length
-      ? await fetchAll<{ id: string; full_name: string | null }>((f, t) =>
-          this.db.from("profiles").select("id, full_name").in("id", ids.slice(0, 1000)).range(f, t),
-        )
-      : [];
+    const profiles: Array<{ id: string; full_name: string | null }> = [];
+    for (let i = 0; i < ids.length; i += 300) {
+      profiles.push(
+        ...(await fetchAll<{ id: string; full_name: string | null }>((f, t) =>
+          this.db
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", ids.slice(i, i + 300))
+            .order("id")
+            .range(f, t),
+        )),
+      );
+    }
     const nameById = new Map(profiles.map((p) => [p.id, p.full_name]));
     const wm: WorkspaceMember[] = members.map((m) => ({
       user_id: m.user_id,
@@ -1324,7 +1568,7 @@ export class ClockifyEngine {
             end_time: s.dstMismatch ? null : s.endTime,
             duration_minutes: s.erpMinutes,
             description: r.payload.description?.trim() || null,
-            billable: r.payload.billable ?? true,
+            billable: r.payload.billable ?? false,
             hourly_rate: rate,
             external_id: `clockify:${r.external_id}:${s.index}`,
             status: this.opts.erpStatus,
@@ -1749,6 +1993,7 @@ export class ClockifyEngine {
     }
     return {
       generated_at: new Date(this.now()).toISOString(),
+      coverage: clockifyCoverage(this.run.counts),
       options: this.opts,
       plan: this.run.counts.plan ?? null,
       capabilities: this.run.counts.capabilities ?? {},
@@ -1772,6 +2017,7 @@ export class ClockifyEngine {
   private buildImportReport() {
     return {
       generated_at: new Date(this.now()).toISOString(),
+      coverage: clockifyCoverage(this.run.counts),
       options: this.opts,
       import: this.cp.importTotals ?? emptyImportTotals(),
     };

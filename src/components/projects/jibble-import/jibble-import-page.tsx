@@ -1,5 +1,5 @@
 // Tela do importador Jibble → TechProjects (contêiner: dados e ações).
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,6 +17,11 @@ import {
 } from "@/components/ui/select";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState, FormSection, PageHeader, Skeletons } from "@/components/techhire/ui";
+import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useImportAccess } from "../imports/use-import-access";
+import { assertImportUiAccess, importPermissionFingerprint } from "../imports/import-access";
+import type { ImportQueryScope } from "../imports/import-format";
 import {
   MappingsTable,
   StagingTable,
@@ -75,7 +80,40 @@ const STAGING_ENTITIES = [
 type MapEntity = "person" | "client" | "project";
 
 export function JibbleImportPage() {
+  const { user } = useAuth();
+  const permissions = usePermissions();
+  const scope: ImportQueryScope = [
+    user?.id ?? "",
+    permissions.workspaceId ?? "",
+    importPermissionFingerprint(permissions.permissions),
+  ];
+  const access = useImportAccess(scope);
+  if (!access.canRead("jibble"))
+    return (
+      <EmptyState
+        title="Importação indisponível"
+        description="Aguarde a validação do acesso ao workspace ativo ou consulte o administrador."
+      />
+    );
+  return <ScopedJibbleImportPage key={JSON.stringify(scope)} scope={scope} />;
+}
+
+function ScopedJibbleImportPage({ scope }: { scope: ImportQueryScope }) {
   const qc = useQueryClient();
+  const access = useImportAccess(scope);
+  const [actorId, workspaceId, permissionKey] = scope;
+  const queryPrefix = useMemo(
+    () => ["jibble-import", actorId, workspaceId, permissionKey],
+    [actorId, workspaceId, permissionKey],
+  );
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      void qc.cancelQueries({ queryKey: queryPrefix });
+    };
+  }, [qc, queryPrefix]);
   const fStatus = useServerFn(getJibbleImportStatus);
   const fSave = useServerFn(saveJibbleImportConnection);
   const fRemove = useServerFn(removeJibbleImportConnection);
@@ -92,14 +130,22 @@ export function JibbleImportPage() {
   const fDups = useServerFn(listJibbleImportDuplicates);
   const fDecide = useServerFn(decideJibbleImportDuplicate);
 
-  const status = useQuery({ queryKey: ["jibble-import", "status"], queryFn: () => fStatus() });
-  const refresh = () => qc.invalidateQueries({ queryKey: ["jibble-import"] });
+  const status = useQuery({
+    queryKey: [...queryPrefix, "status"],
+    enabled: access.canRead("jibble"),
+    queryFn: () => fStatus(),
+  });
+  const refresh = () => qc.invalidateQueries({ queryKey: queryPrefix });
   const act = useMutation({
-    mutationFn: async (fn: () => Promise<unknown>) => fn(),
+    mutationFn: async (fn: () => Promise<unknown>) => {
+      if (!mounted.current) throw new Error("O contexto de importação foi alterado.");
+      assertImportUiAccess(access, "jibble", true);
+      return fn();
+    },
     onError: (e) => toast.error(errMsg(e)),
     onSettled: () => refresh(),
   });
-  const busy = act.isPending;
+  const busy = act.isPending || !access.canManage("jibble");
 
   const conn = status.data?.connection as JbConnectionView | undefined;
   const runs = (status.data?.runs ?? []) as JbRunView[];
@@ -109,32 +155,32 @@ export function JibbleImportPage() {
 
   // Avança enquanto a tela está aberta (o agendador, quando ativo, faz o mesmo).
   const live = useQuery({
-    queryKey: ["jibble-import", "advance", activeRun?.id],
-    enabled: !!activeRun && ACTIVE.includes(activeRun.status),
+    queryKey: [...queryPrefix, "advance", activeRun?.id],
+    enabled: access.canManage("jibble") && !!activeRun && ACTIVE.includes(activeRun.status),
     queryFn: () => fAdvance({ data: { runId: activeRun!.id } }),
     refetchInterval: 3000,
     refetchIntervalInBackground: false,
   });
   useEffect(() => {
-    if (live.data) void qc.invalidateQueries({ queryKey: ["jibble-import", "status"] });
-  }, [live.data, qc]);
+    if (live.data) void qc.invalidateQueries({ queryKey: [...queryPrefix, "status"] });
+  }, [live.data, qc, queryPrefix]);
 
   const [mapEntity, setMapEntity] = useState<MapEntity>("person");
   const [optQ, setOptQ] = useState("");
   const maps = useQuery({
-    queryKey: ["jibble-import", "maps", mapEntity],
-    enabled: !!conn?.org,
+    queryKey: [...queryPrefix, "maps", mapEntity],
+    enabled: access.canRead("jibble") && !!conn?.org,
     queryFn: () => fMappings({ data: { entity: mapEntity } }),
   });
   const opts = useQuery({
-    queryKey: ["jibble-import", "opts", mapEntity, optQ],
-    enabled: !!conn?.org,
+    queryKey: [...queryPrefix, "opts", mapEntity, optQ],
+    enabled: access.canRead("jibble") && !!conn?.org,
     queryFn: () => fOptions({ data: { entity: mapEntity, q: optQ } }),
   });
   const [dupFilter, setDupFilter] = useState<"pending" | "all">("pending");
   const dups = useQuery({
-    queryKey: ["jibble-import", "dups", dupFilter],
-    enabled: !!conn?.org,
+    queryKey: [...queryPrefix, "dups", dupFilter],
+    enabled: access.canRead("jibble") && !!conn?.org,
     queryFn: () =>
       fDups({ data: { decision: dupFilter === "pending" ? "pending" : null, page: 0 } }),
   });
@@ -142,8 +188,8 @@ export function JibbleImportPage() {
   const [stStatus, setStStatus] = useState<string>("pending_review");
   const [stPage, setStPage] = useState(0);
   const staging = useQuery({
-    queryKey: ["jibble-import", "staging", stEntity, stStatus, stPage],
-    enabled: !!conn?.org,
+    queryKey: [...queryPrefix, "staging", stEntity, stStatus, stPage],
+    enabled: access.canRead("jibble") && !!conn?.org,
     queryFn: () =>
       fStaging({
         data: { entity: stEntity, status: stStatus === "all" ? null : stStatus, page: stPage },

@@ -31,7 +31,40 @@ function check(error: { message: string } | null) {
   if (error) throw new Error(error.message);
 }
 
-export function createJibbleStore(db: Db, workspaceId: string, orgId: string): JibbleStore {
+/** Exhaust every page instead of returning a silently capped subset. */
+async function collectPages<T>(
+  read: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await read(from, from + 999);
+    check(error);
+    out.push(...(data ?? []));
+    if (!data || data.length < 1000) return out;
+  }
+}
+
+export async function createJibbleStore(
+  db: Db,
+  workspaceId: string,
+  orgId: string,
+  runId: string,
+): Promise<JibbleStore> {
+  // The privileged adapter is a capability bound to a real run, never arbitrary caller strings.
+  const allowed = await db.rpc("project_import_run_actor", {
+    p_ws: workspaceId,
+    p_provider: PROVIDER,
+    p_source: orgId,
+    p_run: runId,
+  });
+  if (allowed.error || !allowed.data)
+    throw new Error("Execução do Jibble indisponível ou sem permissão.");
+  const assertRun = (id: string) => {
+    if (id !== runId) throw new Error("A gravação pertence a outra execução do Jibble.");
+  };
   const scope = { workspace_id: workspaceId, provider: PROVIDER, source_org_id: orgId };
   const base = (table: string) =>
     db
@@ -43,6 +76,7 @@ export function createJibbleStore(db: Db, workspaceId: string, orgId: string): J
 
   return {
     async upsertStaging(runId, rows) {
+      assertRun(runId);
       const now = new Date().toISOString();
       for (const part of chunk(rows, 500)) {
         const { error } = await db.from("time_import_staging").upsert(
@@ -70,7 +104,7 @@ export function createJibbleStore(db: Db, workspaceId: string, orgId: string): J
     },
     async stagingPersonIds(entity) {
       const ids = new Set<string>();
-      for (let from = 0; from < 2_000_000; from += 1000) {
+      for (let from = 0; ; from += 1000) {
         const { data, error } = await db
           .from("time_import_staging")
           .select("person_external_id")
@@ -101,11 +135,9 @@ export function createJibbleStore(db: Db, workspaceId: string, orgId: string): J
       }
     },
     async loadMappings(entity) {
-      const { data, error } = await base("time_import_mappings")
-        .eq("entity_type", entity)
-        .limit(20_000);
-      check(error);
-      return (data ?? []) as MappingRow[];
+      return collectPages<MappingRow>((from, to) =>
+        base("time_import_mappings").eq("entity_type", entity).order("external_id").range(from, to),
+      );
     },
     async upsertMappings(rows) {
       for (const part of chunk(rows, 300)) {
@@ -121,15 +153,20 @@ export function createJibbleStore(db: Db, workspaceId: string, orgId: string): J
     async loadLinks(entity, externalIds) {
       const out: LinkRow[] = [];
       for (const part of chunk(externalIds, 300)) {
-        const { data, error } = await base("time_import_links")
-          .eq("entity_type", entity)
-          .in("external_id", part);
-        check(error);
-        out.push(...((data ?? []) as LinkRow[]));
+        out.push(
+          ...(await collectPages<LinkRow>((from, to) =>
+            base("time_import_links")
+              .eq("entity_type", entity)
+              .in("external_id", part)
+              .order("id")
+              .range(from, to),
+          )),
+        );
       }
       return out;
     },
     async insertLinks(runId, rows) {
+      assertRun(runId);
       for (const part of chunk(rows, 300)) {
         const { error } = await db.from("time_import_links").upsert(
           part.map((r: LinkInput) => ({ ...scope, ...r, last_run_id: runId })),
@@ -143,7 +180,7 @@ export function createJibbleStore(db: Db, workspaceId: string, orgId: string): J
     },
     async linksCreatedByRun(runId) {
       const out: LinkRow[] = [];
-      for (let from = 0; from < 2_000_000; from += 1000) {
+      for (let from = 0; ; from += 1000) {
         const { data, error } = await base("time_import_links")
           .eq("created_run_id", runId)
           .order("id")
@@ -180,23 +217,31 @@ export function createJibbleStore(db: Db, workspaceId: string, orgId: string): J
     async loadDuplicates(externalIds) {
       const out: DuplicateRow[] = [];
       for (const part of chunk(externalIds, 300)) {
-        const { data, error } = await base("time_import_duplicates").in("external_id", part);
-        check(error);
-        out.push(...((data ?? []) as DuplicateRow[]));
+        out.push(
+          ...(await collectPages<DuplicateRow>((from, to) =>
+            base("time_import_duplicates").in("external_id", part).order("id").range(from, to),
+          )),
+        );
       }
       return out;
     },
     async members() {
-      const { data, error } = await db
-        .from("workspace_members")
-        .select("user_id, status")
-        .eq("workspace_id", workspaceId)
-        .limit(5000);
-      check(error);
+      const data = await collectPages<{ user_id: string; status: string }>((from, to) =>
+        db
+          .from("workspace_members")
+          .select("user_id, status")
+          .eq("workspace_id", workspaceId)
+          .order("user_id")
+          .range(from, to),
+      );
       const ids = (data ?? []).map((m) => m.user_id as string);
       const names = new Map<string, string | null>();
       for (const part of chunk(ids, 300)) {
-        const { data: profiles } = await db.from("profiles").select("id, full_name").in("id", part);
+        const { data: profiles, error } = await db
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", part);
+        check(error);
         for (const p of profiles ?? [])
           names.set(p.id as string, (p.full_name as string | null) ?? null);
       }
@@ -223,14 +268,16 @@ export function createJibbleStore(db: Db, workspaceId: string, orgId: string): J
       for (const p of pairs)
         byProject.set(p.project_id, [...(byProject.get(p.project_id) ?? []), p.user_id]);
       for (const [projectId, users] of byProject) {
-        const { data, error } = await db
-          .from("project_members")
-          .select("project_id, user_id")
-          .eq("workspace_id", workspaceId)
-          .eq("project_id", projectId)
-          .in("user_id", users);
-        check(error);
-        for (const m of data ?? []) out.add(`${m.project_id}:${m.user_id}`);
+        for (const part of chunk(users, 300)) {
+          const { data, error } = await db
+            .from("project_members")
+            .select("project_id, user_id")
+            .eq("workspace_id", workspaceId)
+            .eq("project_id", projectId)
+            .in("user_id", part);
+          check(error);
+          for (const m of data ?? []) out.add(`${m.project_id}:${m.user_id}`);
+        }
       }
       return out;
     },
@@ -241,28 +288,31 @@ export function createJibbleStore(db: Db, workspaceId: string, orgId: string): J
         ...new Set(labels.map((l) => l.replace(/[%_\\,()*"]/g, "").trim()).filter(Boolean)),
       ];
       for (const part of chunk(clean, 40)) {
-        const { data, error } = await db
-          .from(table)
-          .select("id, name")
-          .eq("workspace_id", workspaceId)
-          .or(part.map((l) => `name.ilike."${l}"`).join(","))
-          .limit(400);
-        check(error);
-        out.push(...((data ?? []) as Array<{ id: string; name: string }>));
+        const data = await collectPages<{ id: string; name: string }>((from, to) =>
+          db
+            .from(table)
+            .select("id, name")
+            .eq("workspace_id", workspaceId)
+            .or(part.map((l) => `name.ilike."${l}"`).join(","))
+            .order("id")
+            .range(from, to),
+        );
+        out.push(...data);
       }
       return out;
     },
     async erpEntries(userId, fromIso, toIso) {
-      const { data, error } = await db
-        .from("project_time_entries")
-        .select("id, source, external_id, project_id, started_at, stopped_at")
-        .eq("workspace_id", workspaceId)
-        .eq("user_id", userId)
-        .lt("started_at", toIso)
-        .gt("stopped_at", fromIso)
-        .limit(20_000);
-      check(error);
-      return (data ?? []) as ErpEntry[];
+      return collectPages<ErpEntry>((from, to) =>
+        db
+          .from("project_time_entries")
+          .select("id, source, external_id, project_id, started_at, stopped_at")
+          .eq("workspace_id", workspaceId)
+          .eq("user_id", userId)
+          .lt("started_at", toIso)
+          .gt("stopped_at", fromIso)
+          .order("id")
+          .range(from, to),
+      );
     },
     async applyErp(table, op, rows) {
       const out: ApplyResult = [];
@@ -290,6 +340,7 @@ export function createJibbleStore(db: Db, workspaceId: string, orgId: string): J
       return (data ?? {}) as Record<string, string[]>;
     },
     async saveRun(id, patch) {
+      assertRun(id);
       const { error } = await db
         .from("time_import_runs")
         .update({ ...patch, updated_at: new Date().toISOString() })
@@ -299,6 +350,7 @@ export function createJibbleStore(db: Db, workspaceId: string, orgId: string): J
       check(error);
     },
     async isCancelRequested(id) {
+      assertRun(id);
       const { data } = await db
         .from("time_import_runs")
         .select("status")

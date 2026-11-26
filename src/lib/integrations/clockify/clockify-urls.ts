@@ -83,19 +83,21 @@ const GET_PATHS: RegExp[] = [
   /^\/workspaces\/[0-9a-f]{24}\/time-entries\/status\/in-progress$/i,
 ];
 /** Relatórios: POST de consulta (leitura), documentado pelo Clockify. */
-const REPORT_PATHS: RegExp[] = [/^\/workspaces\/[0-9a-f]{24}\/reports\/summary$/i];
+const REPORT_PATHS: RegExp[] = [/^\/workspaces\/[0-9a-f]{24}\/reports\/(summary|attendance)$/i];
+/** A POST read-query is isolated from the GET and mutation paths. */
+const QUERY_PATHS: RegExp[] = [/^\/workspaces\/[0-9a-f]{24}\/time-off\/requests$/i];
 
 export function buildClockifyUrl(
   bases: ClockifyBases,
-  kind: "api" | "reports",
+  kind: "api" | "reports" | "queries",
   path: string,
   query?: Record<string, string | number | boolean | Array<string> | undefined | null>,
 ): string {
-  const allowed = kind === "api" ? GET_PATHS : REPORT_PATHS;
+  const allowed = kind === "api" ? GET_PATHS : kind === "reports" ? REPORT_PATHS : QUERY_PATHS;
   if (!allowed.some((re) => re.test(path))) {
     throw new Error(`Endpoint do Clockify não permitido: ${path}`);
   }
-  const url = new URL(`${bases[kind]}${path}`);
+  const url = new URL(`${bases[kind === "queries" ? "api" : kind]}${path}`);
   if (!url.hostname.endsWith(".clockify.me") || url.protocol !== "https:") {
     throw new Error("Host do Clockify inválido.");
   }

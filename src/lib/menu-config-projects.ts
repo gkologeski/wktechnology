@@ -126,28 +126,22 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
         icon: LayoutDashboard,
       },
       {
-        title: "Importar do Clockify",
-        url: "/projects/settings/imports/clockify",
+        title: "Importações",
+        url: "/projects/settings/imports",
         need: "admin",
         icon: Download,
-      },
-      {
-        title: "Importar do Jibble",
-        url: "/projects/settings/imports/jibble",
-        need: "admin",
-        icon: Download,
-      },
-      {
-        title: "Importar do ClickUp",
-        url: "/projects/settings/imports/clickup",
-        need: "admin",
-        icon: Download,
+        permissionAny: [
+          "techprojects.clockify_import.view.workspace",
+          "techprojects.jibble_import.view.workspace",
+          "techprojects.clickup_import.view.workspace",
+        ],
       },
       {
         title: "Conciliação de horas",
         url: "/projects/settings/imports/reconciliation",
         need: "admin",
         icon: ShieldCheck,
+        permissionAny: ["techprojects.reconciliation.view.workspace"],
       },
       {
         title: "Entrega de negócios",

@@ -3354,6 +3354,34 @@
       "when": 1795641434698,
       "tag": "0478_contract_draft_public_linked_proposal",
       "breakpoints": true
+    },
+    {
+      "idx": 479,
+      "version": "7",
+      "when": 1795719600479,
+      "tag": "0479_project_import_preservation",
+      "breakpoints": true
+    },
+    {
+      "idx": 480,
+      "version": "7",
+      "when": 1795719600480,
+      "tag": "0480_clickup_full_history_collection",
+      "breakpoints": true
+    },
+    {
+      "idx": 481,
+      "version": "7",
+      "when": 1795719600481,
+      "tag": "0481_jibble_source_screenshots",
+      "breakpoints": true
+    },
+    {
+      "idx": 482,
+      "version": "7",
+      "when": 1795719600482,
+      "tag": "0482_project_import_evidence_pages",
+      "breakpoints": true
     }
   ]
 }

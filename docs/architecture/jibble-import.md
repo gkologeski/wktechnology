@@ -14,12 +14,12 @@ também na central `/projects/settings/imports`. Só administradores ativos do w
 | Cargos, grupos, clientes, projetos, atividades, locais, jornadas | `Positions`, `Groups`, `Clients`, `Projects` (`$expand=client,location`), `Activities`, `Locations`, `Schedules` |
 | Aprovações                                                       | `workspace…/v1/PayPeriodDefinitions`, `time-attendance…/v1/PayPeriodSummary`                                     |
 | Ausências e feriados                                             | `workspace…/v1/TimeOffPolicies`, `Calendars`, `CalendarDays`; `time-tracking…/v1/TimeOffOverview`                |
-| Eventos de ponto                                                 | `time-tracking…/v1/TimeEntries` por mês (`belongsToDate ge/lt`)                                                  |
-| Lançamentos de horas                                             | `time-tracking…/v1/HourEntries` por mês                                                                          |
+| Eventos de ponto                                                 | `time-tracking…/v1/TimeEntries` sem filtro de período, paginado                                                  |
+| Lançamentos de horas                                             | `time-tracking…/v1/HourEntries` sem filtro de período, paginado                                                  |
 | Timesheets                                                       | `time-attendance…/v1/TimesheetsSummary?period=Custom` por mês                                                    |
-| Capturas (só inventário, sem `url`)                              | `time-tracking…/v1/Screenshots` por mês                                                                          |
+| Capturas (metadados e arquivo disponível)                        | `time-tracking…/v1/Screenshots` sem filtro de período, página de 1 para transferências limitadas                 |
 
-Paginação `$top=500&$skip`, seguindo `@odata.nextLink` só se o host for oficial. Exportação
+Paginação `$top=500&$skip` (capturas: `$top=1`), seguindo `@odata.nextLink` só se o host for oficial. Exportação
 assíncrona (`Prefer: respond-async`) implementada no cliente: só trata como export quando a
 resposta é **202** com `statusUrl` (relativo, no mesmo host); **303** `Location` é baixado sem
 `Authorization`; o export de origem nunca é excluído. Endpoint que responde 400/403/404 é marcado
@@ -67,7 +67,7 @@ houver choque (erro visível, nada contornado).
 
 ## Não importado (preservado no staging privado)
 
-Selfies/biometria (não documentado na API), arquivos de captura (só inventário), geolocalização,
+Selfies/biometria (não documentado na API), geolocalização,
 horas extras/regulares/aprovações, jornadas/feriados/ausências, tarifas e lançamentos de horas
 sem relógio (usados só na conciliação). Nada ativa ponto, folha, biometria, e-mail ou fatura.
 
@@ -75,3 +75,51 @@ sem relógio (usados só na conciliação). Nada ativa ponto, folha, biometria, 
 
 Exportações CSV/XLSX do Jibble ("Timesheets list", "Time entries list", "Tracked time report")
 têm colunas úteis, mas não contêm todas as entidades. Não há importador de planilha nesta versão.
+
+## Jornada unificada e evidência original (26/11/2026)
+
+A central `/projects/settings/imports` é a entrada principal. A preparação nativa continua
+existindo no servidor para proteger a aplicação operacional; preservar um original não depende
+da resolução antecipada de todos os vínculos. `preserveImportRecords` é chamado antes de
+validar o ID e antes de achatar o timesheet: o envelope `timesheet_summary` preserva também
+os campos que não têm equivalente operacional. Ajustes manuais são evidência própria, com
+pendência, sem virar um intervalo de ponto artificial.
+
+Eventos, ajustes e capturas são lidos como coleções OData completas, sem recorte por datas de
+criação da organização ou mês atual; erros com datas antigas ou futuras continuam recebidos.
+Somente o resumo calculado TimesheetsSummary exige janelas mensais. Janelas não são truncadas
+após 600 meses. As leituras locais esgotam páginas, inclusive mapeamentos, membros, vínculos
+e períodos usados para verificar sobreposição; não há teto silencioso de 500 mil/2 milhões.
+Uma página ou nextLink repetido sem fim comprovado interrompe com erro explícito.
+
+Saída órfã, intervalo aberto, sobreposição e pessoa/projeto sem vínculo também deixam os
+eventos originais pendentes na fila unificada. A reconstrução propaga o motivo ao staging
+de entrada/saída; não altera payload nem cria uma versão artificial. Corrigir um vínculo
+pode liberar o status nativo, mas os problemas intrínsecos preservados continuam pendentes.
+
+`counts.coverage`/`report.coverage` separam fim do processamento de cobertura integral.
+400/403/404 e falta de conteúdo não significam zero. O navegador nunca recebe credenciais
+ou URLs transitórias de origem; as telas continuam sujeitas a membership ativo, workspace,
+negações, recurso do importador e restrição administrativa existente.
+As telas avançadas antigas também separam o cache por usuário, workspace e permissões
+efetivas; troca de contexto desmonta os campos de credenciais e cancela consultas antigas.
+
+### Capturas privadas
+
+A documentação oficial fornece `url,id,time,status`; o link pode ser nulo em captura
+arquivada. A URL fornecida pela API é usada somente na transferência imediata, nunca
+armazenada como segredo. O downloader aceita HTTPS de armazenamento controlado por
+`*.jibble.io`, sem portas alternativas, credenciais embutidas ou redirecionamento, e não
+encaminha Authorization. Um CDN diferente que não tenha sido comprovado fica pendente,
+sem inventar domínio permitido ou contornar o controle.
+
+Conteúdo PNG/JPEG/WebP é validado por assinatura binária, limitado a 8 MiB/transferência e
+guardado no bucket privado `time-source-files`. `jibble_source_files` conserva versões pelo
+hash do conteúdo. A migração 0481 revalida o ator derivado da execução, tenant, organização
+e conexão antes da escrita; RLS e download assinado de 60 s exigem a permissão de leitura
+do Jibble. Falha/expiração/arquivo indisponível conserva o registro e o motivo; impede
+cobertura integral, e não é mascarada por um selo de conclusão. Nenhuma captura é ativada
+no Jibble, nem biometria/folha/ponto é habilitada no ERP.
+
+Referência primária: [coleção oficial Jibble](https://docs.api.jibble.io/), seção Time Tracking
+→ Screenshots (consultada em 26/11/2026).

@@ -5,13 +5,16 @@ title: Importar do Clockify
 summary: Importar do Clockify no TechProjects: operação, acesso e limites comprovados no código.
 article_type: howto
 route_pattern: /projects/settings/imports/clockify
-min_permission: 
+min_permission:
 audience: internal
 sort_order: 90
-version: 5
+version: 6
 is_published: true
 ---
+
 # Importar do Clockify
+
+> **Jornada principal:** para receber todo o histórico, inclusive registros com erro, use [Importações](/ajuda/projects/operar-imports). Esta rota reúne configurações e operações avançadas do Clockify. A conexão também pode ser configurada pelo painel da jornada, sem sair dela.
 
 **Para que serve:** Os dados aprovados na prévia são processados pelo importador e o resultado da execução fica disponível para conferência.
 
@@ -22,6 +25,7 @@ is_published: true
 **Antes de começar:** Confirme o workspace e o período, confira o registro de destino e disponha da permissão para a ação. Para importações, revise a prévia antes da gravação.
 
 ## Passo a passo
+
 1. Abra Configurações > Importar do Clockify. Salve a conexão e teste a chave no controle próprio, sem compartilhá-la.
 2. Selecione o workspace de origem. Inicie a prévia e configure o tratamento de apontamentos sem projeto e a situação das horas no ERP.
 3. Após a simulação, confira Resumo, Pessoas, Clientes, Projetos e Staging. Revise os mapeamentos e os vínculos antes de continuar.
@@ -30,17 +34,21 @@ is_published: true
 5. Acompanhe a execução e o resultado. Use controles de estado e revisão apenas para a execução indicada.
 
 ## Resultado esperado
+
 Os dados aprovados na prévia são processados pelo importador e o resultado da execução fica disponível para conferência.
 
 ## Regras e limites
+
 Prévia não equivale a importação. Identidades criadas sem acesso não recebem login. Histórico importado travado não é aprovado nem faturado; reabertura de entradas é ação separada.
 
 ## Erros comuns
+
 - Registro indisponível ou sem permissão: confira o workspace, o escopo e a capacidade específica; não tente contornar por URL.
 - Resultado diferente do esperado: confira filtros, período e confirmação da operação; uma consulta não confirma uma gravação.
 - Falha ao salvar: leia a mensagem retornada, corrija os campos ou bloqueios indicados e confirme o estado antes de repetir.
 
 ## Relacionados
+
 ## Importação contínua
 
 No fim da tela, a seção **Importação contínua** busca dados novos do Clockify sozinha.

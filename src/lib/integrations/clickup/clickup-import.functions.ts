@@ -45,7 +45,7 @@ export const startClickUpCollect = createServerFn({ method: "POST" })
 
 export const stepClickUpCollect = createServerFn({ method: "POST" })
   .middleware([requireClickUpImport("manage")])
-  .inputValidator((d) => z.object({ runId: uuid, cursor: cursorSchema }).parse(d))
+  .inputValidator((d) => z.object({ runId: uuid, cursor: cursorSchema.optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const s = await import("./clickup-import.server");
     const workspaceId = context.clickupWorkspaceId;
@@ -118,4 +118,82 @@ export const runClickUpImportStep = createServerFn({ method: "POST" })
       data.kind,
       data.runId,
     );
+  });
+
+/** Seleção explícita, sem presumir a empresa pelo nome ou por todos os teams da credencial. */
+export const getClickUpImportSources = createServerFn({ method: "GET" })
+  .middleware([requireClickUpImport("manage")])
+  .handler(async ({ context }) => {
+    const s = await import("./clickup-import.server");
+    return s.getSources({
+      client: context.supabase,
+      workspaceId: context.clickupWorkspaceId,
+      userId: context.userId,
+    });
+  });
+
+export const saveClickUpImportSources = createServerFn({ method: "POST" })
+  .middleware([requireClickUpImport("manage")])
+  .inputValidator((d) =>
+    z
+      .object({
+        sourceTeamIds: z
+          .array(z.string().regex(/^[A-Za-z0-9_-]{1,40}$/))
+          .min(1)
+          .max(500),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const s = await import("./clickup-import.server");
+    return s.saveSources(
+      { client: context.supabase, workspaceId: context.clickupWorkspaceId, userId: context.userId },
+      data.sourceTeamIds,
+    );
+  });
+
+export const listClickUpImportSourceFiles = createServerFn({ method: "GET" })
+  .middleware([requireClickUpImport("view")])
+  .inputValidator((d) =>
+    z.object({ sourceId: z.string().max(80), externalId: z.string().max(1000) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const s = await import("./clickup-files.server");
+    return s.listClickUpSourceFiles(
+      { client: context.supabase, workspaceId: context.clickupWorkspaceId, userId: context.userId },
+      data,
+    );
+  });
+
+export const getClickUpImportSourceFileUrl = createServerFn({ method: "GET" })
+  .middleware([requireClickUpImport("view")])
+  .inputValidator((d) => z.object({ id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const s = await import("./clickup-files.server");
+    return s.getClickUpSourceFileUrl(
+      { client: context.supabase, workspaceId: context.clickupWorkspaceId, userId: context.userId },
+      data,
+    );
+  });
+
+export const saveClickUpImportConnection = createServerFn({ method: "POST" })
+  .middleware([requireClickUpImport("manage")])
+  .inputValidator((d) => z.object({ apiKey: z.string().min(20).max(500) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const s = await import("./clickup-connection.server");
+    return s.saveClickUpConnection(
+      { client: context.supabase, workspaceId: context.clickupWorkspaceId, userId: context.userId },
+      data.apiKey,
+    );
+  });
+
+export const getClickUpImportConnectionState = createServerFn({ method: "GET" })
+  .middleware([requireClickUpImport("view")])
+  .handler(async ({ context }) => {
+    const s = await import("./clickup-connection.server");
+    return s.getClickUpConnectionState({
+      client: context.supabase,
+      workspaceId: context.clickupWorkspaceId,
+      userId: context.userId,
+    });
   });

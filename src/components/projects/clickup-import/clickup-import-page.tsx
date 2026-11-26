@@ -1,5 +1,10 @@
+import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { importPermissionFingerprint, assertImportUiAccess } from "../imports/import-access";
+import { useImportAccess } from "../imports/use-import-access";
+import type { ImportQueryScope } from "../imports/import-format";
 // Importador ClickUp -> TechProjects: leitura, revisão (organização e responsáveis), aplicação e desfazer.
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, ChevronsUpDown, Download, ListChecks, RotateCcw, Users } from "lucide-react";
@@ -140,24 +145,52 @@ export function ClickUpImportPage() {
 }
 
 function ClickUpImportContent() {
+  const { user } = useAuth();
+  const p = usePermissions();
+  const scope: ImportQueryScope = [
+    user?.id ?? "",
+    p.workspaceId ?? "",
+    importPermissionFingerprint(p.permissions),
+  ];
+  const access = useImportAccess(scope);
   const qc = useQueryClient();
   const status = useServerFn(getClickUpImportStatus);
   const targets = useServerFn(getClickUpImportTargets);
   const start = useServerFn(startClickUpCollect);
   const step = useServerFn(stepClickUpCollect);
   const run = useServerFn(runClickUpImportStep);
-  const q = useQuery({ queryKey: ["clickup-import"], queryFn: () => status() });
-  const t = useQuery({ queryKey: ["clickup-import-targets"], queryFn: () => targets() });
+  const q = useQuery({
+    queryKey: ["clickup-import", ...scope],
+    enabled: access.canRead("clickup"),
+    queryFn: () => {
+      assertImportUiAccess(access, "clickup");
+      return status();
+    },
+  });
+  const t = useQuery({
+    queryKey: ["clickup-import-targets", ...scope],
+    enabled: access.canRead("clickup"),
+    queryFn: () => {
+      assertImportUiAccess(access, "clickup");
+      return targets();
+    },
+  });
   const [busy, setBusy] = useState<null | { label: string; pct: number | null }>(null);
   const [confirm, setConfirm] = useState<null | "apply" | "rollback">(null);
   const stopRef = useRef(false);
+  useEffect(
+    () => () => {
+      stopRef.current = true;
+    },
+    [],
+  );
 
   const data = q.data;
   const r = (data?.run ?? null) as Run | null;
   const groups = (data?.groups ?? []) as Group[];
   const people = (data?.people ?? []) as Person[];
-  const canManage = Boolean(data?.canManage);
-  const refresh = () => qc.invalidateQueries({ queryKey: ["clickup-import"] });
+  const canManage = Boolean(data?.canManage) && access.canManage("clickup");
+  const refresh = () => qc.invalidateQueries({ queryKey: ["clickup-import", ...scope] });
 
   const totals = useMemo(() => {
     const imp = groups.filter((g) => g.action === "import");
@@ -173,11 +206,14 @@ function ClickUpImportContent() {
   }, [groups, people]);
 
   async function collect() {
+    assertImportUiAccess(access, "clickup", true);
+    if (!canManage) return;
     stopRef.current = false;
     setBusy({ label: "Lendo a estrutura do ClickUp…", pct: null });
     try {
       const s = await start();
       let cursor = s.cursor;
+      let completed = false;
       for (;;) {
         if (stopRef.current) break;
         const res = await step({ data: { runId: s.runId, cursor } });
@@ -187,13 +223,21 @@ function ClickUpImportContent() {
           : 100;
         const read = Object.values(cursor.counts).reduce((a, b) => a + b.tasks, 0);
         setBusy({ label: `Lendo tarefas do ClickUp: ${fmt(read)} até agora`, pct });
-        if (res.done) break;
+        if (res.done) {
+          completed = true;
+          break;
+        }
         if (res.waitSeconds) {
           setBusy({ label: `Limite do ClickUp: aguardando ${res.waitSeconds} s…`, pct });
           await sleep(res.waitSeconds * 1000);
         }
       }
-      toast.success("Leitura concluída. Revise a organização antes de importar.");
+      if (completed)
+        toast.success("Leitura finalizada. Confira a cobertura e as pendências antes de importar.");
+      else
+        toast.info(
+          "Leitura interrompida. Os registros recebidos foram preservados; retome pela central de importações.",
+        );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao ler o ClickUp.");
     } finally {
@@ -203,7 +247,8 @@ function ClickUpImportContent() {
   }
 
   async function loop(kind: "apply" | "assignees" | "rollback") {
-    if (!r) return;
+    assertImportUiAccess(access, "clickup", true);
+    if (!r || !canManage) return;
     const label = {
       apply: "Importando tarefas",
       assignees: "Completando responsáveis",
@@ -211,6 +256,7 @@ function ClickUpImportContent() {
     }[kind];
     setBusy({ label: `${label}…`, pct: null });
     let total = 0;
+    let completed = false;
     try {
       for (let i = 0; i < 500; i++) {
         const res = await run({ data: { runId: r.id, kind } });
@@ -221,19 +267,32 @@ function ClickUpImportContent() {
             label: `${label}: ${fmt(total)} criadas, faltam ${fmt(rem)}`,
             pct: total + rem ? Math.round((total / (total + rem)) * 100) : 100,
           });
-          if (res["done"]) break;
+          if (res["done"]) {
+            completed = true;
+            break;
+          }
         } else if (kind === "rollback") {
           total += Number(res["deleted"] ?? 0);
           setBusy({ label: `${label}: ${fmt(total)} tarefas removidas`, pct: null });
-          if (res["done"]) break;
+          if (res["done"]) {
+            completed = true;
+            break;
+          }
         } else {
           const n = Number(res["updated"] ?? 0);
           total += n;
           setBusy({ label: `${label}: ${fmt(total)} tarefas atualizadas`, pct: null });
-          if (n === 0) break;
+          if (n === 0) {
+            completed = true;
+            break;
+          }
         }
       }
-      toast.success(`${label}: concluído.`);
+      if (completed) toast.success(`${label}: concluído.`);
+      else
+        toast.info(
+          `${label}: etapa parcial. Os registros foram preservados; continue a operação para concluir.`,
+        );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "A operação falhou.");
     } finally {

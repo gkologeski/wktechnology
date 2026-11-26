@@ -123,6 +123,9 @@ vi.mock("@/lib/people/people.functions", () => ({
   PEOPLE_EMPLOYMENT_TYPES: ["pj"],
   PEOPLE_EMPLOYMENT_LABELS: { pj: "PJ" },
 }));
+vi.mock("@/lib/people/person-cnpj-lookup.functions", () => ({
+  lookupCnpjForPerson: vi.fn(),
+}));
 vi.mock("@/lib/people/documents.functions", () => ({
   listPersonDocuments: (input: unknown) => state.listDocs(input),
   listPersonTimeline: async () => [],
