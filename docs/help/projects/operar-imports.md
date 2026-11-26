@@ -35,6 +35,10 @@ is_published: true
 9. Para documentar uma divergência sem vincular, informe a orientação e use **Registrar anotação**. Para encaminhar, busque um membro ativo com acesso à origem, selecione seu nome e use **Encaminhar conferência**. O responsável fica registrado no painel e pode usar **Minhas pendências** na aba Pendências. O encaminhamento ocorre dentro da central; não envia e-mail ou WhatsApp. A anotação, a atribuição e o vínculo não alteram o original nem tornam horas aprovadas. A pendência permanece até a reavaliação no processamento da origem. Se a origem tiver mudado desde a leitura, a gravação é recusada: use **Atualizar evidência**, confira a nova versão e escolha novamente o vínculo ou responsável; sua orientação digitada é mantida.
 10. Em **Histórico**, consulte as execuções, origens, contagens e interrupções. Use **Ver execução** para conferir os detalhes; retome apenas quando a opção estiver disponível.
 
+## Resultado esperado
+
+Os registros recebidos ficam disponíveis com seus dados originais, versões e pendências. Cada origem informa a cobertura comprovada e as limitações encontradas. A importação não aprova horas nem libera pagamentos ou faturamento.
+
 ## Como entender o resultado
 
 - **Recebido · a classificar:** o original foi preservado, mas sua situação operacional ainda não foi determinada.
