@@ -47,6 +47,7 @@ CREATE TABLE public.clickup_import_source_bindings (
   PRIMARY KEY (workspace_id, team_id)
 );
 ALTER TABLE public.clickup_import_source_bindings ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.clickup_import_source_bindings FROM PUBLIC,anon,authenticated;
 CREATE POLICY clickup_sources_read ON public.clickup_import_source_bindings FOR SELECT TO authenticated
   USING((workspace_id,'clickup'::text) IN(SELECT s.workspace_id,s.provider FROM public.project_import_visible_scopes() s));
 GRANT SELECT ON public.clickup_import_source_bindings TO authenticated;
@@ -165,6 +166,7 @@ REVOKE ALL ON FUNCTION public.clickup_source_file_guard() FROM PUBLIC,anon,authe
 GRANT EXECUTE ON FUNCTION public.clickup_source_file_guard() TO service_role;
 CREATE TRIGGER clickup_source_file_guard BEFORE INSERT OR UPDATE ON public.clickup_source_files FOR EACH ROW EXECUTE FUNCTION public.clickup_source_file_guard();
 ALTER TABLE public.clickup_source_files ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.clickup_source_files FROM PUBLIC,anon,authenticated;
 CREATE POLICY clickup_source_files_read ON public.clickup_source_files FOR SELECT TO authenticated
   USING((workspace_id,'clickup'::text) IN(SELECT s.workspace_id,s.provider FROM public.project_import_visible_scopes() s));
 GRANT SELECT ON public.clickup_source_files TO authenticated;

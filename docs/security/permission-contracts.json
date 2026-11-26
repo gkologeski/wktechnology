@@ -28494,7 +28494,7 @@
       },
       "files": {
         "drizzle/migrations/0479_project_import_preservation.sql": "a3d3db783aa1320fcb03cbcb04ca69df54c72eac0966ee736e7fbac74f66fa07",
-        "drizzle/migrations/0480_clickup_full_history_collection.sql": "ed2e32d730f24a47f4bb6519c227d2ee4ea308db82d600db9e41144633902f68",
+        "drizzle/migrations/0480_clickup_full_history_collection.sql": "d6f092e08a99e6010439b8bd537198e72d9959a220caf4344291bb48deeec0ce",
         "drizzle/migrations/0481_jibble_source_screenshots.sql": "991bce887adf8bfaa16fcf461c60bfc5578671ef5c2237aa27910e2acf2742ed",
         "src/components/projects/imports/clickup-source-setup.tsx": "22137acf69684a678b0e63f5653b81ac6524c9ce0662378e6764bb8abd1ad9ec",
         "src/components/projects/imports/clockify-source-setup.tsx": "7cf93d41ee939ca01a1e8b8ae0e0c72f8803f727157524b844610f02b7bece08",

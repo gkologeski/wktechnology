@@ -115,6 +115,11 @@ beforeAll(async () => {
   }
   if (!ready) throw new Error("Disposable PostgreSQL did not become ready.");
   await db.unsafe(readFileSync("tests/fixtures/import-preservation.sql", "utf8"));
+  // Match the production Supabase defaults: migrations must explicitly remove
+  // inherited mutation/TRUNCATE privileges, even when RLS already filters rows.
+  await db.unsafe(
+    "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon,authenticated,service_role",
+  );
   for (const name of ["clickup_import_access", "clickup_import_require"])
     await db.unsafe(sourceFunction("drizzle/migrations/0267_clickup_importer.sql", name));
   await db.unsafe(readFileSync("drizzle/migrations/0479_project_import_preservation.sql", "utf8"));
@@ -1065,3 +1070,27 @@ for (const provider of providers)
       (await db`select stage,status from project_import_journeys where id=${begun.id}`)[0],
     ).toEqual({ stage: "done", status: "complete" });
   });
+
+it("removes inherited write and truncate grants from every new source table", async () => {
+  const tables = [
+    "project_import_records",
+    "project_import_record_versions",
+    "project_import_record_receipts",
+    "project_import_record_events",
+    "project_import_journeys",
+    "clickup_import_list_targets",
+    "clickup_import_connections",
+    "clickup_import_source_bindings",
+    "clickup_source_files",
+    "jibble_source_files",
+  ];
+  for (const role of ["anon", "authenticated"])
+    for (const table of tables)
+      for (const privilege of ["INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"])
+        expect(
+          (
+            await db`select has_table_privilege(${role},${`public.${table}`},${privilege}) allowed`
+          )[0]!.allowed,
+          `${role}: ${table}: ${privilege}`,
+        ).toBe(false);
+});
