@@ -18,7 +18,12 @@ vi.mock("@/integrations/supabase/client.server", () => {
     adminCalls.push(table);
     return c;
   };
-  return { supabaseAdmin: { from: chain, rpc: async () => ({ data: null, error: null }) } };
+  return {
+    supabaseAdmin: {
+      from: chain,
+      rpc: async () => ({ data: "<p>CONTRATANTE:</p><p>(assinatura eletrônica)</p>", error: null }),
+    },
+  };
 });
 vi.mock("@/lib/ai/provider-resolver.server", () => ({
   encryptApiKey: async (s: string) => `enc:${s}`,
@@ -30,7 +35,13 @@ vi.mock("@/lib/access-control/enforce.server", async () => {
   return { ...actual, auditDenial: async () => {} };
 });
 
-import { getSettings, sendContract, FS_SETTINGS, FS_SEND } from "./forsign-service.server";
+import {
+  getContractSignatureSlots,
+  getSettings,
+  sendContract,
+  FS_SETTINGS,
+  FS_SEND,
+} from "./forsign-service.server";
 
 type Grants = { ws: string | null; keys: Set<string>; contextError?: string; gateError?: string };
 function caller(g: Grants): any {
@@ -140,4 +151,58 @@ it("hiring ForSign current chain rejects before storage or external provider eff
     ),
   ).rejects.toThrow("Financeiro");
   expect(adminCalls).toEqual([]);
+});
+
+describe("ForSign — prévia de locais de assinatura (autorização)", () => {
+  const HASH = "a".repeat(64);
+  it("permite membro ativo autorizado consultar locais de assinatura", async () => {
+    const res = await getContractSignatureSlots(
+      caller({
+        ws: WS,
+        keys: new Set([FS_SEND, "techcontracts.signature_evidence.manage.workspace"]),
+      }),
+      "u1",
+      "c1",
+      HASH,
+    );
+    expect(res.slots).toHaveLength(1);
+    expect(res.slots[0]?.roleCategory).toBe("CONTRATANTE");
+  });
+  it("recusa consulta sem permissão de envio ForSign", async () => {
+    await expect(
+      getContractSignatureSlots(caller({ ws: WS, keys: new Set() }), "u1", "c1", HASH),
+    ).rejects.toThrow();
+  });
+  it("recusa consulta com deny explícito na chave de envio mesmo com evidências", async () => {
+    await expect(
+      getContractSignatureSlots(
+        caller({
+          ws: WS,
+          keys: new Set(["techcontracts.signature_evidence.manage.workspace"]),
+        }),
+        "u1",
+        "c1",
+        HASH,
+      ),
+    ).rejects.toThrow();
+  });
+  it("recusa consulta de contrato de outro workspace", async () => {
+    await expect(
+      getContractSignatureSlots(
+        caller({
+          ws: WS,
+          keys: new Set([FS_SEND, "techcontracts.signature_evidence.manage.workspace"]),
+          contextError: "Sem permissão",
+        }),
+        "u1",
+        "contrato-outro-ws",
+        HASH,
+      ),
+    ).rejects.toThrow();
+  });
+  it("recusa consulta de membro inativo", async () => {
+    await expect(
+      getContractSignatureSlots(caller({ ws: WS, keys: new Set() }), "inativo", "c1", HASH),
+    ).rejects.toThrow();
+  });
 });

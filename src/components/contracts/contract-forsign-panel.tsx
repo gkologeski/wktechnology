@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   getContractForsign,
+  getContractForsignSlots,
   sendContractForsign,
   refreshContractForsign,
   cancelContractForsign,
@@ -27,6 +28,7 @@ import {
   memberStatusInfo,
   OP_STATUS_PT,
   opStatusTone,
+  planSignaturePlacementsFromSlots,
 } from "@/lib/integrations/forsign/forsign-core";
 import {
   SignatureStatusBadge,
@@ -47,6 +49,7 @@ export function ContractForsignPanel({
   witnessesDetected?: boolean;
 }) {
   const load = useServerFn(getContractForsign);
+  const loadSlots = useServerFn(getContractForsignSlots);
   const send = useServerFn(sendContractForsign);
   const refresh = useServerFn(refreshContractForsign);
   const cancel = useServerFn(cancelContractForsign);
@@ -77,6 +80,16 @@ export function ContractForsignPanel({
     staleTime: 30_000,
     retry: false,
   });
+  const slotsQuery = useQuery({
+    queryKey: ["contract-forsign-slots", contractId, hash],
+    queryFn: () => loadSlots({ data: { contractId, hash } }),
+    enabled: open && canManage,
+    staleTime: 30_000,
+    retry: false,
+  });
+  const placementPlan = slotsQuery.data
+    ? planSignaturePlacementsFromSlots(slotsQuery.data.slots, signers)
+    : null;
   useEffect(() => {
     if (!open || dirty || !suggestions.data) return;
     setSigners((prev) => applySignerSuggestions(prev, suggestions.data, true));
@@ -271,6 +284,59 @@ export function ContractForsignPanel({
                   : undefined
               }
             />
+            <div className="space-y-2 rounded-md border p-3">
+              <p className="text-sm font-medium">Posicionamento das assinaturas e rubricas</p>
+              {slotsQuery.isLoading ? (
+                <p role="status" className="text-xs text-muted-foreground">
+                  Verificando locais de assinatura no contrato…
+                </p>
+              ) : slotsQuery.isError ? (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p role="alert" className="text-xs text-destructive">
+                    Não foi possível verificar os locais de assinatura no texto; se necessário, uma
+                    página de assinaturas será adicionada no envio.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => void slotsQuery.refetch()}
+                  >
+                    Tentar novamente
+                  </Button>
+                </div>
+              ) : placementPlan ? (
+                <ul className="space-y-1.5 text-xs">
+                  {placementPlan.placements.map((p, idx) => {
+                    const signer = signers[idx];
+                    const identified = p.source === "identified";
+                    return (
+                      <li
+                        key={`${p.role}-${idx}`}
+                        className="flex flex-wrap items-center justify-between gap-2"
+                      >
+                        <span className="font-medium text-text-primary">
+                          {p.role}
+                          {signer?.contact?.name ? ` (${signer.contact.name})` : ""}
+                        </span>
+                        <SignatureStatusBadge
+                          tone={identified ? "signed" : "waiting"}
+                          className="max-w-full whitespace-normal text-left"
+                        >
+                          {identified
+                            ? "Local da assinatura: identificado"
+                            : "Local da assinatura: página de assinaturas adicionada"}
+                        </SignatureStatusBadge>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
+              <p className="text-xs text-muted-foreground">
+                Rubricas de todos os signatários serão aplicadas automaticamente no rodapé de todas
+                as páginas do PDF enviado (incluindo anexos).
+              </p>
+            </div>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => handleOpenChange(false)}>
                 Voltar

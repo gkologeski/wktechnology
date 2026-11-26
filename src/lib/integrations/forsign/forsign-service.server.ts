@@ -15,7 +15,11 @@ import type { SignatureContext } from "@/lib/hiring/signature.types";
 import {
   buildMembers,
   allRequestedSignersCompleted,
+  detectSignatureSlots,
+  htmlToBlocks,
   mapOperationStatus,
+  planSignaturePlacements,
+  stripPackageAppendix,
   type ForsignOpStatus,
   type SignerInput,
 } from "./forsign-core";
@@ -194,6 +198,31 @@ async function authorizeSend(sb: SupabaseClient, userId: string, contractId: str
   return ws;
 }
 
+/** Leitura somente-metadados dos espaços de assinatura no contrato para exibir no modal de envio. */
+export async function getContractSignatureSlots(
+  sb: SupabaseClient,
+  userId: string,
+  contractId: string,
+  hash: string,
+) {
+  const ws = await getActiveWorkspaceId(sb, userId);
+  await assertPermission(sb, userId, ws, FS_SEND);
+  await assertPermission(sb, userId, ws, EVIDENCE_MANAGE);
+  const proof = await workRpc<SignatureContext>(sb, "hiring_contract_signature_context", {
+    p_ws: ws,
+    p_contract: contractId,
+  });
+  if (!proof.can_manage || proof.hash !== hash)
+    throw new Error("Sem permissão ou contrato alterado. Recarregue a página.");
+  const db = await admin();
+  const { data: html, error } = await db.rpc("hiring_contract_esign_body", {
+    p_ws: ws,
+    p_contract: contractId,
+  });
+  if (error || !html) throw new Error("O contrato não tem conteúdo para assinatura.");
+  return { slots: detectSignatureSlots(htmlToBlocks(stripPackageAppendix(String(html)))) };
+}
+
 export async function sendContractFromContacts(
   sb: SupabaseClient,
   userId: string,
@@ -213,7 +242,7 @@ export async function sendContract(
   const ws = await authorizeSend(sb, userId, input.contractId, input.hash);
   if (input.signers.some((s) => !s.contactId))
     throw new Error("Selecione contatos para todos os signatários.");
-  const members = buildMembers(input.signers);
+  buildMembers(input.signers);
   const db = await admin();
   const { data: contract, error: ce } = await db
     .from("contracts")
@@ -230,6 +259,14 @@ export async function sendContract(
     p_contract: input.contractId,
   });
   if (he || !html) throw new Error("O contrato não tem conteúdo para assinatura.");
+  const baseHtml = stripPackageAppendix(String(html));
+  const placementPlan = planSignaturePlacements(htmlToBlocks(baseHtml), input.signers);
+  const taggedSigners = input.signers.map((s, idx) => {
+    const placement = placementPlan.placements[idx];
+    if (!placement) throw new Error("Falha ao planejar o posicionamento das assinaturas.");
+    return { ...s, placement };
+  });
+  const membersBase = buildMembers(input.signers, { placements: placementPlan.placements });
   const client = await clientFor(ws);
   const { data: row, error: ie } = await db
     .from("contract_forsign_operations")
@@ -238,13 +275,16 @@ export async function sendContract(
       contract_id: input.contractId,
       contract_hash: input.hash,
       created_by: userId,
-      requested_members: input.signers.map((s) => ({
+      requested_members: input.signers.map((s, idx) => ({
         contact_id: s.contactId,
         name: s.name,
         email: s.email,
         role: s.role,
+        placement: placementPlan.placements[idx]?.source ?? "signature_page",
+        signature_tag: placementPlan.placements[idx]?.signatureTag ?? null,
+        rubric_tag: placementPlan.placements[idx]?.rubricTag ?? null,
       })),
-      members: members.map((m) => ({
+      members: membersBase.map((m) => ({
         name: m.name,
         email: m.email,
         role: m.role,
@@ -262,14 +302,23 @@ export async function sendContract(
     );
   try {
     const title = `${contract.title}${contract.number ? ` (${contract.number})` : ""}`;
-    const { contractHtmlToPdf } = await import("./forsign-pdf");
+    const { applyForsignTagsToPackagePdf, contractHtmlToPdf } = await import("./forsign-pdf");
     const pdf = signaturePackage
-      ? await loadPackageBytes(signaturePackage)
-      : await contractHtmlToPdf(String(html), title);
+      ? await applyForsignTagsToPackagePdf(
+          await loadPackageBytes(signaturePackage),
+          baseHtml,
+          title,
+          { signers: taggedSigners },
+        )
+      : await contractHtmlToPdf(String(html), title, { signers: taggedSigners });
     const fileName = `${(contract.number ?? contract.id).replace(/[^\w.-]+/g, "_")}.pdf`;
     await authorizeSend(sb, userId, input.contractId, input.hash);
     const docId = await client.uploadPdf(pdf, fileName);
     await authorizeSend(sb, userId, input.contractId, input.hash);
+    const members = buildMembers(input.signers, {
+      placements: placementPlan.placements,
+      documentId: docId,
+    });
     const op = await client.createOperation({
       name: title.slice(0, 200),
       files: [{ id: docId, description: fileName }],

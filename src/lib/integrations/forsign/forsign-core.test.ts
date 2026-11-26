@@ -5,6 +5,8 @@ import {
   mapOperationStatus,
   memberStatusInfo,
   opStatusTone,
+  planSignaturePlacements,
+  signerTagPair,
   timestampFresh,
   toWinAnsi,
   verifyForsignSignature,
@@ -181,5 +183,161 @@ describe("activeForsignProgress", () => {
       ]),
     ).toEqual({ signed: 2, total: 4 });
     expect(activeForsignProgress([{ status: "completed", members: [] }])).toBeNull();
+  });
+});
+
+describe("ForSign — posicionamento de assinaturas e rubricas por tag", () => {
+  it("associa linhas _________ seguidas de CONTRATANTE, CONTRATADA e testemunhas", () => {
+    const html = `
+      <h1>Contrato de Serviços</h1>
+      <p>Cláusula 1. Objeto contratado pelas partes.</p>
+      <p>____________________________________</p>
+      <p>CONTRATANTE</p>
+      <p>____________________________________</p>
+      <p>CONTRATADA</p>
+      <p>____________________________________</p>
+      <p>TESTEMUNHA 1</p>
+      <p>____________________________________</p>
+      <p>TESTEMUNHA 2</p>
+    `;
+    const plan = planSignaturePlacements(htmlToBlocks(html), [
+      { role: "CONTRATANTE" },
+      { role: "CONTRATADO" },
+      { role: "TESTEMUNHA 1" },
+      { role: "TESTEMUNHA 2" },
+    ]);
+    expect(plan.hasFallbackPage).toBe(false);
+    expect(plan.placements.map((p) => p.source)).toEqual([
+      "identified",
+      "identified",
+      "identified",
+      "identified",
+    ]);
+    expect(plan.placements.map((p) => p.signatureTag)).toEqual([
+      "#TE-ASSINA-1",
+      "#TE-ASSINA-2",
+      "#TE-ASSINA-3",
+      "#TE-ASSINA-4",
+    ]);
+    expect(plan.placements.map((p) => p.rubricTag)).toEqual([
+      "#TE-RUBRICA-1",
+      "#TE-RUBRICA-2",
+      "#TE-RUBRICA-3",
+      "#TE-RUBRICA-4",
+    ]);
+  });
+
+  it("identifica blocos com cabeçalho acima e (assinatura eletrônica) inclusive tabela de testemunhas", () => {
+    const html = `
+      <p><strong>CONTRATANTE:</strong></p>
+      <p>(assinatura eletrônica)<br>Brooks</p>
+      <p><strong>CONTRATADA:</strong></p>
+      <p>(assinatura eletrônica)<br>CMK KOLOGESKI LTDA</p>
+      <p><strong>Testemunhas:</strong></p>
+      <table><tbody><tr>
+        <td><p>(assinatura eletrônica)</p></td>
+        <td><p><br></p></td>
+        <td><p>(assinatura eletrônica)</p></td>
+      </tr></tbody></table>
+    `;
+    const plan = planSignaturePlacements(htmlToBlocks(html), [
+      { role: "CONTRATANTE" },
+      { role: "CONTRATADO" },
+      { role: "TESTEMUNHA 1" },
+      { role: "TESTEMUNHA 2" },
+    ]);
+    expect(plan.hasFallbackPage).toBe(false);
+    expect(plan.placements.every((p) => p.source === "identified")).toBe(true);
+    expect(new Set(plan.placements.map((p) => p.slot?.blockIndex)).size).toBe(4);
+  });
+
+  it("identifica Representante: ____ e testemunhas lado a lado ignorando data, Nome e CPF", () => {
+    const html = `
+      <p>Florianópolis/SC, _____ de ____________________ de ________.</p>
+      <p><strong>CONTRATANTE:</strong></p>
+      <p><strong>GM Kologeski</strong></p>
+      <p>Representante: ____________________________________</p>
+      <p><strong>CONTRATADA:</strong></p>
+      <p><strong>Am It</strong></p>
+      <p>Representante: ____________________________________</p>
+      <p><strong>TESTEMUNHAS</strong></p>
+      <p>1. Assinatura: ____________________ 2. Assinatura: ____________________</p>
+      <p>Nome: __________________________ Nome: __________________________</p>
+      <p>CPF: ___________________________ CPF: ___________________________</p>
+    `;
+    const plan = planSignaturePlacements(htmlToBlocks(html), [
+      { role: "CONTRATANTE" },
+      { role: "CONTRATADO" },
+      { role: "TESTEMUNHA 1" },
+      { role: "TESTEMUNHA 2" },
+    ]);
+    expect(plan.hasFallbackPage).toBe(false);
+    expect(plan.placements.map((p) => [p.role, p.source, p.slot?.column])).toEqual([
+      ["CONTRATANTE", "identified", "full"],
+      ["CONTRATADO", "identified", "full"],
+      ["TESTEMUNHA 1", "identified", "left"],
+      ["TESTEMUNHA 2", "identified", "right"],
+    ]);
+  });
+
+  it("encaminha para página de assinaturas quando há ambiguidade ou falta de espaço", () => {
+    // Dois espaços CONTRATANTE = ambiguidade para 1 signatário CONTRATANTE -> fallback seguro.
+    const ambiguous = `
+      <p>________________________</p><p>CONTRATANTE</p>
+      <p>________________________</p><p>CONTRATANTE</p>
+      <p>________________________</p><p>CONTRATADA</p>
+    `;
+    const p1 = planSignaturePlacements(htmlToBlocks(ambiguous), [
+      { role: "CONTRATANTE" },
+      { role: "CONTRATADO" },
+    ]);
+    expect(p1.hasFallbackPage).toBe(true);
+    expect(p1.placements[0]?.source).toBe("signature_page");
+    expect(p1.placements[1]?.source).toBe("identified");
+
+    // Linhas sem rótulo de papel nunca chutam quem assina onde -> fallback seguro.
+    const unlabeled = `<p>________________________</p><p>________________________</p>`;
+    const p2 = planSignaturePlacements(htmlToBlocks(unlabeled), [
+      { role: "CONTRATANTE" },
+      { role: "CONTRATADO" },
+    ]);
+    expect(p2.hasFallbackPage).toBe(true);
+    expect(p2.placements.map((p) => p.source)).toEqual(["signature_page", "signature_page"]);
+
+    // Contrato com 2 partes mas envio com testemunha adicional: partes identificadas, testemunha na página extra.
+    const twoOnly = `
+      <p>CONTRATANTE:</p><p>(assinatura eletrônica)</p>
+      <p>CONTRATADA:</p><p>(assinatura eletrônica)</p>
+    `;
+    const p3 = planSignaturePlacements(htmlToBlocks(twoOnly), [
+      { role: "CONTRATANTE" },
+      { role: "CONTRATADO" },
+      { role: "TESTEMUNHA 1" },
+    ]);
+    expect(p3.hasFallbackPage).toBe(true);
+    expect(p3.placements.map((p) => p.source)).toEqual([
+      "identified",
+      "identified",
+      "signature_page",
+    ]);
+  });
+
+  it("envia tags únicas de assinatura, rubrica e vínculo ao documento no payload de membros", () => {
+    const members = buildMembers(
+      [
+        { name: "Alice", email: "alice@example.test", role: "CONTRATANTE" },
+        { name: "Bruno", email: "bruno@example.test", role: "CONTRATADO" },
+      ],
+      { documentId: "doc-123" },
+    );
+    expect(members[0]).toMatchObject({
+      hasSignatureTag: true,
+      signPositionTag: signerTagPair(0).signatureTag,
+      hasRubricTag: true,
+      rubricTag: signerTagPair(0).rubricTag,
+      signatures: [{ documentId: "doc-123", printSignature: true, positions: [] }],
+    });
+    expect(members[1]?.signPositionTag).not.toBe(members[0]?.signPositionTag);
+    expect(members[1]?.rubricTag).not.toBe(members[0]?.rubricTag);
   });
 });

@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/forsign
 min_permission: techcontracts.forsign_settings.manage.workspace
 audience: internal
 sort_order: 97
-version: 9
+version: 10
 is_published: true
 ---
 # Enviar contratos para assinatura pelo ForSign
@@ -28,9 +28,10 @@ is_published: true
 1. Abra o contrato e vá até "Assinaturas do contrato".
 2. No quadro ForSign, clique em "Enviar pelo ForSign".
 3. Confira os representantes sugeridos automaticamente para CONTRATANTE e CONTRATADO (com a razão social de cada empresa no cabeçalho) e ajuste com "Trocar" se necessário. Informe CPF (opcional) e adicione testemunhas se precisar.
-4. Clique em "Enviar". O TechERP gera o PDF da versão atual do contrato e o ForSign envia os convites por e-mail.
-5. Acompanhe a situação de cada assinante no quadro. "Atualizar situação" consulta o ForSign na hora.
-6. Para desistir, use "Cancelar envio" e informe o motivo (os créditos só voltam se ninguém tiver assinado).
+4. Confira o quadro **Posicionamento das assinaturas e rubricas**, que indica para cada pessoa se o local da assinatura foi **identificado** no contrato ou se será incluída uma **página de assinaturas adicionada**.
+5. Clique em "Enviar". O TechERP gera o PDF com as marcas invisíveis de assinatura e rubrica em todas as páginas (incluindo anexos) e o ForSign envia os convites por e-mail.
+6. Acompanhe a situação de cada assinante no quadro. "Atualizar situação" consulta o ForSign na hora.
+7. Para desistir, use "Cancelar envio" e informe o motivo (os créditos só voltam se ninguém tiver assinado).
 
 ## Resultado esperado
 Quando todos assinam, o PDF final do ForSign (com a trilha de auditoria) é guardado no arquivo privado de evidências e aparece como "Documento externo atestado · Versão atual", com a referência "ForSign · operação N". O contrato não é ativado sozinho: siga com a ativação ou com o seu fluxo de automação.
@@ -80,6 +81,13 @@ Inclua as cotações, propostas e arquivos em **Contrato > Documento > Anexos do
 
 ## Conferir anexos antes de preparar ou enviar
 Nos formulários **Preparar assinatura no TechERP** e **Enviar pelo ForSign**, o quadro **Documentos incluídos na assinatura** lista os anexos e identifica as cópias congeladas. Use **Baixar prévia do contrato e anexos** para conferir o PDF completo antes de continuar. Abrir o formulário não gera o pacote nem envia convites. A prévia exige as mesmas permissões da ficha do contrato e não consome créditos do ForSign. Se a consulta falhar, use **Tentar novamente**; uma falha não é apresentada como ausência de anexos.
+
+## Posicionamento automático das assinaturas e rubricas
+- O TechERP identifica automaticamente os espaços de assinatura no texto do contrato (linhas `_________` ou marcações `(assinatura eletrônica)` associadas a CONTRATANTE, CONTRATADA, testemunhas e outros papéis) e posiciona a assinatura de cada signatário por tag na API do ForSign.
+- Quando não há espaço suficiente no texto ou existe ambiguidade entre papéis, o sistema adiciona automaticamente uma **Página de Assinaturas** ao final do PDF com uma linha rotulada para cada signatário pendente — sem nunca trocar um signatário de lugar.
+- No formulário **Enviar pelo ForSign**, o quadro **Posicionamento das assinaturas e rubricas** informa para cada pessoa **Local da assinatura: identificado** ou **Local da assinatura: página de assinaturas adicionada** conforme os signatários escolhidos.
+- As **rubricas** de todos os signatários são posicionadas automaticamente lado a lado no rodapé de **todas as páginas** do PDF enviado, inclusive nas páginas dos anexos incluídos no pacote de assinatura.
+- A consulta do posicionamento usa exatamente as mesmas permissões do envio pelo ForSign (`techcontracts.forsign.manage.workspace` e `techcontracts.signature_evidence.manage.workspace`) e não consome créditos.
 
 ## Avisar a equipe após a conclusão
 

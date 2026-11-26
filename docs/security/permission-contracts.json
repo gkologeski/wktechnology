@@ -14837,6 +14837,10 @@
           "symbol": "sendContractFromContacts"
         },
         {
+          "file": "src/lib/integrations/forsign/forsign-service.server.ts",
+          "symbol": "getContractSignatureSlots"
+        },
+        {
           "file": "src/lib/contracts/signature-package.server.ts",
           "symbol": "prepareSignaturePackage"
         },
@@ -14899,10 +14903,10 @@
       },
       "files": {
         "drizzle/migrations/0359_forsign_integration.sql": "f299acdcbeeac81ca34b101e936070eb15e7b8adb28eaa5262d670fd780d688b",
-        "src/components/contracts/contract-forsign-panel.tsx": "ab302e862caadfb3d6a4bb81928a82d9a567f7330bd3fd31bb29fdc54d3fbc79",
+        "src/components/contracts/contract-forsign-panel.tsx": "b1e50d50714c5addd989f4b56fe10ef10cdb2f3b5977e86c0e65f9175ac3d47f",
         "src/components/integrations/forsign-settings-page.tsx": "91258abbf7bb58f8b9bfa3d98238f13af33b8a100fab4ed0c412185231e0e8dd",
-        "src/lib/integrations/forsign/forsign-service.server.ts": "1fc1e01e41c2c6b0a62f2cd461a3e34a9f7da8d8f3d78a4226412bbe099ce8bd",
-        "src/lib/integrations/forsign/forsign.functions.ts": "d09d853289a03754e5180a570f9bfcf5399ee9c1fb5991b109d9388850e320ca",
+        "src/lib/integrations/forsign/forsign-service.server.ts": "2d96f1ddf8b0502067becc2477ae9cbde537738c80b59b27acb994778a4a1a65",
+        "src/lib/integrations/forsign/forsign.functions.ts": "8fe6f1802e933a5f38075fbb2be4991e643680c79d36ee89470c0ed4330e69b4",
         "src/routes/_authenticated/settings.integrations.forsign.tsx": "7dfc62e76ddcc1ec28fd44877c337ebbc3c0adcb091ba2da42caee9885813a81"
       }
     },
@@ -14986,8 +14990,9 @@
       "kind": "presentation",
       "rationale": "Pure ForSign helpers (status labels, HMAC/timestamp checks, HTML to PDF blocks, PDF layout) and the integration catalogue card. No data access, routes or actions. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant.",
       "files": {
-        "src/lib/integrations/forsign/forsign-core.ts": "8f8f6a838c4aabcc6f1b297329b2b818352d337407c3d0e5dcdac8d1565d93aa",
-        "src/lib/integrations/forsign/forsign-pdf.ts": "fea50d84e7eef29b2eaf2dc50d0f96b18318d0acb18c7a392e6b6e6be910cec9",
+        "src/lib/integrations/forsign/forsign-core.ts": "579844f6b8783441fa58be40ca054b1357f8cc4f50aed41d6abbbeff1a5d5b0a",
+        "src/lib/integrations/forsign/forsign-pdf.ts": "e9fb096cfe78620a832b0c59b80980cd0356fa191dbb9170503ebdb8fe7a9eb9",
+        "src/lib/integrations/forsign/forsign-placement.ts": "c8c199177712acc7ca6e12d17bf5b0147f4903c4123ab55d42d6146f09ab6d26",
         "src/lib/integrations/registry.ts": "47e469de5587703f9ad87a7acda4d28c8b74ebf27c5fc35dc78fdab16571f5a2"
       }
     },

@@ -1,4 +1,17 @@
 // Regras puras da integração ForSign (sem rede, sem banco): situação, webhook e texto do PDF.
+import { signerTagPair, type SignerPlacement } from "./forsign-placement";
+export {
+  detectSignatureSlots,
+  planSignaturePlacements,
+  planSignaturePlacementsFromSlots,
+  signerTagPair,
+  stripPackageAppendix,
+  type DetectedSignatureSlot,
+  type PlacementSource,
+  type SignaturePlacementPlan,
+  type SignerPlacement,
+} from "./forsign-placement";
+
 export type ForsignOpStatus =
   | "creating"
   | "sent"
@@ -204,14 +217,20 @@ export function toWinAnsi(text: string): string {
 
 export type SignerInput = { name: string; email: string; cpf?: string | null; role: string };
 
-/** Monta os assinantes da operação no ForSign (paralelo, notificação por e-mail). */
-export function buildMembers(signers: SignerInput[]) {
+export type BuildMembersOptions = {
+  placements?: readonly SignerPlacement[];
+  documentId?: string;
+};
+
+/** Monta os assinantes da operação no ForSign (paralelo, notificação por e-mail, tags de assinatura e rubrica). */
+export function buildMembers(signers: SignerInput[], options?: BuildMembersOptions) {
   const seen = new Set<string>();
-  return signers.map((s) => {
+  return signers.map((s, idx) => {
     const email = s.email.trim().toLowerCase();
     if (seen.has(email)) throw new Error("Os assinantes precisam ter e-mails diferentes.");
     seen.add(email);
     const cpf = (s.cpf ?? "").replace(/\D/g, "");
+    const tags = options?.placements?.[idx] ?? signerTagPair(idx);
     return {
       name: s.name.trim(),
       email,
@@ -220,7 +239,16 @@ export function buildMembers(signers: SignerInput[]) {
       orderPosition: 1,
       observer: false,
       notificationChannel: "Email",
+      hasSignatureTag: true,
+      signPositionTag: tags.signatureTag,
+      hasRubricTag: true,
+      rubricTag: tags.rubricTag,
       ...(cpf.length === 11 ? { cpf } : {}),
+      ...(options?.documentId
+        ? {
+            signatures: [{ documentId: options.documentId, printSignature: true, positions: [] }],
+          }
+        : {}),
     };
   });
 }

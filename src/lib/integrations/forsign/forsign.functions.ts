@@ -5,6 +5,7 @@ import { contractSignersSchema } from "@/lib/contracts/signers";
 import {
   cancelForUser,
   getContractOps,
+  getContractSignatureSlots,
   getSettings,
   refreshForUser,
   saveSettings,
@@ -36,6 +37,15 @@ export const getContractForsign = createServerFn({ method: "GET" })
   .inputValidator(z.object({ contractId: z.string().uuid() }))
   .handler(async ({ context, data }) =>
     getContractOps(context.supabase, context.userId, data.contractId),
+  );
+
+export const getContractForsignSlots = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({ contractId: z.string().uuid(), hash: z.string().regex(/^[a-f0-9]{64}$/) }),
+  )
+  .handler(async ({ context, data }) =>
+    getContractSignatureSlots(context.supabase, context.userId, data.contractId, data.hash),
   );
 
 export const sendContractForsign = createServerFn({ method: "POST" })

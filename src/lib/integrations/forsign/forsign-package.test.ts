@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { extractText } from "unpdf";
+import { contractHtmlToPdf } from "./forsign-pdf";
 const m = vi.hoisted(() => ({ prepare: vi.fn(), bytes: vi.fn(), chain: vi.fn() }));
 vi.mock("@/lib/contracts/signature-package.server", () => ({
   prepareSignaturePackage: m.prepare,
@@ -29,15 +31,24 @@ const input = {
 const caller = {
   rpc: vi.fn().mockResolvedValue({ data: { can_manage: true, hash: "a".repeat(64) }, error: null }),
 };
-beforeEach(() => {
+let insertedOp: Record<string, unknown> | null = null;
+beforeEach(async () => {
   vi.clearAllMocks();
+  insertedOp = null;
   m.prepare.mockResolvedValue({ id: "pack" });
-  m.bytes.mockResolvedValue(new Uint8Array([7, 8, 9]));
+  const frozenPdf = await contractHtmlToPdf(
+    "<h1>Contrato</h1><p>Anexo congelado</p>",
+    "Contrato e anexos",
+  );
+  m.bytes.mockResolvedValue(frozenPdf);
   m.chain.mockImplementation((table) => {
     const c = {
       select: () => c,
       eq: () => c,
-      insert: () => c,
+      insert: (row: Record<string, unknown>) => {
+        if (table === "contract_forsign_operations") insertedOp = row;
+        return c;
+      },
       update: () => c,
       maybeSingle: async () => ({
         data: { key_ciphertext: "configured", enabled: true },
@@ -61,15 +72,46 @@ beforeEach(() => {
   } as never);
 });
 afterEach(() => vi.restoreAllMocks());
-it("forsign sends the exact frozen contract-and-annex PDF instead of rebuilding the main body", async () => {
+it("forsign uses the frozen contract-and-annex PDF, stamps signature/rubric tags on every page, and sends tags in payload", async () => {
   await sendContract(caller as never, "actor", input);
   expect(m.prepare).toHaveBeenCalledWith(caller, "actor", "C", input.hash);
-  expect(ForsignClient.prototype.uploadPdf).toHaveBeenCalledWith(
-    new Uint8Array([7, 8, 9]),
-    "42.pdf",
-  );
+  expect(m.bytes).toHaveBeenCalledTimes(1);
+  const uploadCall = vi.mocked(ForsignClient.prototype.uploadPdf).mock.calls[0];
+  expect(uploadCall?.[1]).toBe("42.pdf");
+  const uploadedBytes = uploadCall?.[0] as Uint8Array;
+  const extracted = await extractText(new Uint8Array(uploadedBytes), { mergePages: false });
+  const pages = Array.isArray(extracted.text) ? extracted.text : [String(extracted.text)];
+  expect(pages.join("\n")).toContain("Anexo congelado");
+  expect(pages.join("\n")).toContain("#TE-ASSINA-1");
+  expect(pages.join("\n")).toContain("#TE-ASSINA-2");
+  for (const page of pages) {
+    expect(page).toContain("#TE-RUBRICA-1");
+    expect(page).toContain("#TE-RUBRICA-2");
+  }
   expect(ForsignClient.prototype.createOperation).toHaveBeenCalledWith(
-    expect.objectContaining({ files: [{ id: "11", description: "42.pdf" }] }),
+    expect.objectContaining({
+      files: [{ id: "11", description: "42.pdf" }],
+      members: expect.arrayContaining([
+        expect.objectContaining({
+          email: "cliente@example.test",
+          hasSignatureTag: true,
+          signPositionTag: "#TE-ASSINA-1",
+          hasRubricTag: true,
+          rubricTag: "#TE-RUBRICA-1",
+          signatures: [{ documentId: "11", printSignature: true, positions: [] }],
+        }),
+      ]),
+    }),
+  );
+  expect(insertedOp?.requested_members).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        email: "cliente@example.test",
+        placement: "signature_page",
+        signature_tag: "#TE-ASSINA-1",
+        rubric_tag: "#TE-RUBRICA-1",
+      }),
+    ]),
   );
   const expectedCheck = [
     ["hiring_contract_signature_context", { p_ws: "W", p_contract: "C" }],
