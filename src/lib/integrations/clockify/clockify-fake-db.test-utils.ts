@@ -63,6 +63,10 @@ class Query {
     this.filters.push((r) => getPath(r, col) > v);
     return this;
   }
+  lt(col: string, v: any) {
+    this.filters.push((r) => getPath(r, col) < v);
+    return this;
+  }
   in(col: string, vs: any[]) {
     this.filters.push((r) => vs.includes(getPath(r, col)));
     return this;

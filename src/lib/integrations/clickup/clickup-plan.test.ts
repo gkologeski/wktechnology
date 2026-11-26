@@ -36,9 +36,9 @@ const list = (o: Partial<CuHierarchyList>): CuHierarchyList => ({
 });
 
 describe("organização proposta do ClickUp", () => {
-  it("deixa de fora os workspaces de teste", () => {
+  it("inclui todos os workspaces explicitamente autorizados, inclusive históricos de teste", () => {
     for (const teamName of ["FS - Cliente Exemplo", "CS", "OS - Logbit"])
-      expect(planGroup(list({ teamName }), erp).action).toBe("skip");
+      expect(planGroup(list({ teamName }), erp).action).toBe("import");
   });
   it("Byteway da Consultoria vira projeto novo com o nome do ClickUp", () => {
     const g = planGroup(

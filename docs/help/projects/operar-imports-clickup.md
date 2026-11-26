@@ -5,13 +5,16 @@ title: Importar organização e tarefas do ClickUp
 summary: Importar organização e tarefas do ClickUp no TechProjects: operação, acesso e limites comprovados no código.
 article_type: howto
 route_pattern: /projects/settings/imports/clickup
-min_permission: 
+min_permission:
 audience: internal
 sort_order: 80
-version: 4
+version: 5
 is_published: true
 ---
+
 # Importar organização e tarefas do ClickUp
+
+> **Jornada principal:** para receber todo o histórico, inclusive registros com erro, use [Importações](/ajuda/projects/operar-imports). Esta rota reúne configurações e operações avançadas do ClickUp. A conexão também pode ser configurada pelo painel da jornada, sem sair dela.
 
 **Para que serve:** As listas e tarefas lidas são importadas conforme as decisões de organização e responsáveis.
 
@@ -22,23 +25,28 @@ is_published: true
 **Antes de começar:** Confirme o workspace e o período, confira o registro de destino e disponha da permissão para a ação. Para importações, revise a prévia antes da gravação.
 
 ## Passo a passo
+
 1. Abra Configurações > Importar do ClickUp e use a leitura da origem disponível.
 2. Espere a leitura concluir. Em Organização, revise onde cada lista será criada ou vinculada no TechProjects.
 3. Em Responsáveis, confira os vínculos com membros existentes. Quando usar criação de identidade, confira que será um membro inativo e sem acesso.
 4. Execute a etapa de importação disponível após revisar organização e responsáveis. Confira o resultado de cada etapa.
 
 ## Resultado esperado
+
 As listas e tarefas lidas são importadas conforme as decisões de organização e responsáveis.
 
 ## Regras e limites
+
 Leitura e importação são etapas separadas. Identidade inativa preserva atribuição sem liberar login. Não prometa mapeamento por similaridade de nome nem sincronização contínua.
 
 ## Erros comuns
+
 - Registro indisponível ou sem permissão: confira o workspace, o escopo e a capacidade específica; não tente contornar por URL.
 - Resultado diferente do esperado: confira filtros, período e confirmação da operação; uma consulta não confirma uma gravação.
 - Falha ao salvar: leia a mensagem retornada, corrija os campos ou bloqueios indicados e confirme o estado antes de repetir.
 
 ## Relacionados
+
 ## Importação contínua
 
 No fim da tela, a seção **Importação contínua** lê o ClickUp sozinha.
@@ -51,8 +59,9 @@ No fim da tela, a seção **Importação contínua** lê o ClickUp sozinha.
 4. Clique em **Salvar agenda**. Para rodar na hora, clique em **Executar agora**.
 
 Cuidados:
-- Listas do ClickUp que **nunca foram importadas** ficam de fora da importação automática. A seção avisa quantas ficaram aguardando revisão.
-- Nenhuma tarefa editada no sistema é sobrescrita e nada é duplicado. Horas nunca vêm do ClickUp.
+
+- O resultado da coleta deve informar a cobertura efetiva. Uma lista nova ou arquivada não deve ser descartada silenciosamente; confira suas pendências e a organização autorizada na jornada principal.
+- Edições posteriores no sistema são preservadas e os vínculos evitam duplicação. Horas próprias do ClickUp, comentários, documentos e conteúdos relacionados têm cobertura informada por entidade na jornada principal; preservar a fonte não autoriza somar horas equivalentes nem gerar cobrança.
 - A leitura é feita aos poucos para respeitar o limite do ClickUp; uma execução grande pode levar vários minutos.
 - Se quem ligou a agenda perder a permissão ou deixar de ser administrador ativo, a agenda é desligada.
 

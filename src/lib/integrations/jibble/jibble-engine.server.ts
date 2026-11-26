@@ -37,6 +37,8 @@ import type {
   StagingInput,
 } from "./jibble-store";
 import { buildJibbleUrl, monthWindows } from "./jibble-urls";
+import type { preserveImportRecords } from "@/lib/projects/imports/import-preservation.server";
+import type { preserveJibbleScreenshot } from "./jibble-files.server";
 
 export type JbRunOptions = {
   fromDate: string | null;
@@ -75,6 +77,7 @@ export type Checkpoint = {
   spec?: number;
   window?: number;
   nextUrl?: string | null;
+  lastPageHash?: string;
   skip?: number;
   ids?: string[];
   index?: number;
@@ -96,6 +99,7 @@ export type Checkpoint = {
   retryAt?: number;
   requests?: number;
   retries?: number;
+  screenshotFiles?: { preserved: number; pending: number };
 };
 
 export type EngineDeps = {
@@ -104,15 +108,77 @@ export type EngineDeps = {
   now?: () => number;
   budgetMs?: number;
   today?: string;
+  /** Production supplies the durable ledger before normalization or validation. */
+  preserveRecords?: (input: Parameters<typeof preserveImportRecords>[1]) => Promise<void>;
+  preserveScreenshot?: (
+    input: Parameters<typeof preserveJibbleScreenshot>[1],
+  ) => Promise<{ preserved: boolean }>;
 };
 
 class Pause extends Error {}
 
 const ACTIVE_DECISIONS = new Set(["auto", "confirmed"]);
 
-function itemExternalId(item: Record<string, unknown>): string | null {
-  const id = item.id ?? item.exportId;
+function itemExternalId(item: unknown): string | null {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+  const source = item as Record<string, unknown>;
+  const id = source.id ?? source.exportId;
   return typeof id === "string" && id.length > 0 && id.length <= 200 ? id.toLowerCase() : null;
+}
+
+export function jibbleSourceIssues(entity: string, payload: unknown): string[] {
+  const issues: string[] = [];
+  if (!itemExternalId(payload)) issues.push("missing_external_id");
+  if (!payload || typeof payload !== "object" || Array.isArray(payload))
+    return [...issues, "invalid_source_record"];
+  const item = payload as Record<string, unknown>;
+  if (entity === "time_entry") {
+    if (typeof item.personId !== "string" || !item.personId) issues.push("unmapped_person");
+    if (typeof item.time !== "string" || !Number.isFinite(Date.parse(item.time)))
+      issues.push("invalid_time");
+  }
+  if (entity === "hour_entry") issues.push("manual_adjustment_review");
+  return issues;
+}
+
+export function jibbleCoverage(
+  inventory: Record<string, Capability> | undefined,
+  files?: { preserved: number; pending: number },
+) {
+  const entries = Object.entries(inventory ?? {});
+  const gaps: Array<{ entity: string; reason: string; status: number | null }> = entries
+    .filter(([, cap]) => cap.capability !== "ok")
+    .map(([entity, cap]) => ({ entity, reason: cap.capability, status: cap.status ?? null }));
+  for (const entity of [
+    "organization",
+    ...COLLECT_SPECS.map((spec) => spec.entity),
+    ...WINDOW_SPECS.map((spec) => spec.entity),
+  ]) {
+    if (!inventory?.[entity])
+      gaps.push({
+        entity,
+        reason: "A entidade ainda não foi consultada nesta execução.",
+        status: null,
+      });
+  }
+  if (!entries.length)
+    gaps.push({
+      entity: "inventory",
+      reason: "Inventário da origem ainda não comprovado.",
+      status: null,
+    });
+  if (
+    (files?.pending ?? 0) > 0 ||
+    ((inventory?.screenshot?.count ?? 0) > 0 &&
+      (!files || files.preserved < inventory!.screenshot.count))
+  )
+    gaps.push({
+      entity: "screenshot_content",
+      reason:
+        "Parte do conteúdo das capturas ainda não foi obtida; consulte as pendências de arquivos.",
+      status: null,
+    });
+  return { complete: gaps.length === 0, gaps };
 }
 
 function bump(map: Record<string, number>, key: string, n = 1) {
@@ -142,7 +208,7 @@ export class JibbleEngine {
   private nextPhase() {
     const list = this.phases();
     this.run.phase = list[list.indexOf(this.run.phase) + 1] ?? "done";
-    for (const k of ["spec", "window", "nextUrl", "skip", "ids", "index"] as const)
+    for (const k of ["spec", "window", "nextUrl", "lastPageHash", "skip", "ids", "index"] as const)
       delete this.cp[k];
   }
 
@@ -191,7 +257,7 @@ export class JibbleEngine {
       }
       return { status: "running", phase: this.run.phase };
     } catch (e) {
-      if (e instanceof JibbleApiError && e.code === "rate_limited") {
+      if (e instanceof JibbleApiError && ["rate_limited", "network", "server"].includes(e.code)) {
         this.cp.retryAt = e.retryAt ?? this.now() + 30_000;
         await this.save({ error: e.message });
         return { status: "running", phase: this.run.phase };
@@ -209,6 +275,8 @@ export class JibbleEngine {
 
   private counts() {
     return {
+      coverage: jibbleCoverage(this.cp.inventory, this.cp.screenshotFiles),
+      screenshotFiles: this.cp.screenshotFiles ?? null,
       inventory: this.cp.inventory ?? {},
       totals: this.cp.totals ?? null,
       pending: this.cp.pending ?? {},
@@ -219,7 +287,10 @@ export class JibbleEngine {
   }
 
   private buildReport() {
+    const coverage = jibbleCoverage(this.cp.inventory, this.cp.screenshotFiles);
     return {
+      coverage,
+      screenshotFiles: this.cp.screenshotFiles ?? null,
       inventory: this.cp.inventory ?? {},
       totals: this.cp.totals ?? emptyJbTotals(),
       pending: this.cp.pending ?? {},
@@ -228,7 +299,20 @@ export class JibbleEngine {
       reconcile: this.cp.reconcile ?? null,
       importTotals: this.cp.importTotals ?? null,
       rollback: this.cp.rollback ?? null,
-      notImported: JB_NOT_IMPORTED,
+      notImported: [
+        ...JB_NOT_IMPORTED,
+        ...(coverage.gaps.some(
+          ({ entity }) => entity === "screenshot" || entity === "screenshot_content",
+        )
+          ? [
+              {
+                entity: "Arquivos de capturas de tela",
+                reason:
+                  "Há capturas sem conteúdo recebido. As disponíveis são preservadas em armazenamento privado; confira as pendências de acesso ou transferência. Links temporários não são guardados.",
+              },
+            ]
+          : []),
+      ],
       requests: this.cp.requests ?? 0,
       retries: this.cp.retries ?? 0,
     };
@@ -271,12 +355,28 @@ export class JibbleEngine {
     entity: string,
     items: Array<Record<string, unknown>>,
     extra?: (i: Record<string, unknown>) => Partial<StagingInput>,
+    preserve = true,
+    observationPrefix?: string,
   ) {
     const rows: StagingInput[] = [];
-    for (const item of items) {
+    const records: Parameters<typeof preserveImportRecords>[1]["records"] = [];
+    for (const [index, item] of items.entries()) {
       const payload = entity === "screenshot" ? { ...item, url: undefined } : item;
-      const e = extra?.(item) ?? {};
+      const object = item && typeof item === "object" && !Array.isArray(item) ? item : {};
+      const e = extra?.(object) ?? {};
       const external_id = e.external_id ?? itemExternalId(item);
+      const issues = jibbleSourceIssues(entity, item).filter(
+        (reason) => reason !== "missing_external_id" || !external_id,
+      );
+      records.push({
+        entity,
+        externalId: external_id,
+        payload: item,
+        status: issues.length ? "pending" : "received",
+        issues,
+        sourcePersonId: e.person_external_id ?? null,
+        observationKey: `${observationPrefix ?? `${this.run.phase}:${this.cp.spec ?? 0}:${this.cp.window ?? 0}:${this.cp.skip ?? 0}`}:${index}`,
+      });
       if (!external_id) continue;
       rows.push({
         entity_type: entity,
@@ -287,6 +387,29 @@ export class JibbleEngine {
         payload_hash: await sha256Hex(stableStringify(payload)),
         status: "staged",
       });
+    }
+    // Originals are persisted before canonical staging. A validation failure cannot erase evidence.
+    if (preserve)
+      await this.deps.preserveRecords?.({
+        workspaceId: this.run.workspace_id,
+        provider: "jibble",
+        sourceId: this.run.source_org_id,
+        runId: this.run.id,
+        records,
+      });
+    if (entity === "screenshot") {
+      const files = (this.cp.screenshotFiles ??= { preserved: 0, pending: 0 });
+      for (const record of records) {
+        const result = await this.deps.preserveScreenshot?.({
+          workspaceId: this.run.workspace_id,
+          sourceId: this.run.source_org_id,
+          runId: this.run.id,
+          payload: record.payload,
+          observationKey: record.observationKey,
+        });
+        if (result?.preserved) files.preserved++;
+        else files.pending++;
+      }
     }
     if (rows.length) await this.deps.store.upsertStaging(this.run.id, rows);
     const inv = (this.cp.inventory ??= {});
@@ -323,19 +446,65 @@ export class JibbleEngine {
     paged: boolean,
     extra?: (i: Record<string, unknown>) => Partial<StagingInput>,
     flatten?: (items: Array<Record<string, unknown>>) => Array<Record<string, unknown>>,
+    pageSize = PAGE_SIZE,
   ): Promise<boolean> {
     const url = this.cp.nextUrl ?? firstUrl;
     try {
       const page = await this.deps.client.page<Record<string, unknown>>(url);
-      await this.stage(entity, flatten ? flatten(page.items) : page.items, extra);
+      const observationPrefix = `${entity}:${await sha256Hex(url)}`;
+      if (flatten) {
+        await this.deps.preserveRecords?.({
+          workspaceId: this.run.workspace_id,
+          provider: "jibble",
+          sourceId: this.run.source_org_id,
+          runId: this.run.id,
+          records: page.items.map((payload, index) => ({
+            entity: "timesheet_summary",
+            payload,
+            status: "received",
+            observationKey: `${observationPrefix}:${index}`,
+            externalId:
+              typeof payload?.personId === "string"
+                ? `${payload.personId}:${new URL(firstUrl).searchParams.get("date") ?? ""}`
+                : null,
+            sourcePersonId: typeof payload?.personId === "string" ? payload.personId : null,
+          })),
+        });
+      }
+      await this.stage(
+        entity,
+        flatten ? flatten(page.items) : page.items,
+        extra,
+        !flatten,
+        observationPrefix,
+      );
       if (!paged) return true;
+      const pageHash = await sha256Hex(stableStringify(page.items));
+      if (page.items.length && this.cp.lastPageHash === pageHash)
+        throw new Error(
+          "O Jibble repetiu uma página sem confirmar o fim. Os registros estão preservados e a cobertura está incompleta.",
+        );
+      this.cp.lastPageHash = pageHash;
       if (page.nextUrl) {
+        if (page.nextUrl === url)
+          throw new Error(
+            "O Jibble repetiu o link de paginação. Os registros estão preservados, mas a cobertura não foi concluída.",
+          );
         this.cp.nextUrl = page.nextUrl;
+        this.cp.skip = (this.cp.skip ?? 0) + page.items.length;
         return false;
       }
       this.cp.nextUrl = null;
-      if (page.items.length >= PAGE_SIZE) {
-        this.cp.skip = (this.cp.skip ?? 0) + PAGE_SIZE;
+      if (page.count !== null && page.count > (this.cp.skip ?? 0) + page.items.length) {
+        if (!page.items.length)
+          throw new Error(
+            "O Jibble informou mais registros, mas retornou uma página vazia. A cobertura está incompleta.",
+          );
+        this.cp.skip = (this.cp.skip ?? 0) + page.items.length;
+        return false;
+      }
+      if (page.items.length >= pageSize) {
+        this.cp.skip = (this.cp.skip ?? 0) + pageSize;
         return false;
       }
       return true;
@@ -351,9 +520,9 @@ export class JibbleEngine {
     }
   }
 
-  private pagedQuery(paged: boolean) {
+  private pagedQuery(paged: boolean, pageSize = PAGE_SIZE) {
     return paged
-      ? { $top: String(PAGE_SIZE), $skip: String(this.cp.skip ?? 0), $count: "true" }
+      ? { $top: String(pageSize), $skip: String(this.cp.skip ?? 0), $count: "true" }
       : {};
   }
 
@@ -362,24 +531,44 @@ export class JibbleEngine {
     if (!spec) return this.nextPhase();
     const url = buildJibbleUrl(spec.service, spec.path, {
       ...spec.query,
-      ...this.pagedQuery(spec.paged),
+      ...this.pagedQuery(spec.paged, spec.entity === "screenshot" ? 1 : PAGE_SIZE),
     });
-    const extra =
-      spec.entity === "person"
-        ? (i: Record<string, unknown>) => ({ person_external_id: itemExternalId(i) })
-        : undefined;
-    const done = await this.pageOnce(spec.entity, url, spec.paged, extra);
+    const extra = (item: Record<string, unknown>): Partial<StagingInput> => ({
+      person_external_id:
+        spec.entity === "person"
+          ? itemExternalId(item)
+          : spec.entity === "screenshot"
+            ? itemExternalId(item.person)
+            : typeof item.personId === "string"
+              ? item.personId.toLowerCase()
+              : null,
+      period:
+        typeof item.belongsToDate === "string"
+          ? item.belongsToDate
+          : typeof item.date === "string"
+            ? item.date
+            : null,
+    });
+    const done = await this.pageOnce(
+      spec.entity,
+      url,
+      spec.paged,
+      extra,
+      undefined,
+      spec.entity === "screenshot" ? 1 : PAGE_SIZE,
+    );
     if (done) {
       this.cp.spec = (this.cp.spec ?? 0) + 1;
       this.cp.skip = 0;
       this.cp.nextUrl = null;
+      delete this.cp.lastPageHash;
     }
   }
 
   private async windows() {
     const spec = WINDOW_SPECS[this.cp.spec ?? 0];
     if (!spec) return this.nextPhase();
-    const from = (this.opts.fromDate ?? this.cp.orgCreatedAt ?? "2015-01-01").slice(0, 10);
+    const from = (this.opts.fromDate ?? this.cp.orgCreatedAt ?? "1970-01-01").slice(0, 10);
     const list = monthWindows(
       from,
       this.deps.today ?? new Date(this.now()).toISOString().slice(0, 10),
@@ -391,11 +580,12 @@ export class JibbleEngine {
       this.cp.window = 0;
       this.cp.skip = 0;
       this.cp.nextUrl = null;
+      delete this.cp.lastPageHash;
       return;
     }
     const url = buildJibbleUrl(spec.service, spec.path, {
       ...spec.query(w.from, w.to),
-      ...this.pagedQuery(spec.paged),
+      ...this.pagedQuery(spec.paged, spec.entity === "screenshot" ? 1 : PAGE_SIZE),
     });
     const str = (v: unknown) => (typeof v === "string" ? v : null);
     const extra = (i: Record<string, unknown>): Partial<StagingInput> => {
@@ -426,18 +616,26 @@ export class JibbleEngine {
               })),
             )
         : undefined;
-    const done = await this.pageOnce(spec.entity, url, spec.paged, extra, flatten);
+    const done = await this.pageOnce(
+      spec.entity,
+      url,
+      spec.paged,
+      extra,
+      flatten,
+      spec.entity === "screenshot" ? 1 : PAGE_SIZE,
+    );
     if (done) {
       this.cp.window = (this.cp.window ?? 0) + 1;
       this.cp.skip = 0;
       this.cp.nextUrl = null;
+      delete this.cp.lastPageHash;
     }
   }
 
   // ------------------------------------------------------------ mapeamentos
   private async allStaging(entity: string, personId?: string) {
     const out: Array<{ external_id: string; payload: Record<string, unknown> }> = [];
-    for (let offset = 0; offset < 500_000; offset += 1000) {
+    for (let offset = 0; ; offset += 1000) {
       const page = await this.deps.store.stagingPage(entity, { personId, offset, limit: 1000 });
       out.push(
         ...page.map((r) => ({
@@ -649,8 +847,11 @@ export class JibbleEngine {
       maxSeconds: this.opts.maxIntervalHours * 3600,
     });
     const byReason = new Map<string, string[]>();
-    for (const a of anomalies)
-      byReason.set(a.reason, [...(byReason.get(a.reason) ?? []), a.eventId]);
+    for (const a of anomalies) {
+      const ids = byReason.get(a.reason) ?? [];
+      ids.push(a.eventId);
+      byReason.set(a.reason, ids);
+    }
     for (const [reason, ids] of byReason) {
       await store.setStagingStatus("time_entry", ids, "pending_review", reason);
       if (!write) bump(this.cp.anomalies!, reason, ids.length);
@@ -824,6 +1025,38 @@ export class JibbleEngine {
       }
     }
     if (staged.length) await store.upsertStaging(this.run.id, staged);
+    // The unified queue reads originals, not reconstructed intervals. Carry operational
+    // review reasons back to source events without changing the evidence or inventing hours.
+    const pendingSources = new Map<string, string>();
+    for (const [reason, eventIds] of byReason)
+      for (const eventId of eventIds) pendingSources.set(eventId, reason);
+    const readySources = new Set<string>();
+    for (const row of staged) {
+      const payload =
+        row.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
+          ? (row.payload as Record<string, unknown>)
+          : {};
+      const eventIds = [payload.startEventId, payload.endEventId].filter(
+        (id): id is string => typeof id === "string" && !!id,
+      );
+      if (row.status === "pending_review" || (row.status === "staged" && row.reason_code)) {
+        for (const eventId of eventIds)
+          if (!pendingSources.has(eventId))
+            pendingSources.set(eventId, row.reason_code ?? "awaiting_review");
+      } else if (row.status && ["ready", "imported", "skipped"].includes(row.status)) {
+        for (const eventId of eventIds) readySources.add(eventId);
+      }
+    }
+    const sourceReasons = new Map<string, string[]>();
+    for (const [eventId, reason] of pendingSources) {
+      const ids = sourceReasons.get(reason) ?? [];
+      ids.push(eventId);
+      sourceReasons.set(reason, ids);
+    }
+    for (const [reason, eventIds] of sourceReasons)
+      await store.setStagingStatus("time_entry", eventIds, "pending_review", reason);
+    const readyIds = [...readySources].filter((eventId) => !pendingSources.has(eventId));
+    if (readyIds.length) await store.setStagingStatus("time_entry", readyIds, "ready", null);
     if (!write) await this.reconcilePerson(personId, intervals);
   }
 

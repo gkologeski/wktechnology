@@ -1,14 +1,7 @@
 // Importador ClickUp -> TechProjects (servidor). Lê o ClickUp só com GET em api.clickup.com,
 // grava staging e aplica/desfaz apenas pelas RPCs clickup_import_* (que reconferem a permissão).
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  isClosed,
-  planGroup,
-  taskPayload,
-  type CuHierarchyList,
-  type CuTask,
-  type ErpRef,
-} from "./clickup-plan";
+import { type ErpRef } from "./clickup-plan";
 
 export type ClickUpAction = "view" | "manage";
 
@@ -30,97 +23,19 @@ export async function assertClickUpImport(
   if (error || data !== true) throw new Error("Sem permissão para o importador do ClickUp.");
 }
 
-const CLICKUP_HOST = "https://api.clickup.com/api/v2";
-const ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
-
-export class ClickUpRateLimited extends Error {
-  constructor(public waitSeconds: number) {
-    super("Limite de leitura do ClickUp atingido.");
-  }
-}
-
-async function cuGet<T>(path: string, query: Record<string, string> = {}): Promise<T> {
-  const token = process.env["CLICKUP_API_TOKEN"];
-  if (!token) throw new Error("ClickUp não conectado: falta a chave no servidor.");
-  const qs = new URLSearchParams(query).toString();
-  const res = await fetch(`${CLICKUP_HOST}${path}${qs ? `?${qs}` : ""}`, {
-    method: "GET",
-    redirect: "error",
-    headers: { Authorization: token, accept: "application/json" },
-  });
-  if (res.status === 429) {
-    const reset = Number(res.headers.get("x-ratelimit-reset"));
-    const wait = Number.isFinite(reset) && reset > 0 ? Math.max(5, reset - Date.now() / 1000) : 30;
-    throw new ClickUpRateLimited(Math.min(90, Math.ceil(wait)));
-  }
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`ClickUp respondeu ${res.status}: ${body.slice(0, 200)}`);
-  }
-  return (await res.json()) as T;
-}
-
-function safeId(id: unknown): string {
-  const s = String(id ?? "");
-  if (!ID_RE.test(s)) throw new Error("Identificador do ClickUp inválido.");
-  return s;
-}
-
-type Named = { id: string | number; name: string };
-
-/** Hierarquia completa (workspaces, espaços, pastas e listas, sem arquivados). */
-export async function readHierarchy(): Promise<CuHierarchyList[]> {
-  const out: CuHierarchyList[] = [];
-  const { teams } = await cuGet<{ teams: Named[] }>("/team");
-  for (const t of teams) {
-    const teamId = safeId(t.id);
-    const { spaces } = await cuGet<{ spaces: Named[] }>(`/team/${teamId}/space`, {
-      archived: "false",
-    });
-    for (const s of spaces) {
-      const spaceId = safeId(s.id);
-      const { folders } = await cuGet<{ folders: (Named & { lists?: Named[] })[] }>(
-        `/space/${spaceId}/folder`,
-        { archived: "false" },
-      );
-      for (const f of folders)
-        for (const l of f.lists ?? [])
-          out.push({
-            teamId,
-            teamName: t.name,
-            spaceId,
-            spaceName: s.name,
-            folderId: safeId(f.id),
-            folderName: f.name,
-            listId: safeId(l.id),
-            listName: l.name,
-          });
-      const { lists } = await cuGet<{ lists: Named[] }>(`/space/${spaceId}/list`, {
-        archived: "false",
-      });
-      for (const l of lists)
-        out.push({
-          teamId,
-          teamName: t.name,
-          spaceId,
-          spaceName: s.name,
-          folderId: null,
-          folderName: null,
-          listId: safeId(l.id),
-          listName: l.name,
-        });
-    }
-  }
-  return out;
-}
-
-export type CollectCursor = {
-  lists: string[];
-  index: number;
-  page: number;
-  counts: Record<string, { tasks: number; closed: number }>;
-  people: Record<string, { username: string | null; email: string | null; tasks: number }>;
-};
+import {
+  clickUpGetForWorkspace as cuGet,
+  clickUpId as safeId,
+  ClickUpRateLimited,
+} from "./clickup-api.server";
+import {
+  initialCollectCursor,
+  type CollectCursor,
+  type ClickUpTeam,
+  type CoverageGap,
+} from "./clickup-collection";
+export { ClickUpRateLimited } from "./clickup-api.server";
+export type { CollectCursor } from "./clickup-collection";
 
 type Ctx = { client: SupabaseClient; workspaceId: string; userId: string };
 
@@ -130,110 +45,221 @@ async function rpc<T>(client: SupabaseClient, fn: string, args: Record<string, u
   return data as T;
 }
 
-async function erpRefs(ctx: Ctx): Promise<{ projects: ErpRef[]; spaces: ErpRef[] }> {
-  const [p, s] = await Promise.all([
-    ctx.client.from("projects").select("id, name").eq("workspace_id", ctx.workspaceId).limit(5000),
-    ctx.client
-      .from("project_spaces")
-      .select("id, name")
-      .eq("workspace_id", ctx.workspaceId)
-      .is("archived_at", null),
-  ]);
-  if (p.error) throw new Error(p.error.message);
-  if (s.error) throw new Error(s.error.message);
-  return { projects: (p.data ?? []) as ErpRef[], spaces: (s.data ?? []) as ErpRef[] };
+async function allRows<T>(read: (from: number, to: number) => PromiseLike<unknown>): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += 1000) {
+    const result = (await read(from, from + 999)) as {
+      data: T[] | null;
+      error: { message: string } | null;
+    };
+    if (result.error) throw new Error(result.error.message);
+    out.push(...(result.data ?? []));
+    if (!result.data || result.data.length < 1000) return out;
+  }
 }
 
-/** Passo 1: abre a execução, lê a hierarquia e grava a organização proposta. */
+async function erpRefs(ctx: Ctx): Promise<{ projects: ErpRef[]; spaces: ErpRef[] }> {
+  const [projects, spaces] = await Promise.all([
+    allRows<ErpRef>((from, to) =>
+      ctx.client
+        .from("projects")
+        .select("id,name")
+        .eq("workspace_id", ctx.workspaceId)
+        .order("id")
+        .range(from, to),
+    ),
+    allRows<ErpRef>((from, to) =>
+      ctx.client
+        .from("project_spaces")
+        .select("id,name")
+        .eq("workspace_id", ctx.workspaceId)
+        .is("archived_at", null)
+        .order("id")
+        .range(from, to),
+    ),
+  ]);
+  return { projects, spaces };
+}
+
+/** Fontes visíveis à credencial; nenhuma é incluída sem vínculo explícito com o workspace. */
+export async function getSources(ctx: Ctx) {
+  await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage");
+  const { teams } = await cuGet<{ teams: ClickUpTeam[] }>(ctx, "/team");
+  if (!Array.isArray(teams)) throw new Error("A origem não informou as organizações autorizadas.");
+  const bindings = await ctx.client
+    .from("clickup_import_source_bindings" as never)
+    .select("team_id")
+    .eq("workspace_id", ctx.workspaceId)
+    .order("team_id");
+  if (bindings.error) throw new Error(bindings.error.message);
+  return {
+    available: teams.map((t) => ({ id: safeId(t.id), name: t.name })),
+    selectedIds: ((bindings.data ?? []) as { team_id: string }[]).map((t) => t.team_id),
+  };
+}
+
+export async function saveSources(ctx: Ctx, sourceTeamIds: string[]) {
+  await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage");
+  const selected = new Set(sourceTeamIds.map(safeId));
+  if (!selected.size) throw new Error("Escolha uma organização autorizada para este workspace.");
+  const { teams } = await cuGet<{ teams: ClickUpTeam[] }>(ctx, "/team");
+  const sources = teams
+    .filter((t) => selected.has(String(t.id)))
+    .map((t) => ({ id: String(t.id), name: t.name }));
+  if (sources.length !== selected.size)
+    throw new Error("Uma das organizações não está disponível nesta credencial.");
+  await rpc(ctx.client, "clickup_import_sources_set", {
+    p_ws: ctx.workspaceId,
+    p_sources: sources,
+  });
+  return { selectedIds: sources.map((s) => s.id) };
+}
+
+type CollectionRun = {
+  id: string;
+  collect_cursor: CollectCursor | null;
+  collect_revision: number;
+  source_team_ids: string[];
+  collect_error: string | null;
+  collect_coverage: Record<string, unknown>;
+  status: string;
+};
+export async function loadCollection(ctx: Ctx, runId: string): Promise<CollectionRun> {
+  await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage");
+  const result = await ctx.client
+    .from("clickup_import_runs" as never)
+    .select(
+      "id,collect_cursor,collect_revision,source_team_ids,collect_error,collect_coverage,status",
+    )
+    .eq("workspace_id", ctx.workspaceId)
+    .eq("id", runId)
+    .maybeSingle();
+  if (result.error || !result.data) throw new Error("Importação não encontrada neste workspace.");
+  const run = result.data as unknown as CollectionRun;
+  if (run.source_team_ids.length) {
+    const bindings = await ctx.client
+      .from("clickup_import_source_bindings" as never)
+      .select("team_id")
+      .eq("workspace_id", ctx.workspaceId);
+    if (
+      bindings.error ||
+      run.source_team_ids.some(
+        (id) => !((bindings.data ?? []) as { team_id: string }[]).some((b) => b.team_id === id),
+      )
+    )
+      throw new Error("Uma origem desta execução deixou de estar autorizada para o workspace.");
+  }
+  return run;
+}
+
+async function saveCheckpoint(
+  ctx: Ctx,
+  runId: string,
+  revision: number,
+  cursor: CollectCursor,
+  error: string | null = null,
+) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return rpc<number>(supabaseAdmin, "clickup_import_checkpoint", {
+    p_actor: ctx.userId,
+    p_run: runId,
+    p_expected: revision,
+    p_cursor: cursor,
+    p_error: error,
+  });
+}
+
+/** A coleta é retomada pelo checkpoint do servidor; fechar a aba não elimina o progresso. */
 export async function startCollect(ctx: Ctx) {
   await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage");
+  const sources = await getSources(ctx);
+  if (!sources.selectedIds.length)
+    throw new Error(
+      "Confirme as organizações do ClickUp que pertencem a este workspace antes de importar.",
+    );
+  const existing = await ctx.client
+    .from("clickup_import_runs" as never)
+    .select("id,collect_cursor")
+    .eq("workspace_id", ctx.workspaceId)
+    .eq("status", "collecting")
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (existing.error) throw new Error(existing.error.message);
+  const active = existing.data?.[0] as unknown as
+    | { id: string; collect_cursor: CollectCursor }
+    | undefined;
+  if (active?.collect_cursor?.version === 2) {
+    const run = await loadCollection(ctx, active.id);
+    return {
+      runId: active.id,
+      cursor: run.collect_cursor!,
+      lists: run.collect_cursor!.lists.length,
+      resumed: true,
+    };
+  }
+  const { teams } = await cuGet<{ teams: ClickUpTeam[] }>(ctx, "/team");
+  const allowed = teams.filter((t) => sources.selectedIds.includes(String(t.id)));
+  if (allowed.length !== sources.selectedIds.length)
+    throw new Error("Uma organização selecionada não está mais disponível; confira a conexão.");
+  const cursor = initialCollectCursor(allowed);
   const runId = await rpc<string>(ctx.client, "clickup_import_start", { p_ws: ctx.workspaceId });
-  const lists = await readHierarchy();
-  const erp = await erpRefs(ctx);
-  const groups = lists.map((l) => planGroup(l, erp));
-  for (let i = 0; i < groups.length; i += 400)
-    await rpc(ctx.client, "clickup_import_stage", {
-      p_run: runId,
-      p_groups: groups.slice(i, i + 400),
-      p_tasks: [],
-      p_people: [],
-    });
-  const cursor: CollectCursor = {
-    lists: groups.filter((g) => g.action === "import").map((g) => g.list_ext_id),
-    index: 0,
-    page: 0,
-    counts: {},
-    people: {},
-  };
-  return { runId, cursor, lists: groups.length };
+  await saveCheckpoint(ctx, runId, 0, cursor);
+  // Organization/member originals are the first resumable collector unit. Returning
+  // or losing this start response cannot advance past their preservation.
+  return { runId, cursor, lists: 0, resumed: false };
 }
 
-const PAGES_PER_STEP = 3;
-
-/** Passo 2..N: lê até 3 páginas de tarefas (100 por página) e grava no staging. */
-export async function collectStep(ctx: Ctx, runId: string, cursor: CollectCursor) {
-  await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage");
-  const c: CollectCursor = structuredClone(cursor);
-  let pages = 0;
+/** Uma unidade GET por chamada, checkpoint depois da preservação. O cursor do navegador não é autoridade. */
+export async function collectStep(ctx: Ctx, runId: string, _cursor?: CollectCursor) {
+  const run = await loadCollection(ctx, runId);
+  if (!run.collect_cursor)
+    throw new Error("A execução antiga não possui checkpoint; inicie uma nova leitura integral.");
+  const c = structuredClone(run.collect_cursor);
+  if (c.phase === "done")
+    return { cursor: c, done: true, waitSeconds: 0, coverageComplete: !c.gaps?.length };
   try {
-    while (c.index < c.lists.length && pages < PAGES_PER_STEP) {
-      const listId = safeId(c.lists[c.index]);
-      const r = await cuGet<{ tasks: CuTask[]; last_page?: boolean }>(`/list/${listId}/task`, {
-        archived: "false",
-        include_closed: "true",
-        subtasks: "true",
-        page: String(c.page),
-      });
-      pages++;
-      const tasks = (r.tasks ?? []).filter((t) => ID_RE.test(String(t.id)));
-      const cnt = (c.counts[listId] ??= { tasks: 0, closed: 0 });
-      for (const t of tasks) {
-        cnt.tasks++;
-        if (isClosed(t)) cnt.closed++;
-        for (const a of t.assignees ?? []) {
-          const p = (c.people[String(a.id)] ??= {
-            username: a.username ?? null,
-            email: a.email ?? null,
-            tasks: 0,
-          });
-          p.tasks++;
-        }
-      }
-      if (tasks.length)
-        await rpc(ctx.client, "clickup_import_stage", {
-          p_run: runId,
-          p_groups: [],
-          p_tasks: tasks.map((t) => ({
-            id: String(t.id),
-            list_ext_id: listId,
-            parent: t.parent ?? null,
-            payload: taskPayload(t),
-          })),
-          p_people: [],
-        });
-      if (r.last_page !== false || tasks.length === 0) {
-        c.index++;
-        c.page = 0;
-      } else c.page++;
-    }
-  } catch (e) {
-    if (e instanceof ClickUpRateLimited)
-      return { cursor: c, done: false, waitSeconds: e.waitSeconds };
-    throw e;
+    const { collectClickUpPage } = await import("./clickup-collection.server");
+    await collectClickUpPage(ctx, runId, c);
+    await saveCheckpoint(ctx, runId, run.collect_revision, c);
+  } catch (error) {
+    // A última unidade concluída continua persistida. Repetir uma página não duplica originais.
+    if (error instanceof ClickUpRateLimited)
+      return {
+        cursor: run.collect_cursor,
+        done: false,
+        waitSeconds: error.waitSeconds,
+        coverageComplete: false,
+      };
+    const message =
+      error instanceof Error && !/https?:|pk_/i.test(error.message)
+        ? error.message.slice(0, 400)
+        : "A leitura foi interrompida. Retome sem perder os registros recebidos.";
+    await saveCheckpoint(ctx, runId, run.collect_revision, run.collect_cursor, message).catch(
+      () => undefined,
+    );
+    throw new Error(message);
   }
-  if (c.index < c.lists.length) return { cursor: c, done: false, waitSeconds: 0 };
-  return { cursor: c, done: true, waitSeconds: 0 };
+  const done = (c as CollectCursor).phase === "done";
+  return { cursor: c, done, waitSeconds: 0, coverageComplete: done && !c.gaps?.length };
 }
 
 /** Fecha a leitura: totais por lista, responsáveis e sugestões de vínculo. */
-export async function finishCollect(ctx: Ctx, runId: string, cursor: CollectCursor) {
+export async function finishCollect(ctx: Ctx, runId: string, _cursor?: CollectCursor) {
   await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage");
-  const { data: groups, error } = await ctx.client
-    .from("clickup_import_groups" as never)
-    .select("*")
-    .eq("run_id", runId);
-  if (error) throw new Error(error.message);
-  const rows = (groups ?? []) as Record<string, unknown>[];
+  const current = await loadCollection(ctx, runId);
+  if (current.collect_cursor?.phase !== "done")
+    throw new Error("A coleta ainda não terminou. Retome a importação.");
+  if (current.status !== "collecting") return { status: current.status };
+  const cursor = current.collect_cursor;
+  const rows = await allRows<Record<string, unknown>>((from, to) =>
+    ctx.client
+      .from("clickup_import_groups" as never)
+      .select("*")
+      .eq("run_id", runId)
+      .eq("workspace_id", ctx.workspaceId)
+      .order("id")
+      .range(from, to),
+  );
   const updated = rows.map((g) => {
     const k = String(g["list_ext_id"]);
     return {
@@ -262,7 +288,13 @@ export async function finishCollect(ctx: Ctx, runId: string, cursor: CollectCurs
       p_tasks: [],
       p_people: people.slice(i, i + 400),
     });
-  const totalTasks = Object.values(cursor.counts).reduce((s, x) => s + x.tasks, 0);
+  const total = await ctx.client
+    .from("clickup_import_tasks" as never)
+    .select("external_id", { count: "exact", head: true })
+    .eq("run_id", runId)
+    .eq("workspace_id", ctx.workspaceId);
+  if (total.error) throw new Error(total.error.message);
+  const totalTasks = total.count ?? 0;
   return rpc(ctx.client, "clickup_import_finish_collect", {
     p_run: runId,
     p_counts: {
@@ -278,6 +310,14 @@ export type ClickUpRun = {
   status: string;
   counts: Record<string, number>;
   applied_at: string | null;
+  collect_cursor?: CollectCursor | null;
+  collect_error?: string | null;
+  collect_coverage?: {
+    complete?: boolean;
+    gaps?: CoverageGap[];
+    capabilities?: Record<string, string>;
+  };
+  source_team_ids?: string[];
   created_at: string;
 };
 export type ClickUpGroupRow = {
@@ -317,6 +357,8 @@ export async function getStatus(ctx: Ctx): Promise<{
   groups: ClickUpGroupRow[];
   people: ClickUpPersonRow[];
   linkedTasks: number;
+  sources: { id: string; name: string }[];
+  needsSourceSelection: boolean;
 }> {
   await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "view");
   const canManage = await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage")
@@ -324,7 +366,9 @@ export async function getStatus(ctx: Ctx): Promise<{
     .catch(() => false);
   const { data: runs, error } = await ctx.client
     .from("clickup_import_runs" as never)
-    .select("id, status, counts, applied_at, created_at")
+    .select(
+      "id,status,counts,applied_at,created_at,collect_cursor,collect_error,collect_coverage,source_team_ids",
+    )
     .eq("workspace_id", ctx.workspaceId)
     .neq("status", "discarded")
     .order("created_at", { ascending: false })
@@ -333,25 +377,32 @@ export async function getStatus(ctx: Ctx): Promise<{
   const run = ((runs ?? []) as unknown as ClickUpRun[])[0] ?? null;
   let groups: ClickUpGroupRow[] = [];
   if (run) {
-    const g = await ctx.client
-      .from("clickup_import_groups" as never)
-      .select(
-        "id, team_name, space_name, folder_name, list_name, task_count, closed_count, action, reason, target_space_id, new_space_name, target_project_id, new_project_name, new_project_status, erp_list_name, erp_project_id, erp_list_id",
-      )
-      .eq("run_id", run.id)
-      .order("team_name")
-      .order("space_name")
-      .order("folder_name", { nullsFirst: true })
-      .order("list_name");
-    if (g.error) throw new Error(g.error.message);
-    groups = (g.data ?? []) as unknown as ClickUpGroupRow[];
+    groups = await allRows<ClickUpGroupRow>((from, to) =>
+      ctx.client
+        .from("clickup_import_groups" as never)
+        .select(
+          "id,team_name,space_name,folder_name,list_name,task_count,closed_count,action,reason,target_space_id,new_space_name,target_project_id,new_project_name,new_project_status,erp_list_name,erp_project_id,erp_list_id",
+        )
+        .eq("run_id", run.id)
+        .eq("workspace_id", ctx.workspaceId)
+        .order("team_name")
+        .order("space_name")
+        .order("folder_name", { nullsFirst: true })
+        .order("list_name")
+        .order("id")
+        .range(from, to),
+    );
   }
-  const people = await ctx.client
-    .from("clickup_import_people" as never)
-    .select("clickup_user_id, username, email, task_count, user_id, status, match_reason")
-    .eq("workspace_id", ctx.workspaceId)
-    .order("task_count", { ascending: false });
-  if (people.error) throw new Error(people.error.message);
+  const people = await allRows<ClickUpPersonRow>((from, to) =>
+    ctx.client
+      .from("clickup_import_people" as never)
+      .select("clickup_user_id,username,email,task_count,user_id,status,match_reason")
+      .eq("workspace_id", ctx.workspaceId)
+      .order("task_count", { ascending: false })
+      .order("clickup_user_id")
+      .range(from, to),
+  );
+
   let linkedTasks = Number(run?.counts?.["tasks_created"] ?? 0);
   if (run && !linkedTasks && ["applying", "rolling_back"].includes(run.status)) {
     const l = await ctx.client
@@ -362,12 +413,26 @@ export async function getStatus(ctx: Ctx): Promise<{
       .eq("entity_type", "task");
     linkedTasks = l.count ?? 0;
   }
+  const bindings = await ctx.client
+    .from("clickup_import_source_bindings" as never)
+    .select("team_id,team_name")
+    .eq("workspace_id", ctx.workspaceId)
+    .order("team_name");
+  if (bindings.error) throw new Error(bindings.error.message);
+  const sources = ((bindings.data ?? []) as { team_id: string; team_name: string }[]).map((b) => ({
+    id: b.team_id,
+    name: b.team_name,
+  }));
+  const { getClickUpConnectionState } = await import("./clickup-connection.server");
+  const connection = await getClickUpConnectionState(ctx);
   return {
-    configured: Boolean(process.env["CLICKUP_API_TOKEN"]),
+    sources,
+    needsSourceSelection: !sources.length,
+    configured: connection.configured,
     canManage,
     run,
     groups,
-    people: (people.data ?? []) as unknown as ClickUpPersonRow[],
+    people,
     linkedTasks,
   };
 }
@@ -375,20 +440,29 @@ export async function getStatus(ctx: Ctx): Promise<{
 export async function listTargets(ctx: Ctx) {
   await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "view");
   const erp = await erpRefs(ctx);
-  const { data: members, error } = await ctx.client
-    .from("workspace_members")
-    .select("user_id, status")
-    .eq("workspace_id", ctx.workspaceId);
-  if (error) throw new Error(error.message);
-  const ids = (members ?? []).map((m) => m.user_id as string);
-  const { data: profiles } = ids.length
-    ? await ctx.client.from("profiles").select("id, full_name").in("id", ids)
-    : { data: [] as { id: string; full_name: string | null }[] };
-  const name = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
+  const members = await allRows<{ user_id: string; status: string }>((from, to) =>
+    ctx.client
+      .from("workspace_members")
+      .select("user_id,status")
+      .eq("workspace_id", ctx.workspaceId)
+      .order("user_id")
+      .range(from, to),
+  );
+  const ids = members.map((m) => m.user_id);
+  const profiles: { id: string; full_name: string | null }[] = [];
+  for (let offset = 0; offset < ids.length; offset += 100) {
+    const result = await ctx.client
+      .from("profiles")
+      .select("id,full_name")
+      .in("id", ids.slice(offset, offset + 100));
+    if (result.error) throw new Error(result.error.message);
+    profiles.push(...(result.data ?? []));
+  }
+  const name = new Map(profiles.map((p) => [p.id, p.full_name]));
   return {
     projects: erp.projects.sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
     spaces: erp.spaces.sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
-    members: (members ?? [])
+    members: members
       .map((m) => ({
         id: m.user_id as string,
         name: name.get(m.user_id as string) ?? "Sem nome",
@@ -508,3 +582,5 @@ export async function runStep(ctx: Ctx, kind: "apply" | "assignees" | "rollback"
         : "clickup_import_rollback_step";
   return rpc<StepResult>(ctx.client, fn, { p_run: runId, p_limit: 300 });
 }
+
+export { getClickUpConnectionState } from "./clickup-connection.server";

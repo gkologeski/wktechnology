@@ -43,7 +43,7 @@ describe("agenda de importação contínua — acesso", () => {
       authorizeImportSchedule(client(null, "inactive membership"), U, "clickup", false),
     ).rejects.toThrow();
   });
-  it("lista do ClickUp nunca importada fica fora da importação automática", async () => {
+  it("lista nova das origens autorizadas não é descartada da importação automática", async () => {
     const { groupsToHold } = await import("./clickup-schedule.server");
     const held = groupsToHold(
       [
@@ -53,6 +53,6 @@ describe("agenda de importação contínua — acesso", () => {
       ],
       new Set(["L1"]),
     );
-    expect(held.map((g) => g.id)).toEqual(["b"]);
+    expect(held).toEqual([]);
   });
 });

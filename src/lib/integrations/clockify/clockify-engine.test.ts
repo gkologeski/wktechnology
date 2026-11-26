@@ -1,7 +1,14 @@
 // Fluxo completo do motor com fixture do Clockify e banco em memória:
 // prévia → confirmação → importação → reexecução (sem duplicar) → mudança na origem → edição no ERP.
 import { describe, expect, it } from "vitest";
-import { ClockifyEngine } from "./clockify-engine.server";
+import {
+  ClockifyEngine,
+  COLLECT_SPECS,
+  clockifyCoverage,
+  clockifySourceIssues,
+  fetchAll,
+  type EngineDeps,
+} from "./clockify-engine.server";
 import { FakeDb, uuid } from "./clockify-fake-db.test-utils";
 import type { FetchLike } from "./clockify-client";
 
@@ -76,10 +83,12 @@ const entries: Record<string, unknown[][]> = {
 function fixtureFetch(opts: { first429?: boolean } = {}) {
   let sent429 = !opts.first429;
   const methods: string[] = [];
+  const postedPaths: string[] = [];
   const f: FetchLike = async (raw, init) => {
     methods.push(init.method ?? "GET");
     const u = new URL(raw);
     const p = u.pathname.replace(/^\/(api|report)?\/?v1/, "").replace(/^\/v1/, "");
+    if (init.method === "POST") postedPaths.push(p);
     const ok = (body: unknown, last = true) =>
       new Response(JSON.stringify(body), { status: 200, headers: { "last-page": String(last) } });
     if (!sent429) {
@@ -140,7 +149,7 @@ function fixtureFetch(opts: { first429?: boolean } = {}) {
       });
     return ok([]);
   };
-  return { f, methods };
+  return { f, methods, postedPaths };
 }
 
 function setup() {
@@ -173,7 +182,14 @@ function newRun(db: FakeDb, kind: "dry_run" | "import", options: Record<string, 
   return run;
 }
 
-async function drive(db: FakeDb, runId: string, fetch: FetchLike, clock: { t: number }, max = 20) {
+async function drive(
+  db: FakeDb,
+  runId: string,
+  fetch: FetchLike,
+  clock: { t: number },
+  max = 20,
+  preserveRecords?: EngineDeps["preserveRecords"],
+) {
   for (let i = 0; i < max; i++) {
     const run = db.tables.clockify_import_runs.find((r) => r.id === runId)!;
     if (["completed", "failed", "cancelled"].includes(run.status)) return run;
@@ -187,6 +203,7 @@ async function drive(db: FakeDb, runId: string, fetch: FetchLike, clock: { t: nu
       now: () => clock.t,
       sleep: async () => {},
       memberEmails: async () => new Map([[ANA, "ana@wk.com"]]),
+      preserveRecords,
     });
     await engine.advance(structuredClone(run) as never);
   }
@@ -194,10 +211,118 @@ async function drive(db: FakeDb, runId: string, fetch: FetchLike, clock: { t: nu
 }
 
 describe("motor Clockify ponta a ponta (fixture)", () => {
+  it("preserva objetos sem ID e intervalos inválidos antes de validar e não cria horas incorretas", async () => {
+    const db = setup();
+    const clock = { t: 1_800_000_000_000 };
+    const captured: Array<Parameters<NonNullable<EngineDeps["preserveRecords"]>>[0]> = [];
+    const { f } = fixtureFetch();
+    const malformed = {
+      userId: U1,
+      description: "sem identificador",
+      timeInterval: { start: "inválido", end: null },
+    };
+    const negative = {
+      id: "8c1a2b3c4d5e6f7a8b9c0d99",
+      userId: U1,
+      projectId: P1,
+      billable: true,
+      timeInterval: { start: "2026-01-10T12:00:00Z", end: "2026-01-10T11:00:00Z" },
+    };
+    const source: FetchLike = async (url, init) => {
+      const response = await f(url, init);
+      if (
+        url.includes(`/user/${U1}/time-entries`) &&
+        new URL(url).searchParams.get("page") === "1"
+      ) {
+        return new Response(
+          JSON.stringify([...((await response.json()) as unknown[]), malformed, negative]),
+          { status: 200, headers: response.headers },
+        );
+      }
+      return response;
+    };
+    const dry = await drive(db, newRun(db, "dry_run").id, source, clock, 20, async (batch) => {
+      captured.push(structuredClone(batch));
+    });
+    expect(dry.status, dry.error).toBe("completed");
+    const raw = captured.flatMap((batch) => batch.records);
+    expect(raw.find((r) => r.entity === "time_entry" && r.externalId == null)).toMatchObject({
+      payload: malformed,
+      status: "pending",
+      issues: expect.arrayContaining(["missing_external_id", "invalid_interval"]),
+    });
+    expect(raw.find((r) => r.externalId === negative.id)).toMatchObject({
+      payload: negative,
+      status: "pending",
+      issues: expect.arrayContaining(["invalid_interval"]),
+    });
+    expect(
+      db.tables.clockify_staging_records.find((r) => r.external_id === negative.id),
+    ).toMatchObject({ status: "pending_review", reason_code: "invalid_interval" });
+    expect(db.tables.project_time_entries ?? []).toHaveLength(0);
+    expect(
+      captured.every(
+        (batch) =>
+          batch.workspaceId === TARGET_WS &&
+          batch.sourceId === SRC &&
+          batch.provider === "clockify",
+      ),
+    ).toBe(true);
+  });
+
+  it("consome páginas além do antigo limite de 200 mil sem truncar", async () => {
+    const data = await fetchAll(async (from, to) => ({
+      data: Array.from(
+        { length: Math.max(0, Math.min(to + 1, 200_001) - from) },
+        (_, index) => from + index,
+      ),
+      error: null,
+    }));
+    expect(data).toHaveLength(200_001);
+    expect(data.at(-1)).toBe(200_000);
+    await expect(
+      fetchAll(async (from) => ({
+        data: from ? null : Array(1000).fill(1),
+        error: from ? { message: "falha da página seguinte" } : null,
+      })),
+    ).rejects.toThrow("falha da página seguinte");
+  });
+
+  it("cobertura parcial não vira integral quando outro filtro já trouxe registros", () => {
+    expect(
+      clockifyCoverage({
+        capabilities: { project: { status: "partial", count: 2, detail: "Arquivados sem acesso" } },
+      }),
+    ).toMatchObject({
+      complete: false,
+      gaps: expect.arrayContaining([{ entity: "project", reason: "Arquivados sem acesso" }]),
+    });
+    const capabilities = Object.fromEntries(
+      [
+        "workspace",
+        ...COLLECT_SPECS.map((spec) => spec.entity),
+        "task",
+        "time_entry",
+        "running_time_entry",
+        "time_off_request",
+        "attendance",
+        "report_summary",
+      ].map((entity) => [entity, { status: "empty" }]),
+    );
+    expect(clockifyCoverage({ capabilities }).complete).toBe(true);
+    expect(clockifyCoverage({ capabilities: { project: { status: "collected" } } }).complete).toBe(
+      false,
+    );
+    expect(clockifySourceIssues("time_entry", null)).toEqual([
+      "missing_external_id",
+      "invalid_source_record",
+    ]);
+  });
+
   it("prévia, importação, reexecução, mudança na origem e edição no ERP", async () => {
     const db = setup();
     const clock = { t: 1_800_000_000_000 };
-    const { f, methods } = fixtureFetch({ first429: true });
+    const { f, methods, postedPaths } = fixtureFetch({ first429: true });
 
     // 429 longo: a execução guarda o horário e não avança antes dele (retomada).
     const dry = newRun(db, "dry_run");
@@ -209,11 +334,16 @@ describe("motor Clockify ponta a ponta (fixture)", () => {
     expect(db.tables.clockify_import_runs.find((r) => r.id === dry.id)!.phase).toBe("workspace");
     clock.t += 61_000;
     const done = await drive(db, dry.id, f, clock);
-    expect(done.status).toBe("completed");
+    expect(done.status, done.error).toBe("completed");
 
-    // Somente leitura: GET em tudo, POST apenas no relatório resumido.
+    // POST is limited to documented read-queries; no mutation in the source.
     expect(new Set(methods)).toEqual(new Set(["GET", "POST"]));
-    expect(methods.filter((m) => m === "POST")).toHaveLength(1);
+    expect(postedPaths.length).toBeGreaterThan(1);
+    expect(
+      postedPaths.every((path) =>
+        /\/(reports\/(summary|attendance)|time-off\/requests)$/.test(path),
+      ),
+    ).toBe(true);
 
     const report = done.report;
     expect(report.capabilities.group.status).toBe("forbidden");

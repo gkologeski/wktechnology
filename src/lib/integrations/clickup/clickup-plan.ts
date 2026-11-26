@@ -12,6 +12,7 @@ export type CuHierarchyList = {
   folderName: string | null;
   listId: string;
   listName: string;
+  archived?: boolean;
 };
 
 export type PlannedGroup = {
@@ -33,8 +34,6 @@ export type PlannedGroup = {
   erp_list_name: string;
 };
 
-/** Workspaces de teste que ficam fora da importação (decisão do usuário). */
-export const CLICKUP_EXCLUDED_TEAMS = ["FS - Cliente Exemplo", "CS", "OS - Logbit"];
 /** Workspace principal, cujos espaços viram áreas do TechProjects. */
 export const CLICKUP_MAIN_TEAM = "WK Technology";
 /** Espaço do TechProjects que recebe os workspaces de clientes de Outsourcing. */
@@ -48,7 +47,7 @@ const PROJECT_ALIASES: Record<string, string> = {
 };
 
 export function normName(s: string | null | undefined): string {
-  return (s ?? "")
+  return (typeof s === "string" ? s : "")
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
@@ -94,7 +93,8 @@ const MAIN_SPACE_RULES: Record<string, SpaceRule> = {
 function findByName(refs: ErpRef[], name: string): ErpRef | undefined {
   const n = normName(name);
   const alias = PROJECT_ALIASES[n] ?? n;
-  return refs.find((r) => normName(r.name) === alias);
+  const matches = refs.filter((r) => normName(r.name) === alias);
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 /** Destino proposto para uma lista do ClickUp. Nome igual só vincula a projeto/espaço existente. */
@@ -119,18 +119,6 @@ export function planGroup(
           ? l.spaceName
           : cleanTeamName(l.teamName),
   };
-  if (CLICKUP_EXCLUDED_TEAMS.some((t) => normName(t) === normName(l.teamName))) {
-    return {
-      ...base,
-      action: "skip",
-      reason: "Workspace de teste fora da importação",
-      target_space_id: null,
-      new_space_name: null,
-      target_project_id: null,
-      new_project_name: null,
-      new_project_status: null,
-    };
-  }
   let spaceName: string;
   let projectName: string;
   if (normName(l.teamName) === normName(CLICKUP_MAIN_TEAM)) {
@@ -143,7 +131,7 @@ export function planGroup(
   }
   const space = findByName(erp.spaces, spaceName);
   const project = findByName(erp.projects, projectName);
-  const archived = isArchivedName(l.teamName) || isArchivedName(l.folderName ?? "");
+  const archived = l.archived || isArchivedName(l.teamName) || isArchivedName(l.folderName ?? "");
   return {
     ...base,
     action: "import",
@@ -209,7 +197,7 @@ export function msToLocalDate(
 ) {
   if (ms === null || ms === undefined || ms === "") return null;
   const n = Number(ms);
-  if (!Number.isFinite(n) || n <= 0) return null;
+  if (!Number.isFinite(n) || n <= 0 || Math.abs(n) > 8.64e15) return null;
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone,
     year: "numeric",
@@ -221,26 +209,33 @@ export function msToLocalDate(
 
 function msToIso(ms: string | number | null | undefined) {
   const n = Number(ms);
-  return Number.isFinite(n) && n > 0 ? new Date(n).toISOString() : null;
+  return Number.isFinite(n) && n > 0 && Math.abs(n) <= 8.64e15 ? new Date(n).toISOString() : null;
 }
 
 export function taskPayload(t: CuTask): TaskPayload {
-  const desc = (t.text_content ?? t.description ?? "").trim();
+  const desc =
+    typeof t.text_content === "string"
+      ? t.text_content
+      : typeof t.description === "string"
+        ? t.description
+        : "";
+  const status = t.status && typeof t.status === "object" ? t.status : null;
+  const tags = Array.isArray(t.tags) ? t.tags : [];
+  const assignees = Array.isArray(t.assignees) ? t.assignees : [];
   return {
-    title: (t.name ?? "").trim().slice(0, 500) || "(sem título)",
-    description: desc ? desc.slice(0, 20000) : null,
-    status: mapStatus(t.status?.status, t.status?.type),
-    status_name: t.status?.status ?? null,
-    priority: mapPriority(t.priority?.priority),
+    title: (typeof t.name === "string" ? t.name.trim() : "").slice(0, 500) || "(sem título)",
+    description: desc.trim() || null,
+    status: mapStatus(status?.status, status?.type),
+    status_name: typeof status?.status === "string" ? status.status : null,
+    priority: mapPriority(typeof t.priority?.priority === "string" ? t.priority.priority : null),
     due_at: msToLocalDate(t.due_date),
     start_at: msToLocalDate(t.start_date),
     created_at: msToIso(t.date_created),
-    tags: (t.tags ?? [])
-      .map((x) => (x.name ?? "").trim())
-      .filter(Boolean)
-      .slice(0, 30),
-    assignees: (t.assignees ?? []).map((a) => String(a.id)),
-    url: t.url ?? null,
+    tags: tags.map((x) => (typeof x?.name === "string" ? x.name.trim() : "")).filter(Boolean),
+    assignees: assignees
+      .filter((a) => a && Number.isFinite(Number(a.id)) && Number(a.id) > 0)
+      .map((a) => String(a.id)),
+    url: typeof t.url === "string" ? t.url : null,
   };
 }
 

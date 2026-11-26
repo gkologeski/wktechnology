@@ -3553,7 +3553,7 @@
       "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. LinkedIn navigation accepts personal view as well as workspace view; server and RLS remain independently enforced. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos.",
       "files": {
         "src/lib/menu-config.ts": "51cae40df12dccad0f1a4cec9d182a1296668df4174d09055c11142704cc2b9c",
-        "src/lib/menu-resources.ts": "41893e5890fe8b8609729e5820a152a2a3abdb7b5f6547b5e2c4fa30531dd8b1",
+        "src/lib/menu-resources.ts": "9421c8c61535787aeee96518be1d0a956abc9416cc6303b9949c5cdc821dd932",
         "src/lib/access-control/sales-resources.ts": "b52f747ccc294edc4f31c933224958a42ce7193b480c0e3e6f8145d3fb0d2b31"
       }
     },
@@ -4905,7 +4905,7 @@
         "techprojects.clickup_import.manage.workspace",
         "system.members.manage.workspace"
       ],
-      "rationale": "ClickUp -> TechProjects importer. The screen renders only behind HrScreenAccess(techprojects.clickup_import) and the menu entries map to the same resource. Every server function requires an authenticated session, resolves the active workspace and calls assertClickUpImport (clickup_import_access: work_subject_context, active membership, deny wins, workspace-bound) before reading ClickUp (GET only, fixed host, no redirects) or calling any RPC. Staging tables are SELECT-only for authenticated under RLS with the same function; all writes go through SECURITY DEFINER RPCs clickup_import_* that re-check clickup_import_require (manage key, not read-only 'Ver como') and validate that spaces/projects/people belong to the run workspace. Writes suppress workflow events; rollback only removes rows the run created and nobody changed since. 0266 adds read indexes only. Keys are not granted to any role automatically. 'Cadastrar sem acesso' (createHistoricalPerson) additionally requires system.members.manage.workspace via user_has_permission before any read; it creates a login-banned account plus an inactive workspace member (same model as HubSpot/Clockify historical identities, no invite, no role) and links it through clickup_import_set_person with the user client.",
+      "rationale": "ClickUp -> TechProjects importer. The screen renders only behind HrScreenAccess(techprojects.clickup_import) and the menu entries map to the same resource. Every server function requires an authenticated session, resolves the active workspace and calls assertClickUpImport (clickup_import_access: work_subject_context, active membership, deny wins, workspace-bound) before reading ClickUp (GET only, fixed host, no redirects) or calling any RPC. Staging tables are SELECT-only for authenticated under RLS with the same function; all writes go through SECURITY DEFINER RPCs clickup_import_* that re-check clickup_import_require (manage key, not read-only 'Ver como') and validate that spaces/projects/people belong to the run workspace. Writes suppress workflow events; rollback only removes rows the run created and nobody changed since. 0266 adds read indexes only. Keys are not granted to any role automatically. 'Cadastrar sem acesso' (createHistoricalPerson) additionally requires system.members.manage.workspace via user_has_permission before any read; it creates a login-banned account plus an inactive workspace member (same model as HubSpot/Clockify historical identities, no invite, no role) and links it through clickup_import_set_person with the user client. IMPORT-JOURNEY: approved unified flow preserves source evidence and versions, explicit provider origin bindings, resumable coverage, invalid records visible without approving hours or changing financial eligibility. Provider-specific view/manage and active workspace/membership/deny/read-only gates remain authoritative.",
       "controls": [
         {
           "file": "src/lib/integrations/clickup/clickup-import.server.ts",
@@ -4922,6 +4922,78 @@
         {
           "file": "src/components/hr-access.tsx",
           "symbol": "HrScreenAccess"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/integrations/clockify/clockify-service.server.ts",
+          "symbol": "requireClockifyAdmin"
+        },
+        {
+          "file": "src/lib/integrations/clockify/clockify-urls.ts",
+          "symbol": "buildClockifyUrl"
+        },
+        {
+          "file": "src/lib/integrations/clockify/clockify-urls.ts",
+          "symbol": "clockifyBases"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-urls.ts",
+          "symbol": "buildJibbleUrl"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-store.server.ts",
+          "symbol": "assertRun"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-screenshot.ts",
+          "symbol": "assertJibbleScreenshotUrl"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-connection.server.ts",
+          "symbol": "getClickUpCredential"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-api.server.ts",
+          "symbol": "assertClickUpAttachmentUrl"
+        },
+        {
+          "file": "src/components/projects/imports/use-import-access.tsx",
+          "symbol": "useImportAccess"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canReadImportContext"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canManageImportContext"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canManageImportSource"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canConfigureImportSource"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "assertImportUiAccess"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-service.server.ts",
+          "symbol": "requireJibbleAdmin"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-files.server.ts",
+          "symbol": "authorizeRead"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-api.server.ts",
+          "symbol": "clickUpGetForWorkspace"
         }
       ],
       "database": [
@@ -4944,6 +5016,10 @@
         {
           "file": "drizzle/migrations/0269_clickup_apply_step_fix.sql",
           "symbol": "clickup_import_apply_step"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_access"
         }
       ],
       "tests": {
@@ -4971,10 +5047,10 @@
       "files": {
         "drizzle/migrations/0267_clickup_importer.sql": "65e20a858e6a85091126d895b1dcb9d47cb83873aac486120a81412623c72354",
         "drizzle/migrations/0266_projects_perf_indexes.sql": "d27d72647496ce96600f0cff4355bb76a4a13a2da12671ae3281a9ca01d275e4",
-        "src/lib/integrations/clickup/clickup-import.server.ts": "fc7dc63bb71ecf7bd18f714617b1abdbe2d77c51ede9c7aad0ca2d1b40f026f4",
-        "src/lib/integrations/clickup/clickup-import.functions.ts": "e62e710dd0814003392018fa80d80fe21e1a8277b67afc39f5642b0b3fb107b9",
+        "src/lib/integrations/clickup/clickup-import.server.ts": "a55a1d389a38fa04f2087bc933564267a15dd1313cf36139d43af3734619045b",
+        "src/lib/integrations/clickup/clickup-import.functions.ts": "79cf4fd41308590d6155f7d2f49cd53a6addc2db08d6e234834fd475bd23730e",
         "src/lib/integrations/clickup/clickup-import.middleware.ts": "7d32c2b75e626e5dd9a80a9b8b43038efeece0923af9835a5a965bf803ad65b4",
-        "src/components/projects/clickup-import/clickup-import-page.tsx": "619d3d88c013fc0e8be7ee3378d32ce725a5169d245305619a027e73e38c1091",
+        "src/components/projects/clickup-import/clickup-import-page.tsx": "7b8ddae7820d3c3aafa656ffa360aef5c5fae1602a2a94024048292acd4c996b",
         "src/routes/_authenticated/projects.settings.imports.index.tsx": "1b467a4bdabfc704d37c532aee03bbe9894423de41e1fca5d7ed1657e56d0c0b",
         "drizzle/migrations/0268_project_tasks_comment.sql": "f6ddbc10f820db9e8add066f99a665d477b4bc02e22b57b7fcb856b2d4d75e41",
         "drizzle/migrations/0269_clickup_apply_step_fix.sql": "3cec267765eec356abbbcd175ce6900e26735aab20ec9dc2438f4496064309cd"
@@ -4989,9 +5065,9 @@
       "permission_keys": [],
       "rationale": "Pure ClickUp organization rules (no data access) and menu/hub links to the ClickUp importer. Visibility of the links follows techprojects.clickup_import.view; the screen and every server function enforce the projects-clickup-import contract.",
       "files": {
-        "src/lib/integrations/clickup/clickup-plan.ts": "533a97467cf1f2c7b5da96d712d85d596da4bef664ea769de1e35051dc68918e",
-        "src/components/projects/clockify-import/projects-imports-hub.tsx": "d27a05dc685ec8bcebe499543b467862fac4f823bef8e610fb88ca07351d558d",
-        "src/lib/menu-config-projects.ts": "014814122487224508d144158e4b20e9d4581eea25c03960a239a86c680337a9",
+        "src/lib/integrations/clickup/clickup-plan.ts": "6e3b9aa11d1238dd48f9be68c3f9561b62541d2175915075b79050d928182636",
+        "src/components/projects/clockify-import/projects-imports-hub.tsx": "650b57ae18f28b7d3bcd36c5da144d32915f6b23764c93e546d519f2bff63a56",
+        "src/lib/menu-config-projects.ts": "7978c7e52a9181982e389c093f37c55105454b98d0101782bd2bdfb7d697aaff",
         "src/lib/access-control/hr-menu-access.ts": "d3c5cb3e66cbeaeb0ddc921656b7448e6c986bb40f498ff42ee1bfe2fdadfd47"
       }
     },
@@ -13437,7 +13513,7 @@
         "techprojects.jibble_import.manage.workspace",
         "techprojects.clickup_import.manage.workspace"
       ],
-      "rationale": "CONECTOR-IMPORTA: periodic import schedule reuses each importer's existing view/manage keys (requireClockifyAdmin/requireJibbleAdmin/assertClickUpImport). Table import_connector_schedules: GRANT select/insert/update to authenticated, RLS only for active workspace admins, owner must be caller. Cron (CRON_SECRET, existing clockify-import-tick) re-checks work_import_delegate_allowed for the schedule owner before starting any run and disables the schedule when revoked. ClickUp scheduling stays off (RPCs need a user session). Catalog adds links only. ClickUp automation runs each official step through clickup_import_delegate (service_role only, fixed allow-list) as the schedule owner, so clickup_import_require re-checks the owner's key; the scheduler also re-checks active admin + manage key each tick, and lists never imported before are held as skip for human review. Run-now requires manage via authorizeImportSchedule. PESSOAS-JIBBLE: Jibble person target options (jibbleTargetOptions, reached only after requireJibbleAdmin in jibble.functions.ts; view-as writes blocked by assertNotReadOnlyView) list every workspace member alphabetically instead of an arbitrary first 50; no new data, key or action. BUSCA-EMPRESA-IMPORT: client mapping decision in clockify-review.tsx uses the shared CompanyPicker (companies read under user RLS) and the same existing decide action; no new key or write.",
+      "rationale": "CONECTOR-IMPORTA: periodic import schedule reuses each importer's existing view/manage keys (requireClockifyAdmin/requireJibbleAdmin/assertClickUpImport). Table import_connector_schedules: GRANT select/insert/update to authenticated, RLS only for active workspace admins, owner must be caller. Cron (CRON_SECRET, existing clockify-import-tick) re-checks work_import_delegate_allowed for the schedule owner before starting any run and disables the schedule when revoked. ClickUp scheduling stays off (RPCs need a user session). Catalog adds links only. ClickUp automation runs each official step through clickup_import_delegate (service_role only, fixed allow-list) as the schedule owner, so clickup_import_require re-checks the owner's key; the scheduler also re-checks active admin + manage key each tick, and lists never imported before are held as skip for human review. Run-now requires manage via authorizeImportSchedule. PESSOAS-JIBBLE: Jibble person target options (jibbleTargetOptions, reached only after requireJibbleAdmin in jibble.functions.ts; view-as writes blocked by assertNotReadOnlyView) list every workspace member alphabetically instead of an arbitrary first 50; no new data, key or action. BUSCA-EMPRESA-IMPORT: client mapping decision in clockify-review.tsx uses the shared CompanyPicker (companies read under user RLS) and the same existing decide action; no new key or write. IMPORT-JOURNEY: approved unified flow preserves source evidence and versions, explicit provider origin bindings, resumable coverage, invalid records visible without approving hours or changing financial eligibility. Provider-specific view/manage and active workspace/membership/deny/read-only gates remain authoritative.",
       "controls": [
         {
           "file": "src/components/ui/company-picker.tsx",
@@ -13490,6 +13566,66 @@
         {
           "file": "src/lib/view-as-guard.server.ts",
           "symbol": "assertNotReadOnlyView"
+        },
+        {
+          "file": "src/lib/integrations/clockify/clockify-urls.ts",
+          "symbol": "buildClockifyUrl"
+        },
+        {
+          "file": "src/lib/integrations/clockify/clockify-urls.ts",
+          "symbol": "clockifyBases"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-urls.ts",
+          "symbol": "buildJibbleUrl"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-store.server.ts",
+          "symbol": "assertRun"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-screenshot.ts",
+          "symbol": "assertJibbleScreenshotUrl"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-connection.server.ts",
+          "symbol": "getClickUpCredential"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-api.server.ts",
+          "symbol": "assertClickUpAttachmentUrl"
+        },
+        {
+          "file": "src/components/projects/imports/use-import-access.tsx",
+          "symbol": "useImportAccess"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canReadImportContext"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canManageImportContext"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canManageImportSource"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canConfigureImportSource"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "assertImportUiAccess"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-files.server.ts",
+          "symbol": "authorizeRead"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-api.server.ts",
+          "symbol": "clickUpGetForWorkspace"
         }
       ],
       "database": [
@@ -13504,6 +13640,10 @@
         {
           "file": "drizzle/migrations/0334_clickup_import_delegate.sql",
           "symbol": "clickup_import_delegate"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_access"
         }
       ],
       "tests": {
@@ -13533,15 +13673,15 @@
         "drizzle/migrations/0333_import_connector_schedules.sql": "47fea8b96602b2e3a7352cd2d536960a87a924aaa7775253d8923ae2fe0b4eee",
         "src/components/integrations/import-schedule/import-schedule-card.tsx": "e0c31f61cbcb1fe80e6202f0a32bd485897b70837fc6fdd80de96763988de049",
         "src/lib/integrations/import-schedule/schedule.functions.ts": "654dd73878e2b6395c7300f734b09ef71cb65a4a5f2fca76f5b47fe4d331b0f3",
-        "src/lib/integrations/import-schedule/schedule.server.ts": "066415a4b950b415278b1c6f01f2b456a1da2d86f3edb57972302ae03dc8c06f",
+        "src/lib/integrations/import-schedule/schedule.server.ts": "ab2426bee126931219595e75740c52530a0e8369be44172cfe0f339df7c0eedf",
         "src/routes/api/public/hooks/clockify-import-tick.ts": "f981ba5cf0c85bac595ddfbd1807cffae6e33e4b46e5da5c88f48479cf79dfd6",
         "src/routes/_authenticated/projects.settings.imports.clickup.tsx": "b2af86edf4ac233fb016f5c6e28ff9453c23c3fe080390201741ccf3e0b83ba8",
         "src/routes/_authenticated/projects.settings.imports.clockify.tsx": "031d8e89759c2f6a072dd84105f5206bc363ff3180ef45835e23b32407f8b80c",
         "src/routes/_authenticated/projects.settings.imports.jibble.tsx": "59ea4f7c5d8eb4749e079f7ce6b2191e2be88949b514050e74c6a99966bd9c5c",
         "src/components/integrations/pages/integrations-catalog-page.tsx": "a4a157726cbe79f94fb3939a5ee3ed046fd51d4dd66f2408a6ddab66cd74b8e0",
-        "src/lib/integrations/import-schedule/clickup-schedule.server.ts": "09ef0f198ab36b2a7b8d1601b8255e48db7a8ac9de08eb8d3fdb6029c4c06861",
+        "src/lib/integrations/import-schedule/clickup-schedule.server.ts": "1b7c645be234e22c9fb26160a4200f5649246ba719a5410902fe19890947ec34",
         "drizzle/migrations/0334_clickup_import_delegate.sql": "1b9273affc14406399f424089b109d95b446fb505a5c5753b804c6692c0e0c47",
-        "src/lib/integrations/jibble/jibble-service.server.ts": "cd655e7ab710d6fc3a83e3400b064797fc81db7def3112c24910cad72186e0dc"
+        "src/lib/integrations/jibble/jibble-service.server.ts": "d26aecd627041e818f8c122fcfedb8ba2f2c4217c3fa275ab1a37c7361723d11"
       }
     },
     {
@@ -28148,6 +28288,470 @@
       },
       "files": {
         "src/lib/integrations/cnpj-lookup.server.ts": "1de6459b17beb5b0088fe630df86e2c21febb7405e2a763b8ab7b5d77e3c7a57"
+      }
+    },
+    {
+      "id": "project-import-unified-preservation",
+      "kind": "business",
+      "resources": [
+        "techprojects.clockify_import",
+        "techprojects.jibble_import",
+        "techprojects.clickup_import"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techprojects.clockify_import.view.workspace",
+        "techprojects.clockify_import.manage.workspace",
+        "techprojects.jibble_import.view.workspace",
+        "techprojects.jibble_import.manage.workspace",
+        "techprojects.clickup_import.view.workspace",
+        "techprojects.clickup_import.manage.workspace"
+      ],
+      "rationale": "IMPORT-JOURNEY: user-approved unified source collection and private evidence history. Authorize each provider through project_import_access using the active caller workspace and effective keys; Clockify/Jibble also require active admin, ClickUp retains its existing manage/view contract. Raw evidence, immutable versions, receipts, review history, source list mappings and resumable jobs have provider-scoped RLS and no direct authenticated writes. Native run-derived service actor, exact source binding, read-only and deny checks precede preservation and external GET. Normalization uses existing guarded native RPCs; invalid rows remain visible and are never forced into approved hours or financial data. Original files stay in private storage with provider-scoped signed download authorization. JSON and catalogues are internal contracts, not public endpoints. No automatic role grants. Five server boundary tests plus mandatory real PostgreSQL migration/RLS tests cover access and preservation.",
+      "controls": [
+        {
+          "file": "src/lib/projects/imports/import-journey-access.server.ts",
+          "symbol": "authorizeImportJourney"
+        },
+        {
+          "file": "src/lib/projects/imports/import-journey-access.server.ts",
+          "symbol": "allowedImportProviders"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_access"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_run_actor"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-import.server.ts",
+          "symbol": "assertClickUpImport"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-service.server.ts",
+          "symbol": "requireJibbleAdmin"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/integrations/clockify/clockify-service.server.ts",
+          "symbol": "requireClockifyAdmin"
+        },
+        {
+          "file": "src/lib/integrations/clockify/clockify-urls.ts",
+          "symbol": "buildClockifyUrl"
+        },
+        {
+          "file": "src/lib/integrations/clockify/clockify-urls.ts",
+          "symbol": "clockifyBases"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-urls.ts",
+          "symbol": "buildJibbleUrl"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-store.server.ts",
+          "symbol": "assertRun"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-screenshot.ts",
+          "symbol": "assertJibbleScreenshotUrl"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-connection.server.ts",
+          "symbol": "getClickUpCredential"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-api.server.ts",
+          "symbol": "assertClickUpAttachmentUrl"
+        },
+        {
+          "file": "src/components/projects/imports/use-import-access.tsx",
+          "symbol": "useImportAccess"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canReadImportContext"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canManageImportContext"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canManageImportSource"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canConfigureImportSource"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "assertImportUiAccess"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-files.server.ts",
+          "symbol": "authorizeRead"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-api.server.ts",
+          "symbol": "clickUpGetForWorkspace"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_records"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_journeys"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_preserve_records"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_record_review"
+        },
+        {
+          "file": "drizzle/migrations/0480_clickup_full_history_collection.sql",
+          "symbol": "clickup_import_source_bindings"
+        },
+        {
+          "file": "drizzle/migrations/0481_jibble_source_screenshots.sql",
+          "symbol": "jibble_source_files"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_access"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_run_actor"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_ready_step"
+        },
+        {
+          "file": "drizzle/migrations/0480_clickup_full_history_collection.sql",
+          "symbol": "clickup_import_connections"
+        },
+        {
+          "file": "drizzle/migrations/0480_clickup_full_history_collection.sql",
+          "symbol": "clickup_import_checkpoint"
+        },
+        {
+          "file": "drizzle/migrations/0481_jibble_source_screenshots.sql",
+          "symbol": "jibble_import_file_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0482_project_import_evidence_pages.sql",
+          "symbol": "project_import_evidence_page"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/projects/imports/import-journey.test.ts",
+          "name": "import journey permits an authorized active actor"
+        },
+        "missing_permission": {
+          "file": "src/lib/projects/imports/import-journey.test.ts",
+          "name": "import journey rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/projects/imports/import-journey.test.ts",
+          "name": "import journey rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/projects/imports/import-journey.test.ts",
+          "name": "import journey rejects a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/projects/imports/import-journey.test.ts",
+          "name": "import journey rejects inactive membership"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0479_project_import_preservation.sql": "a3d3db783aa1320fcb03cbcb04ca69df54c72eac0966ee736e7fbac74f66fa07",
+        "drizzle/migrations/0480_clickup_full_history_collection.sql": "ed2e32d730f24a47f4bb6519c227d2ee4ea308db82d600db9e41144633902f68",
+        "drizzle/migrations/0481_jibble_source_screenshots.sql": "991bce887adf8bfaa16fcf461c60bfc5578671ef5c2237aa27910e2acf2742ed",
+        "src/components/projects/imports/clickup-source-setup.tsx": "22137acf69684a678b0e63f5653b81ac6524c9ce0662378e6764bb8abd1ad9ec",
+        "src/components/projects/imports/clockify-source-setup.tsx": "7cf93d41ee939ca01a1e8b8ae0e0c72f8803f727157524b844610f02b7bece08",
+        "src/components/projects/imports/connection-state.tsx": "9f9156da56ab3fef94c16eb36a0455dd6611920fabd78ceb0a5fbefb5eaa4085",
+        "src/components/projects/imports/import-flow.tsx": "e155ad0dade4d389370120e709904aa63811bc4827b654683c58a296ffc4707d",
+        "src/components/projects/imports/import-history.tsx": "39df3f795288e5435c9ca53f432a1438db78407461645356307ee07a4e6eb292",
+        "src/components/projects/imports/import-journey-page.tsx": "340a85cc450e42fb730da75ef339d2e1a443fb41498e35dd2e1900d1a0b691dc",
+        "src/components/projects/imports/import-record-sheet.tsx": "980bacb72cc94a1090a2b358f675234fb6960cd94a607dfbd68643db97949f6c",
+        "src/components/projects/imports/import-records.tsx": "9b6f9b6540915f0d314e02f781cfb86786d7114b09f16f47643645fe944f785e",
+        "src/components/projects/imports/import-source-files.tsx": "f7c8b88324bf9708b4e59ab7ba50da7810ace6928310e93a1b1fe691e926b402",
+        "src/components/projects/imports/import-source-sheet.tsx": "e62e79e32e09c440c2b73059fb635a43896fe0aaaeee8cc704a06ad547f8e955",
+        "src/components/projects/imports/jibble-source-setup.tsx": "fa091d31bdef688e87665777281f62bd0a52ca6edfe2b80227e56b5293711b60",
+        "src/lib/integrations/clickup/clickup-api.server.ts": "a61d1f57b875f0db556b5208f674efccaf060a6eadef27761c328972150abbe0",
+        "src/lib/integrations/clickup/clickup-collection.server.ts": "96e254a07a2d421a89c1658436cdeeb674396078a0be588210015e972026873d",
+        "src/lib/integrations/clickup/clickup-files.server.ts": "f059e5d9c48d884f630fe6833f282c69e02b86fd0955f0e2890f011a586fdfcb",
+        "src/lib/integrations/clockify/clockify-service.server.ts": "2898c2002ba1ea4d06b7bfd8f86e8a15d4e85dc840f2c4a3707d32d72991444e",
+        "src/lib/integrations/jibble/jibble-files.server.ts": "2b372a81ad8f90f96cb2d85f550177dc2364e9fa47db69d8f05bfe96e61c85d4",
+        "src/lib/projects/imports/import-journey-access.server.ts": "6c7ad880adeba17a3070d3e9df51bc987539b8e0f9f0bffc608f5884ddc7acdd",
+        "src/lib/projects/imports/import-journey-engine.server.ts": "2e9e70e7a89f275f63cb795d3d8951287807f2ef0c2c82e515207797bac16da1",
+        "src/lib/projects/imports/import-journey-records.server.ts": "7097850376a8e40075ef8cee0c99fd559d143a32a63f8965b0b725ace987620f",
+        "src/lib/projects/imports/import-journey-status.server.ts": "424fbff54c6e55edae11f1ebfbb69959b0e8dd6d4198e119674fb7cac2b3a473",
+        "src/lib/projects/imports/import-journey.functions.ts": "57b63e252c4c47a119d670d29f0092e2f828fc94bd265d5bf6cc25d3c12964c4",
+        "src/lib/projects/imports/import-preservation.server.ts": "c6772baf87958f1cf8a81fa4ae2cde0890707166c4beca13448ed97258d3bf4a",
+        "drizzle/migrations/0482_project_import_evidence_pages.sql": "1fdfaca667c2b6c2e8cd589f5791ea0273eb3a3bdb46bdc18aefe6810ad40e8f",
+        "src/components/projects/clockify-import/clockify-import-page.tsx": "3b9debb55a14e4c8511043ab1ef5e379aed7d6c07a0a5a8a9c0916662bca8928",
+        "src/components/projects/imports/import-access.ts": "dc9b6cfcacad422831f272f7f07e02115e32b3166fbfe5f3b04b117e4cb78197",
+        "src/components/projects/imports/import-record-review.tsx": "45f55871b4abe8cec6d30f373341252d98417a376d67e0ab8ca5065a7d30c043",
+        "src/components/projects/imports/use-import-access.tsx": "f71d0105c3ea6f365b96ccf96421db148be96435d18b4eeda4cebac434378029",
+        "src/components/projects/imports/use-import-record-evidence.ts": "ab8a1a09d9ca166d6ed279163e5445baf708d067ea729be5089d66fbdb277a90",
+        "src/components/projects/jibble-import/jibble-import-page.tsx": "47857429ff28062925f4faadfb5aebb4049037862566d4c34d29a4203a53f455",
+        "src/lib/integrations/clickup/clickup-connection.server.ts": "21f337ecf5a6f5365a0d0cf32f09f742f53762b78a038a0c32ae9a8fc3a11d8c",
+        "src/lib/projects/imports/import-journey-evidence.server.ts": "ca5c4ec2821e5a8517a3b69a712fa77547c46613373c68669fbc85836f5a718a"
+      }
+    },
+    {
+      "id": "project-import-pure-view-models",
+      "kind": "presentation",
+      "rationale": "Pure token-free data types, labels, ID/URL schemas, deterministic collection planning and test-only in-memory adapters. No UI event, server entrypoint, network, database or credential operation. Runtime import permissions, URL allowlists, source capabilities and writes are revalidated by the caller/service/RPC contracts; this classification grants no action or access.",
+      "files": {
+        "src/components/projects/imports/import-flow-sections.tsx": "a5c551f2fa361b4b14f9ce5973f1e9292eb91447c3203e1c83bf108710ff5b27",
+        "src/components/projects/imports/import-format.ts": "793c45f0748a735af15d8a29d88c994cffea2273848a2efb9277f6c683504432",
+        "src/components/projects/imports/import-journey-ui.tsx": "4b8476989c4d2f7adc88372fa6d84534213d7fade756792457a1e9ddc460df87",
+        "src/lib/integrations/clickup/clickup-collection.ts": "57c72eea2a46e1f1d6d060b6b81243f483e33803c3709139ddbb469b73227d37",
+        "src/lib/integrations/clockify/clockify-fake-db.test-utils.ts": "ec49ddc0b5f38e0e869d65ac5c803aa095abd5fa429bf86b1cd4a7b9effadd65",
+        "src/lib/integrations/clockify/clockify-urls.ts": "4ca402ab425e6ce3a91399145b77148fbfd5f5cf84fbbe593f99002767369662",
+        "src/lib/integrations/jibble/jibble-map.ts": "308c01221a86cb5d084adebd55e8c1c2eb184789016bc23957616845ef61fcd8",
+        "src/lib/integrations/jibble/jibble-specs.ts": "cbba5c5931407557450594bec939990cdd85c58d640d0b900aa128338a5612e2",
+        "src/lib/integrations/jibble/jibble-urls.ts": "c2ca516db61497264ab71dc661d1dd6a6d8a0373f4fcde8c4b854ed592616a4b",
+        "src/lib/projects/imports/import-journey.ts": "74e40bb190dd32fe9d7a9a3fb349ee9e5880e90ee1251b1601b55aabb0ca05c3"
+      }
+    },
+    {
+      "id": "project-import-bound-internal-adapters",
+      "kind": "internal",
+      "resources": [
+        "techprojects.clockify_import",
+        "techprojects.jibble_import",
+        "techprojects.clickup_import"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techprojects.clockify_import.view.workspace",
+        "techprojects.clockify_import.manage.workspace",
+        "techprojects.jibble_import.view.workspace",
+        "techprojects.jibble_import.manage.workspace",
+        "techprojects.clickup_import.view.workspace",
+        "techprojects.clickup_import.manage.workspace"
+      ],
+      "rationale": "Internal collection engines and read-only transports have no independent browser/server-function entrypoint. Clockify/Jibble services reauthorize the native run actor and source before every advance. Jibble privileged adapter additionally calls project_import_run_actor in its factory and binds every run write by assertRun. Source records use project_import_preserve_records with a native-run-derived actor, tenant and source. Clockify/Jibble RPCs remain the only canonical writers. URL builders and screenshot allowlists are actual runtime controls preventing token exfiltration; memory-injected engines in tests do not confer production authority.",
+      "controls": [
+        {
+          "file": "src/lib/projects/imports/import-journey-access.server.ts",
+          "symbol": "authorizeImportJourney"
+        },
+        {
+          "file": "src/lib/projects/imports/import-journey-access.server.ts",
+          "symbol": "allowedImportProviders"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_access"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_run_actor"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-import.server.ts",
+          "symbol": "assertClickUpImport"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-service.server.ts",
+          "symbol": "requireJibbleAdmin"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/integrations/clockify/clockify-service.server.ts",
+          "symbol": "requireClockifyAdmin"
+        },
+        {
+          "file": "src/lib/integrations/clockify/clockify-urls.ts",
+          "symbol": "buildClockifyUrl"
+        },
+        {
+          "file": "src/lib/integrations/clockify/clockify-urls.ts",
+          "symbol": "clockifyBases"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-urls.ts",
+          "symbol": "buildJibbleUrl"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-store.server.ts",
+          "symbol": "assertRun"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-screenshot.ts",
+          "symbol": "assertJibbleScreenshotUrl"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-connection.server.ts",
+          "symbol": "getClickUpCredential"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-api.server.ts",
+          "symbol": "assertClickUpAttachmentUrl"
+        },
+        {
+          "file": "src/components/projects/imports/use-import-access.tsx",
+          "symbol": "useImportAccess"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canReadImportContext"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canManageImportContext"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canManageImportSource"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "canConfigureImportSource"
+        },
+        {
+          "file": "src/components/projects/imports/import-access.ts",
+          "symbol": "assertImportUiAccess"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_records"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_journeys"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_preserve_records"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_record_review"
+        },
+        {
+          "file": "drizzle/migrations/0480_clickup_full_history_collection.sql",
+          "symbol": "clickup_import_source_bindings"
+        },
+        {
+          "file": "drizzle/migrations/0481_jibble_source_screenshots.sql",
+          "symbol": "jibble_source_files"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_access"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_run_actor"
+        },
+        {
+          "file": "drizzle/migrations/0479_project_import_preservation.sql",
+          "symbol": "project_import_ready_step"
+        },
+        {
+          "file": "drizzle/migrations/0480_clickup_full_history_collection.sql",
+          "symbol": "clickup_import_connections"
+        },
+        {
+          "file": "drizzle/migrations/0480_clickup_full_history_collection.sql",
+          "symbol": "clickup_import_checkpoint"
+        },
+        {
+          "file": "drizzle/migrations/0481_jibble_source_screenshots.sql",
+          "symbol": "jibble_import_file_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0482_project_import_evidence_pages.sql",
+          "symbol": "project_import_evidence_page"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/projects/imports/import-journey.test.ts",
+          "name": "import journey permits an authorized active actor"
+        },
+        "missing_permission": {
+          "file": "src/lib/projects/imports/import-journey.test.ts",
+          "name": "import journey rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/projects/imports/import-journey.test.ts",
+          "name": "import journey rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/projects/imports/import-journey.test.ts",
+          "name": "import journey rejects a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/projects/imports/import-journey.test.ts",
+          "name": "import journey rejects inactive membership"
+        }
+      },
+      "exception": {
+        "mechanism": "Caller-bound server import capability: active actor, effective provider key, selected tenant and exact native run/source checked before instantiating an engine or privileged adapter.",
+        "boundary": "Only internal source collection/reconstruction and official HTTPS GET/report transport; no public entrypoint, user-selected host, automatic membership, approval or financial authorization.",
+        "revocation": "Service revalidates current actor/deny/source every advance; SQL preservation and canonical RPCs recheck native run scope. Read-only mode and revoked actor prevent writes.",
+        "review_by": "2027-02-24"
+      },
+      "files": {
+        "src/lib/integrations/clockify/clockify-client.ts": "fe39f2e8d5261fbf03f7d672945c803f5e10dd04533ba2f3301db0e87688f656",
+        "src/lib/integrations/clockify/clockify-engine.server.ts": "62ff2b12358282986836650b6e6f4c17f1685bb7251d472eb13bc99f42cb6ced",
+        "src/lib/integrations/jibble/jibble-engine.server.ts": "11b68561b4dab14a995ca84c0961e7ee8b0bd69e171f4794bf9b2f39b239d85f",
+        "src/lib/integrations/jibble/jibble-screenshot.ts": "c038af732de8016f9171629bc34e93f97a07b40c208316c4b58008993bccd1c6",
+        "src/lib/integrations/jibble/jibble-store.server.ts": "af2190f35058bbb84defdfff8e5b6a8c1a337672f341addeaa14f44fa1b707a9"
       }
     }
   ],

@@ -251,4 +251,27 @@ export class ClockifyClient {
       );
     }
   }
+
+  /** Endpoint documentado de consulta; não permite POST arbitrário nem criar pedidos. */
+  async timeOffRequests<T>(
+    workspaceId: string,
+    body: { page: number; pageSize: number; users: string[]; statuses: ["ALL"] },
+  ): Promise<T> {
+    const res = await this.request(
+      buildClockifyUrl(this.opts.bases, "queries", `/workspaces/${workspaceId}/time-off/requests`),
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+    );
+    try {
+      return (await res.json()) as T;
+    } catch {
+      throw new ClockifyApiError(
+        "invalid_response",
+        res.status,
+        clockifyErrorMessage("invalid_response"),
+      );
+    }
+  }
 }

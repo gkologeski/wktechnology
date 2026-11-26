@@ -12,6 +12,8 @@ import { canReadWholeOrg, classifyJibbleRole, type JbAccess } from "./jibble-map
 import { createJibbleStore } from "./jibble-store.server";
 import type { RunRow } from "./jibble-store";
 import { buildJibbleUrl, isJibbleId } from "./jibble-urls";
+import { preserveImportRecords } from "@/lib/projects/imports/import-preservation.server";
+import { preserveJibbleScreenshot } from "./jibble-files.server";
 
 const LEASE_MS = 45_000;
 const PROVIDER = "jibble";
@@ -125,6 +127,23 @@ export async function getJibbleStatus(ctx: Ctx) {
     encryptionReady: !!process.env["AI_KEYS_ENCRYPTION_KEY"],
     runs: runs ?? [],
   };
+}
+
+/** The caller has passed requireJibbleAdmin; the run is still narrowed to its tenant/provider. */
+export async function getJibbleRun(ctx: Ctx, runId: string) {
+  const db = await admin();
+  const { data, error } = await db
+    .from("time_import_runs")
+    .select(
+      "id, kind, status, phase, counts, report, error, created_at, started_at, finished_at, heartbeat_at, preview_confirmed_at, source_org_id, options, checkpoint",
+    )
+    .eq("id", runId)
+    .eq("workspace_id", ctx.workspaceId)
+    .eq("provider", PROVIDER)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Execução do Jibble não encontrada neste workspace.");
+  return data;
 }
 
 export async function saveJibbleConnection(
@@ -425,8 +444,15 @@ export async function advanceJibbleRun(workspaceId: string, runId: string) {
       return { advanced: false };
     }
     const engine = new JibbleEngine({
-      store: createJibbleStore(db, workspaceId, claimed.source_org_id as string),
+      store: await createJibbleStore(
+        db,
+        workspaceId,
+        claimed.source_org_id as string,
+        claimed.id as string,
+      ),
       client: new JibbleClient({ credentials: await credentialsOf(conn), maxInlineWaitMs: 8000 }),
+      preserveRecords: (input) => preserveImportRecords(db, input),
+      preserveScreenshot: (input) => preserveJibbleScreenshot(db, input),
     });
     const res = await engine.advance(claimed as unknown as RunRow);
     return { advanced: true, ...res };

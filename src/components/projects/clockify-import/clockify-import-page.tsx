@@ -1,5 +1,5 @@
 // Tela do importador Clockify → TechProjects (contêiner: dados e ações).
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,7 +17,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import { FormSection, PageHeader, Skeletons } from "@/components/techhire/ui";
+import { EmptyState, FormSection, PageHeader, Skeletons } from "@/components/techhire/ui";
+import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useImportAccess } from "../imports/use-import-access";
+import { assertImportUiAccess, importPermissionFingerprint } from "../imports/import-access";
+import type { ImportQueryScope } from "../imports/import-format";
 import {
   advanceClockifyImportRun,
   clockifyImportTargetOptions,
@@ -86,7 +91,41 @@ const ACTIVE = ["queued", "running", "cancel_requested"];
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : "Algo deu errado. Tente de novo.");
 
 export function ClockifyImportPage() {
+  const { user } = useAuth();
+  const permissions = usePermissions();
+  const scope: ImportQueryScope = [
+    user?.id ?? "",
+    permissions.workspaceId ?? "",
+    importPermissionFingerprint(permissions.permissions),
+  ];
+  const access = useImportAccess(scope);
+  if (!access.canRead("clockify"))
+    return (
+      <EmptyState
+        title="Importação indisponível"
+        description="Aguarde a validação do acesso ao workspace ativo ou consulte o administrador."
+      />
+    );
+  // Changing actor, workspace or effective permissions destroys credential drafts and selections.
+  return <ScopedClockifyImportPage key={JSON.stringify(scope)} scope={scope} />;
+}
+
+function ScopedClockifyImportPage({ scope }: { scope: ImportQueryScope }) {
   const qc = useQueryClient();
+  const access = useImportAccess(scope);
+  const [actorId, workspaceId, permissionKey] = scope;
+  const queryPrefix = useMemo(
+    () => ["clockify-import", actorId, workspaceId, permissionKey],
+    [actorId, workspaceId, permissionKey],
+  );
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      void qc.cancelQueries({ queryKey: queryPrefix });
+    };
+  }, [qc, queryPrefix]);
   const fStatus = useServerFn(getClockifyImportStatus);
   const fSave = useServerFn(saveClockifyImportConnection);
   const fRemove = useServerFn(removeClockifyImportConnection);
@@ -106,7 +145,11 @@ export function ClockifyImportPage() {
   const fReopen = useServerFn(reopenClockifyImportEntries);
   const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
 
-  const status = useQuery({ queryKey: ["clockify-import", "status"], queryFn: () => fStatus() });
+  const status = useQuery({
+    queryKey: [...queryPrefix, "status"],
+    enabled: access.canRead("clockify"),
+    queryFn: () => fStatus(),
+  });
   const [workspaces, setWorkspaces] = useState<SourceWorkspaceView[] | null>(null);
   const [suggestedId, setSuggestedId] = useState<string | null>(null);
   const [noProjectPolicy, setNoProjectPolicy] = useState<"stage" | "fallback">("stage");
@@ -118,12 +161,12 @@ export function ClockifyImportPage() {
   const lastPreview = runs.find((r) => r.kind === "dry_run" && r.status === "completed") ?? null;
   const lastImport = runs.find((r) => r.kind === "import" && r.status === "completed") ?? null;
 
-  const refresh = () => qc.invalidateQueries({ queryKey: ["clockify-import"] });
+  const refresh = () => qc.invalidateQueries({ queryKey: queryPrefix });
 
   // Avança a execução enquanto a tela estiver aberta (o cron, quando agendado, faz o mesmo).
   const live = useQuery({
-    queryKey: ["clockify-import", "run", activeRun?.id],
-    enabled: !!activeRun,
+    queryKey: [...queryPrefix, "run", activeRun?.id],
+    enabled: access.canManage("clockify") && !!activeRun,
     queryFn: () =>
       ACTIVE.includes(activeRun!.status)
         ? fAdvance({ data: { runId: activeRun!.id } })
@@ -142,46 +185,46 @@ export function ClockifyImportPage() {
   }, [liveRun?.status]);
 
   const previewDetail = useQuery({
-    queryKey: ["clockify-import", "report", lastPreview?.id],
-    enabled: !!lastPreview,
+    queryKey: [...queryPrefix, "report", lastPreview?.id],
+    enabled: access.canRead("clockify") && !!lastPreview,
     queryFn: () => fRun({ data: { runId: lastPreview!.id } }),
   });
   const importDetail = useQuery({
-    queryKey: ["clockify-import", "report", lastImport?.id],
-    enabled: !!lastImport,
+    queryKey: [...queryPrefix, "report", lastImport?.id],
+    enabled: access.canRead("clockify") && !!lastImport,
     queryFn: () => fRun({ data: { runId: lastImport!.id } }),
   });
 
   const userMaps = useQuery({
-    queryKey: ["clockify-import", "map", "user"],
-    enabled: !!lastPreview,
+    queryKey: [...queryPrefix, "map", "user"],
+    enabled: access.canRead("clockify") && !!lastPreview,
     queryFn: () => fMappings({ data: { entity: "user" } }),
   });
   const clientMaps = useQuery({
-    queryKey: ["clockify-import", "map", "client"],
-    enabled: !!lastPreview,
+    queryKey: [...queryPrefix, "map", "client"],
+    enabled: access.canRead("clockify") && !!lastPreview,
     queryFn: () => fMappings({ data: { entity: "client" } }),
   });
   const projectMaps = useQuery({
-    queryKey: ["clockify-import", "map", "project"],
-    enabled: !!lastPreview,
+    queryKey: [...queryPrefix, "map", "project"],
+    enabled: access.canRead("clockify") && !!lastPreview,
     queryFn: () => fMappings({ data: { entity: "project" } }),
   });
 
   const [optQ, setOptQ] = useState<Record<string, string>>({ user: "", client: "", project: "" });
   const userOpts = useQuery({
-    queryKey: ["clockify-import", "opt", "user", optQ.user],
-    enabled: !!lastPreview,
+    queryKey: [...queryPrefix, "opt", "user", optQ.user],
+    enabled: access.canRead("clockify") && !!lastPreview,
     queryFn: () => fOptions({ data: { entity: "user", q: optQ.user } }),
   });
   const clientOpts = useQuery({
-    queryKey: ["clockify-import", "opt", "client", optQ.client],
-    enabled: !!lastPreview,
+    queryKey: [...queryPrefix, "opt", "client", optQ.client],
+    enabled: access.canRead("clockify") && !!lastPreview,
     queryFn: () => fOptions({ data: { entity: "client", q: optQ.client } }),
   });
   const projectOpts = useQuery({
-    queryKey: ["clockify-import", "opt", "project", optQ.project],
-    enabled: !!lastPreview,
+    queryKey: [...queryPrefix, "opt", "project", optQ.project],
+    enabled: access.canRead("clockify") && !!lastPreview,
     queryFn: () => fOptions({ data: { entity: "project", q: optQ.project } }),
   });
 
@@ -189,8 +232,8 @@ export function ClockifyImportPage() {
   const [stStatus, setStStatus] = useState<string>("pending_review");
   const [stPage, setStPage] = useState(0);
   const staging = useQuery({
-    queryKey: ["clockify-import", "staging", stEntity, stStatus, stPage],
-    enabled: !!lastPreview,
+    queryKey: [...queryPrefix, "staging", stEntity, stStatus, stPage],
+    enabled: access.canRead("clockify") && !!lastPreview,
     queryFn: () =>
       fStaging({
         data: { entity: stEntity, status: stStatus === "all" ? null : stStatus, page: stPage },
@@ -215,11 +258,15 @@ export function ClockifyImportPage() {
   }, [userMaps.data, projectMaps.data]);
 
   const act = useMutation({
-    mutationFn: async (fn: () => Promise<unknown>) => fn(),
+    mutationFn: async (fn: () => Promise<unknown>) => {
+      if (!mounted.current) throw new Error("O contexto de importação foi alterado.");
+      assertImportUiAccess(access, "clockify", true);
+      return fn();
+    },
     onError: (e) => toast.error(errMsg(e)),
     onSettled: () => refresh(),
   });
-  const busy = act.isPending || bulk !== null;
+  const busy = act.isPending || bulk !== null || !access.canManage("clockify");
 
   const runBulkIdentities = async (total: number) => {
     if (
@@ -237,6 +284,8 @@ export function ClockifyImportPage() {
     setBulk({ done: 0, total });
     try {
       for (let guard = 0; guard < 100; guard++) {
+        if (!mounted.current) return;
+        assertImportUiAccess(access, "clockify", true);
         const r = await fIdentityBulk({ data: { limit: 15, skip } });
         created.push(...r.newUserIds);
         for (const f of r.failed) {
@@ -246,6 +295,8 @@ export function ClockifyImportPage() {
         setBulk({ done: created.length + failed.length, total });
         if (r.processed === 0 || r.remaining === 0) break;
       }
+      if (!mounted.current) return;
+      assertImportUiAccess(access, "clockify", true);
       if (created.length) await fReopen({ data: { externalIds: created } });
       toast.success(
         `${created.length} identidades criadas${failed.length ? `; ${failed.length} continuam pendentes` : ""}.${created.length ? " Gravando as horas dessas pessoas." : ""}`,

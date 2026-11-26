@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { JibbleClient } from "./jibble-client";
-import { JibbleEngine } from "./jibble-engine.server";
+import { describe, expect, it, vi } from "vitest";
+import { JibbleApiError, JibbleClient } from "./jibble-client";
+import { JibbleEngine, jibbleCoverage, type EngineDeps } from "./jibble-engine.server";
 import { MemoryStore } from "./jibble-memory-store.test-utils";
 import type { RunRow } from "./jibble-store";
+import { COLLECT_SPECS, WINDOW_SPECS } from "./jibble-specs";
 
 const ORG = "0a000000-0000-4000-8000-000000000001";
 const ANA = "1a000000-0000-4000-8000-000000000001";
@@ -37,7 +38,12 @@ const te = (
   ...extra,
 });
 
-function fakeJibble() {
+type FixtureOptions = {
+  countOnly?: boolean;
+  screenshots?: boolean;
+  preserveScreenshot?: EngineDeps["preserveScreenshot"];
+};
+function fakeJibble(withErrors = false, options: FixtureOptions = {}) {
   let throttled = false;
   const calls: string[] = [];
   const f = async (url: string) => {
@@ -60,6 +66,7 @@ function fakeJibble() {
     if (p === "/v1/People") {
       if (u.searchParams.get("$skip") === "1")
         return json({
+          ...(options.countOnly ? { "@odata.count": 3 } : {}),
           value: [
             { id: BIA, email: "bia@wk.com", fullName: "Bia" },
             { id: CAIO, email: "caio@wk.com", fullName: "Caio", status: "Archived" },
@@ -67,7 +74,9 @@ function fakeJibble() {
         });
       return json({
         value: [{ id: ANA, email: "ana@wk.com", fullName: "Ana", timeZone: "UTC" }],
-        "@odata.nextLink": "https://workspace.prod.jibble.io/v1/People?$skip=1",
+        ...(options.countOnly
+          ? { "@odata.count": 3 }
+          : { "@odata.nextLink": "https://workspace.prod.jibble.io/v1/People?$skip=1" }),
       });
     }
     if (p === "/v1/Projects")
@@ -80,9 +89,29 @@ function fakeJibble() {
     if (p === "/v1/Activities") return json({ value: [{ id: ACT, name: "Desenvolvimento" }] });
     if (p === "/v1/CalendarDays") return json({ error: "filter required" }, 400);
     if (p === "/v1/TimeOffOverview") return json({}, 404);
-    if (p === "/v1/Screenshots") return json({}, 403);
+    if (p === "/v1/Screenshots")
+      return options.screenshots
+        ? json({
+            value:
+              u.searchParams.get("$skip") === "0"
+                ? [
+                    {
+                      id: "4a000000-0000-4000-8000-000000000050",
+                      time: "2024-06-13T12:00:00Z",
+                      person: { id: ANA },
+                      url: "https://storage.jibble.io/fixture.png?sig=temporary",
+                      status: "Active",
+                    },
+                  ]
+                : [],
+            "@odata.count": 1,
+          })
+        : json({}, 403);
     if (p === "/v1/TimeEntries") {
-      if (!(u.searchParams.get("$filter") ?? "").includes("ge 2024-06-01"))
+      if (
+        u.searchParams.has("$filter") &&
+        !(u.searchParams.get("$filter") ?? "").includes("ge 2024-06-01")
+      )
         return json({ value: [] });
       if (!throttled) {
         throttled = true;
@@ -98,19 +127,69 @@ function fakeJibble() {
           te("4a000000-0000-4000-8000-000000000006", CAIO, "In", "2024-06-13T09:00:00Z"),
           te("4a000000-0000-4000-8000-000000000007", CAIO, "Out", "2024-06-13T10:00:00Z"),
           te("4a000000-0000-4000-8000-000000000008", CAIO, "Out", "2024-06-13T11:00:00Z"),
+          ...(withErrors
+            ? [
+                { personId: ANA, time: "invalid", type: "In", note: "objeto sem ID" },
+                {
+                  id: "4a000000-0000-4000-8000-000000000099",
+                  time: "2024-06-15T12:00:00Z",
+                  type: "Out",
+                  personId: null,
+                },
+                te("4a000000-0000-4000-8000-000000000090", ANA, "In", "2024-06-15T08:00:00Z", {
+                  status: "Archived",
+                }),
+                {
+                  id: "4a000000-0000-4000-8000-000000000080",
+                  type: "Out",
+                  time: "1990-01-01T12:00:00Z",
+                  personId: null,
+                },
+                {
+                  id: "4a000000-0000-4000-8000-000000000081",
+                  type: "Out",
+                  time: "2099-01-01T12:00:00Z",
+                  personId: null,
+                },
+              ]
+            : []),
         ],
       });
     }
     if (p === "/v1/TimesheetsSummary") {
       if (u.searchParams.get("date") !== "2024-06-01") return json({ value: [] });
-      return json({ value: [{ personId: ANA, daily: [{ date: "2024-06-13", tracked: "PT4H" }] }] });
+      return json({
+        value: [
+          {
+            personId: ANA,
+            sourceNote: "envelope original preservado",
+            daily: [{ date: "2024-06-13", tracked: "PT4H" }],
+          },
+        ],
+      });
     }
+    if (withErrors && p === "/v1/HourEntries")
+      return json({
+        value: [
+          {
+            id: "4a000000-0000-4000-8000-000000000091",
+            personId: ANA,
+            date: "2024-06-13",
+            duration: "PT30M",
+            status: "Active",
+          },
+        ],
+      });
     return json({ value: [] });
   };
   return { f, calls };
 }
 
-function setup() {
+function setup(
+  preserveRecords?: EngineDeps["preserveRecords"],
+  withErrors = false,
+  options: FixtureOptions = {},
+) {
   const store = new MemoryStore(
     [
       { user_id: "u1", email: "ana@wk.com", status: "active", name: "Ana" },
@@ -129,7 +208,7 @@ function setup() {
     started_at: "2024-06-13T09:00:00Z",
     stopped_at: "2024-06-13T10:00:00Z",
   });
-  const api = fakeJibble();
+  const api = fakeJibble(withErrors, options);
   let clock = Date.parse("2024-07-01T00:00:00Z");
   const now = () => (clock += 1);
   const client = new JibbleClient({
@@ -140,7 +219,15 @@ function setup() {
     now,
   });
   const engine = () =>
-    new JibbleEngine({ store, client, now, budgetMs: 1_000_000, today: "2024-06-30" });
+    new JibbleEngine({
+      store,
+      client,
+      now,
+      budgetMs: 1_000_000,
+      today: "2024-06-30",
+      preserveRecords,
+      preserveScreenshot: options.preserveScreenshot,
+    });
   const newRun = (kind: RunRow["kind"], extra: Partial<RunRow> = {}): RunRow => {
     const r: RunRow = {
       id: `run-${store.runs.size + 1}`,
@@ -169,10 +256,170 @@ function setup() {
     }
     return store.runs.get(run.id)!;
   };
-  return { store, api, newRun, drive };
+  return { store, api, newRun, drive, client, engine };
 }
 
 describe("motor do importador Jibble", () => {
+  it("recebe também erros com datas anteriores à organização ou muito futuras", async () => {
+    const captured: Array<Parameters<NonNullable<EngineDeps["preserveRecords"]>>[0]> = [];
+    const { newRun, drive } = setup(async (batch) => {
+      captured.push(batch);
+    }, true);
+    const run = await drive(newRun("dry_run"));
+    expect(run.status).toBe("completed");
+    const rows = captured.flatMap((batch) => batch.records);
+    expect(rows.find((row) => row.externalId?.endsWith("0080"))).toMatchObject({
+      payload: { time: "1990-01-01T12:00:00Z" },
+      status: "pending",
+    });
+    expect(rows.find((row) => row.externalId?.endsWith("0081"))).toMatchObject({
+      payload: { time: "2099-01-01T12:00:00Z" },
+      status: "pending",
+    });
+  });
+
+  it("não encerra página curta quando o count informa mais objetos sem nextLink", async () => {
+    const { newRun, drive } = setup(undefined, false, { countOnly: true });
+    const run = await drive(newRun("dry_run"));
+    expect(run.status).toBe("completed");
+    expect((run.report?.inventory as Record<string, { count: number }>).person.count).toBe(3);
+  });
+
+  it("transfere capturas depois de preservar o original e só considera conteúdo recebido após confirmação", async () => {
+    const order: string[] = [];
+    const file = vi.fn(async (_input: unknown) => {
+      order.push("file");
+      return { preserved: true };
+    });
+    const { newRun, drive, api } = setup(
+      async (batch) => {
+        if (batch.records.some((record) => record.entity === "screenshot")) order.push("raw");
+      },
+      false,
+      { screenshots: true, preserveScreenshot: file },
+    );
+    const run = await drive(newRun("dry_run"));
+    expect(run.status).toBe("completed");
+    expect(order).toEqual(["raw", "file"]);
+    expect(file).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceId: ORG,
+        payload: expect.objectContaining({
+          url: "https://storage.jibble.io/fixture.png?sig=temporary",
+        }),
+      }),
+    );
+    expect(run.report?.screenshotFiles).toEqual({ preserved: 1, pending: 0 });
+    expect(run.report?.notImported).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ entity: "Arquivos de capturas de tela" })]),
+    );
+    expect(
+      (run.report?.coverage as { gaps: Array<{ entity: string }> }).gaps.some(
+        (gap) => gap.entity === "screenshot_content",
+      ),
+    ).toBe(false);
+    expect(
+      api.calls
+        .filter((url) => url.includes("Screenshots"))
+        .every((url) => new URL(url).searchParams.get("$top") === "1"),
+    ).toBe(true);
+  });
+
+  it("só informa capturas não recebidas quando há conteúdo pendente", async () => {
+    const { newRun, drive } = setup(undefined, false, {
+      screenshots: true,
+      preserveScreenshot: async () => ({ preserved: false }),
+    });
+    const run = await drive(newRun("dry_run"));
+    expect(run.status).toBe("completed");
+    expect(run.report?.notImported).toEqual(
+      expect.arrayContaining([expect.objectContaining({ entity: "Arquivos de capturas de tela" })]),
+    );
+    expect((run.report?.coverage as { complete: boolean }).complete).toBe(false);
+  });
+
+  it("falha transitória de rede mantém checkpoint e pode ser retomada sem marcar conclusão", async () => {
+    const { newRun, client, engine, store, drive } = setup();
+    vi.spyOn(client, "page").mockRejectedValueOnce(new JibbleApiError("network", null));
+    const run = newRun("dry_run");
+    await engine().advance(run);
+    expect(store.runs.get(run.id)).toMatchObject({ status: "running", phase: "organization" });
+    expect(Number(store.runs.get(run.id)?.checkpoint.retryAt)).toBeGreaterThan(
+      Date.parse("2024-07-01T00:00:00Z"),
+    );
+    const resumed = await drive(run);
+    expect(resumed.status).toBe("completed");
+  });
+
+  it("preserva erro sem ID, pessoa ausente, evento arquivado e ajuste manual sem inventar horas", async () => {
+    const captured: Array<Parameters<NonNullable<EngineDeps["preserveRecords"]>>[0]> = [];
+    const { store, newRun, drive } = setup(async (batch) => {
+      captured.push(structuredClone(batch));
+    }, true);
+    const run = await drive(newRun("dry_run"));
+    expect(run.status, run.error as string).toBe("completed");
+    const raw = captured.flatMap((batch) => batch.records);
+    expect(raw.find((r) => r.entity === "time_entry" && r.externalId === null)).toMatchObject({
+      status: "pending",
+      issues: ["missing_external_id", "invalid_time"],
+      payload: { note: "objeto sem ID" },
+    });
+    expect(raw.find((r) => r.externalId?.endsWith("0099"))).toMatchObject({
+      status: "pending",
+      issues: ["unmapped_person"],
+    });
+    expect(raw.find((r) => r.externalId?.endsWith("0090"))).toMatchObject({
+      payload: { status: "Archived" },
+    });
+    expect(raw.find((r) => r.entity === "hour_entry")).toMatchObject({
+      status: "pending",
+      issues: ["manual_adjustment_review"],
+      payload: { duration: "PT30M" },
+    });
+    expect(raw.find((r) => r.entity === "timesheet_summary")).toMatchObject({
+      payload: {
+        sourceNote: "envelope original preservado",
+        daily: [{ date: "2024-06-13", tracked: "PT4H" }],
+      },
+    });
+    expect(
+      captured.every(
+        (batch) =>
+          batch.workspaceId === "ws" && batch.sourceId === ORG && batch.provider === "jibble",
+      ),
+    ).toBe(true);
+    expect(store.erp.filter((row) => row.table === "project_time_entries")).toHaveLength(1); // only the original Clockify fixture
+  });
+
+  it("distingue metadados preservados de conteúdo indisponível e não chama rejeição de vazio", () => {
+    expect(
+      jibbleCoverage({
+        person: { capability: "ok", count: 10 },
+        screenshot: { capability: "unavailable", count: 0, status: 403 },
+      }),
+    ).toMatchObject({
+      complete: false,
+      gaps: expect.arrayContaining([{ entity: "screenshot", reason: "unavailable", status: 403 }]),
+    });
+    expect(jibbleCoverage({ screenshot: { capability: "ok", count: 2 } })).toMatchObject({
+      complete: false,
+      gaps: expect.arrayContaining([expect.objectContaining({ entity: "screenshot_content" })]),
+    });
+    const inventory = Object.fromEntries(
+      [
+        "organization",
+        ...COLLECT_SPECS.map((spec) => spec.entity),
+        ...WINDOW_SPECS.map((spec) => spec.entity),
+      ].map((entity) => [entity, { capability: "ok" as const, count: 0 }]),
+    );
+    expect(jibbleCoverage(inventory).complete).toBe(true);
+    expect(jibbleCoverage(inventory, { preserved: 0, pending: 1 })).toMatchObject({
+      complete: false,
+      gaps: expect.arrayContaining([expect.objectContaining({ entity: "screenshot_content" })]),
+    });
+    expect(jibbleCoverage({ person: { capability: "ok", count: 0 } }).complete).toBe(false);
+  });
+
   it("prévia completa, importação, idempotência, duplicidade entre fontes e desfazer", async () => {
     const { store, api, newRun, drive } = setup();
 
@@ -189,7 +436,12 @@ describe("motor do importador Jibble", () => {
     expect(api.calls.filter((c) => c.includes("/v1/People")).some((c) => c.includes("role"))).toBe(
       false,
     );
-    expect(api.calls.filter((c) => c.includes("TimeEntries")).length).toBeGreaterThanOrEqual(3);
+    expect(api.calls.filter((c) => c.includes("TimeEntries")).length).toBeGreaterThanOrEqual(2);
+    expect(
+      api.calls
+        .filter((c) => c.includes("TimeEntries"))
+        .every((url) => !new URL(url).searchParams.has("$filter")),
+    ).toBe(true);
 
     // Pessoas: e-mail único casa (inclusive inativo); sem membro fica pendente.
     const pm = (await store.loadMappings("person")).reduce<Record<string, string>>(
@@ -227,6 +479,23 @@ describe("motor do importador Jibble", () => {
     });
     expect(iv("4a000000-0000-4000-8000-000000000006")).toMatchObject({
       reason_code: "cross_source_duplicate",
+    });
+    for (const [event, reason] of [
+      ["003", "open_interval"],
+      ["004", "unmapped_person"],
+      ["005", "unmapped_person"],
+      ["006", "cross_source_duplicate"],
+      ["007", "cross_source_duplicate"],
+    ])
+      expect(
+        store.staging.get(`time_entry|4a000000-0000-4000-8000-000000000${event}`),
+      ).toMatchObject({
+        status: "pending_review",
+        reason_code: reason,
+      });
+    expect(store.staging.get("time_entry|4a000000-0000-4000-8000-000000000001")).toMatchObject({
+      status: "ready",
+      reason_code: null,
     });
     expect(store.duplicates).toHaveLength(1);
     expect(store.duplicates[0]).toMatchObject({

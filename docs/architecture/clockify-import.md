@@ -7,7 +7,7 @@ Guia do importador. Ele lê o Clockify somente com consultas, guarda tudo num st
 
 ## 1. Conexão
 
-1. No Clockify, gere a chave em *Profile settings › API*. Use a conta de um administrador do workspace de origem. Workspace com subdomínio exige a chave gerada no próprio subdomínio.
+1. No Clockify, gere a chave em _Profile settings › API_. Use a conta de um administrador do workspace de origem. Workspace com subdomínio exige a chave gerada no próprio subdomínio.
 2. Na tela, cole a chave no campo de senha e escolha a região (Global, euc1, use2, euw2, apse2). Informe o subdomínio, se houver.
 3. Salve. A chave é cifrada no servidor com AES-GCM (`AI_KEYS_ENCRYPTION_KEY`, o mesmo padrão das chaves de IA). Ela fica em `clockify_connections`, que não tem GRANT para `authenticated`: o navegador só vê `••••1234`.
 4. Clique em **Testar** (faz só `GET /user`, `GET /workspaces` e `GET /workspaces?roles=OWNER|WORKSPACE_ADMIN`). A tela lista os workspaces reais com o papel comprovado da chave em cada um: Proprietário, Administrador, Sem acesso administrativo ou Permissão não verificada (filtro indisponível — nunca presumido admin).
@@ -19,34 +19,35 @@ Nunca peça a chave no chat nem a grave em código, secrets compartilhados ou lo
 ## 2. Segurança da origem
 
 - **Hosts aceitos:** só os oficiais `api.clockify.me`, `reports.api.clockify.me`, `{região}.clockify.me` e `{subdomínio}.clockify.me`. O subdomínio é validado e nomes reservados são recusados. Redirecionamentos são bloqueados, então a chave não segue para outro host.
-- **Métodos:** só GET, numa lista fixa de caminhos. A única exceção é `POST /reports/summary`, que é consulta de relatório (leitura). Nenhum POST, PUT, PATCH ou DELETE altera dados no Clockify.
-- **IDs externos:** validados como hexadecimal de 24 caracteres no servidor e no banco (CHECK).
+- **Métodos:** só GET, numa lista fixa de caminhos. Exceções de leitura documentadas: `POST /reports/summary`, `POST /reports/attendance` e `POST /workspaces/{id}/time-off/requests`. Cada classe possui lista fixa de caminhos; não há POST arbitrário. Nenhum POST, PUT, PATCH ou DELETE altera dados no Clockify.
+- **IDs externos:** a aplicação operacional continua exigindo hexadecimal de 24 caracteres. Objetos sem ID válido são preservados antes da validação em `project_import_records`, com identificação técnica de observação e pendência.
 - **Ritmo de requisições:** Free 30 por hora (120 s entre chamadas), planos pagos 20/s, Enterprise 50/s, e 5/s quando o plano é desconhecido. Em 429 o importador respeita `Retry-After`. Esperas longas viram `waitUntil` no checkpoint e a execução continua depois.
-- **Paginação:** cabeçalho `Last-Page`. Quando ele falta, uma página incompleta encerra. Página repetida também encerra, por proteção. O parâmetro é `page-size` (não `pageSize`), conforme cada endpoint documentado.
+- **Paginação:** cabeçalho `Last-Page`. Quando ele falta, uma página incompleta encerra. Página repetida sem confirmação de fim interrompe com cobertura incompleta; não é tratada como conclusão. O parâmetro é `page-size` (não `pageSize`), conforme cada endpoint documentado.
 
 ## 3. Inventário por capacidade
 
-| Dado | Endpoint | Destino |
-| --- | --- | --- |
-| Workspace (plano, moedas, configurações) | `GET /workspaces/{id}` | staging |
-| Usuários, inclusive inativos e limitados, com vínculos | `GET /users?status=ALL&memberships=ALL` e `account-statuses=LIMITED` | staging + mapeamento |
-| Grupos | `GET /user-groups` | staging (sem equivalente) |
-| Clientes, inclusive arquivados | `GET /clients?archived=false/true` | staging + sugestão de empresa |
-| Projetos, inclusive arquivados (`hydrated`) | `GET /projects` | `projects` |
-| Tarefas | `GET /projects/{id}/tasks` | `project_tasks` |
-| Etiquetas | `GET /tags` | staging; os ids ficam no vínculo do apontamento |
-| Campos personalizados | `GET /custom-fields` | staging; os valores ficam no vínculo |
-| Aprovações | `GET /approval-requests` (PENDING, APPROVED, WITHDRAWN_APPROVAL) | staging; a metadata original fica separada da aprovação comercial do ERP |
-| Despesas, faturas, feriados, políticas de folga | GET correspondentes | staging (sem equivalente) |
-| Apontamentos de todas as pessoas | `GET /user/{id}/time-entries` | `project_time_entries` |
-| Cronômetros abertos | `GET /time-entries/status/in-progress` | diagnóstico |
-| Conciliação | `POST /reports/summary` (USER, fuso UTC, blocos de 1 ano) | relatório |
+| Dado                                                   | Endpoint                                                                                          | Destino                                                                  |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Workspace (plano, moedas, configurações)               | `GET /workspaces/{id}`                                                                            | staging                                                                  |
+| Usuários, inclusive inativos e limitados, com vínculos | `GET /users?status=ALL&memberships=ALL` e `account-statuses=LIMITED`                              | staging + mapeamento                                                     |
+| Grupos                                                 | `GET /user-groups`                                                                                | staging (sem equivalente)                                                |
+| Clientes, inclusive arquivados                         | `GET /clients?archived=false/true`                                                                | staging + sugestão de empresa                                            |
+| Projetos, inclusive arquivados (`hydrated`)            | `GET /projects`                                                                                   | `projects`                                                               |
+| Tarefas                                                | `GET /projects/{id}/tasks`                                                                        | `project_tasks`                                                          |
+| Etiquetas                                              | `GET /tags`                                                                                       | staging; os ids ficam no vínculo do apontamento                          |
+| Campos personalizados                                  | `GET /custom-fields`                                                                              | staging; os valores ficam no vínculo                                     |
+| Aprovações                                             | `GET /approval-requests` (PENDING, APPROVED, WITHDRAWN_APPROVAL)                                  | staging; a metadata original fica separada da aprovação comercial do ERP |
+| Despesas, faturas, feriados, políticas de folga        | GET correspondentes                                                                               | staging (sem equivalente)                                                |
+| Apontamentos de todas as pessoas                       | `GET /user/{id}/time-entries`                                                                     | `project_time_entries`                                                   |
+| Cronômetros abertos                                    | `GET /time-entries/status/in-progress` paginado                                                   | original preservado + revisão, nunca fim inventado                       |
+| Pedidos de folga                                       | `POST /workspaces/{id}/time-off/requests` (consulta ALL, sem filtro de período, lotes de pessoas) | original privado; não ativa ausência                                     |
+| Presença                                               | `POST /reports/attendance` por período/página                                                     | envelope original privado; nunca soma horas adicionais                   |
+| Conciliação                                            | `POST /reports/summary` (USER, fuso UTC, blocos de 1 ano)                                         | relatório                                                                |
 
 Cada item recebe uma situação: coletado, sem registros, sem permissão, indisponível no plano/API, falhou ou não coletado. Um 403 nunca vira "zero" silencioso.
 
 **Fora desta versão:**
-- Pedidos de folga: a leitura no Clockify é por POST de consulta.
-- Presença (attendance): só existe como relatório.
+
 - Logins e senhas: não são transferíveis.
 - Papéis de admin do Clockify: não são replicados.
 
@@ -74,6 +75,7 @@ Cada item recebe uma situação: coletado, sem registros, sem permissão, indisp
 - **Sobreposições:** dentro do Clockify ou com horas já lançadas no ERP, vão para revisão com o diagnóstico. Nada é removido ou ajustado em silêncio.
 - **Pausa, feriado e folga** (`type` diferente de REGULAR): ficam no staging como "sem equivalente".
 - **Valores:** a taxa histórica do apontamento (em centavos → unidades) é preservada no vínculo. `hourly_rate` só é preenchido na moeda alvo. A prévia soma valores por moeda e nunca mistura moedas.
+- **Faturável ausente:** `false`; a ausência do campo nunca autoriza cobrança.
 - **Situação no ERP:** `locked` por padrão (histórico, `approved_at` nulo, fora da cobrança) ou `draft`. Workflows e atualizações automáticas são suprimidos durante a gravação (`app.clockify_import` + gatilho em `workflow_events` e `project_updates`). Nenhum convite, cobrança ou notificação é disparado.
 
 ## 6. Idempotência e reexecução
@@ -140,3 +142,27 @@ Cada item recebe uma situação: coletado, sem registros, sem permissão, indisp
 - **Valores monetários:** o Clockify envia em centavos. Isso foi validado só pela documentação e precisa ser conferido na primeira prévia real.
 - **Relatório resumido:** pode não incluir cronômetros abertos ou pessoas sem acesso. As diferenças aparecem por pessoa.
 - **Tela de horas do ERP:** ainda não exibe o selo de origem nem `24:00`. A tela de edição existente não aceita "24:00", mas linhas `locked` não são editáveis.
+
+## Jornada unificada e preservação integral (26/11/2026)
+
+A central `/projects/settings/imports` conduz Origens → Cobertura → Importar tudo → Resultado.
+A leitura/inventário do motor é uma etapa interna dessa mesma jornada; o usuário não precisa
+descartar um original para aplicar os registros operacionais válidos. A confirmação do percurso
+permanece explícita e o serviço nativo continua exigindo a prévia confirmada.
+
+O hook de produção `preserveImportRecords` recebe cada objeto antes de descartar ID inválido,
+normalizar ou aplicar horas. Os originais e as versões ficam privados, sujeitos à permissão
+do conector. Valores malformados, zero, intervalos negativos, timer aberto e pessoa sem vínculo
+são consultáveis com a pendência; não passam pelas exceções antigas de `force_pending`.
+
+Leituras locais paginam até o fim, sem teto silencioso de 200 mil e sem limitar nomes de
+perfis aos primeiros mil membros. Uma variação ativa bem-sucedida não transforma falha de
+arquivados em cobertura integral. `counts.coverage` e `report.coverage` distinguem fim do
+worker de cobertura comprovada; falta de acesso, entidade não consultada e formato de
+relatório não comprovado ficam explícitos. Cada avanço revalida origem e acesso integral,
+além da delegação e membership já existentes.
+
+Referência primária: [API oficial Clockify](https://docs.clockify.me/) (consultada em 26/11/2026).
+Pedidos de folga usam página máxima 1.000 do provedor; atingir esse limite sem terminar causa
+interrupção explícita, nunca truncamento verde. O relatório de presença preserva o envelope
+completo em vez de converter valores agregados em apontamentos.

@@ -5,13 +5,16 @@ title: Importar do Jibble
 summary: Importar do Jibble no TechProjects: operação, acesso e limites comprovados no código.
 article_type: howto
 route_pattern: /projects/settings/imports/jibble
-min_permission: 
+min_permission:
 audience: internal
 sort_order: 110
-version: 5
+version: 6
 is_published: true
 ---
+
 # Importar do Jibble
+
+> **Jornada principal:** para receber todo o histórico, inclusive registros com erro, use [Importações](/ajuda/projects/operar-imports). Esta rota reúne configurações e operações avançadas do Jibble. A conexão também pode ser configurada pelo painel da jornada, sem sair dela.
 
 **Para que serve:** A execução registra o processamento do histórico de ponto e os vínculos revisados.
 
@@ -22,6 +25,7 @@ is_published: true
 **Antes de começar:** Confirme o workspace e o período, confira o registro de destino e disponha da permissão para a ação. Para importações, revise a prévia antes da gravação.
 
 ## Passo a passo
+
 1. Abra Configurações > Importar do Jibble. Salve as credenciais e teste a conexão.
 2. Confirme a organização de origem e inicie a prévia.
 3. Confira Resumo, Mapeamentos, Duplicidades e Staging. Resolva as decisões de duplicidade antes de confirmar o que deve entrar.
@@ -30,17 +34,21 @@ is_published: true
 5. Se precisar desfazer, confira a execução escolhida e a confirmação Desfazer; depois revise o resultado.
 
 ## Resultado esperado
+
 A execução registra o processamento do histórico de ponto e os vínculos revisados.
 
 ## Regras e limites
+
 Ponto do Jibble não deve ser somado automaticamente a horas produtivas do Clockify. Não resolva duplicidade apenas pelo nome. Desfazer depende das regras e do estado da execução, não é uma restauração geral do workspace.
 
 ## Erros comuns
+
 - Registro indisponível ou sem permissão: confira o workspace, o escopo e a capacidade específica; não tente contornar por URL.
 - Resultado diferente do esperado: confira filtros, período e confirmação da operação; uma consulta não confirma uma gravação.
 - Falha ao salvar: leia a mensagem retornada, corrija os campos ou bloqueios indicados e confirme o estado antes de repetir.
 
 ## Relacionados
+
 ## Importação contínua
 
 No fim da tela, a seção **Importação contínua** busca dados novos do Jibble sozinha.

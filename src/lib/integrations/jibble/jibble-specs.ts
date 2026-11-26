@@ -1,7 +1,6 @@
 // O que o importador lê do Jibble, por endpoint documentado em docs.api.jibble.io.
 // Leitura integral: sem $filter de papel/status (inclui inativos e arquivados quando a API
-// os devolve) e sem limitar a dias recentes — eventos são lidos mês a mês desde a criação
-// da organização.
+// os devolve). Native records have no date filter: incorrect past/future dates are retained.
 import type { JibbleService } from "./jibble-urls";
 
 export type CollectSpec = {
@@ -39,6 +38,31 @@ export const COLLECT_SPECS: CollectSpec[] = [
   { entity: "calendar_day", service: "workspace", path: "/v1/CalendarDays", paged: true },
   { entity: "pay_period", service: "timeAttendance", path: "/v1/PayPeriodSummary", paged: true },
   { entity: "time_off", service: "timeTracking", path: "/v1/TimeOffOverview", paged: false },
+  {
+    entity: "time_entry",
+    service: "timeTracking",
+    path: "/v1/TimeEntries",
+    query: { $orderby: "time asc,id asc" },
+    paged: true,
+  },
+  {
+    entity: "hour_entry",
+    service: "timeTracking",
+    path: "/v1/HourEntries",
+    query: { $orderby: "createdAt asc,id asc" },
+    paged: true,
+  },
+  {
+    entity: "screenshot",
+    service: "timeTracking",
+    path: "/v1/Screenshots",
+    paged: true,
+    query: {
+      $select: "url,id,time,status",
+      $expand: "person($select=id)",
+      $orderby: "time asc,id asc",
+    },
+  },
 ];
 
 export type WindowSpec = {
@@ -54,43 +78,11 @@ const lastDay = (to: string) =>
 
 export const WINDOW_SPECS: WindowSpec[] = [
   {
-    entity: "time_entry",
-    service: "timeTracking",
-    path: "/v1/TimeEntries",
-    query: (from, to) => ({
-      $filter: `belongsToDate ge ${from} and belongsToDate lt ${to}`,
-      $orderby: "time asc",
-    }),
-    paged: true,
-  },
-  {
-    entity: "hour_entry",
-    service: "timeTracking",
-    path: "/v1/HourEntries",
-    query: (from, to) => ({
-      $filter: `date ge ${from} and date lt ${to}`,
-      $orderby: "createdAt asc",
-    }),
-    paged: true,
-  },
-  {
     entity: "timesheet_day",
     service: "timeAttendance",
     path: "/v1/TimesheetsSummary",
     query: (from, to) => ({ period: "Custom", date: from, endDate: lastDay(to) }),
     paged: false,
-  },
-  {
-    entity: "screenshot",
-    service: "timeTracking",
-    path: "/v1/Screenshots",
-    // Sem `url`: o link assinado não é guardado; só inventário.
-    query: (from, to) => ({
-      $filter: `belongsToDate ge ${from} and belongsToDate lt ${to}`,
-      $select: "id,time,status",
-      $expand: "person($select=id)",
-    }),
-    paged: true,
   },
 ];
 
