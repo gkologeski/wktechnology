@@ -25,8 +25,11 @@ export async function preserveClickUpFile(
   runId: string,
   teamId: string,
   attachment: Record<string, unknown>,
+  externalId: string,
 ) {
   await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage");
+  if (!externalId.trim() || externalId.length > 1024)
+    throw new Error("Identidade do arquivo de origem inválida.");
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const authorized = await supabaseAdmin.rpc(
     "clickup_import_file_authorize" as never,
@@ -50,7 +53,9 @@ export async function preserveClickUpFile(
     !(run.data as { source_team_ids: string[] }).source_team_ids.includes(teamId)
   )
     throw new Error("Arquivo fora das origens autorizadas desta importação.");
-  const attachmentId = String(attachment["id"] ?? "");
+  // Raw attachments may have no id. The collector supplies the ledger's exact
+  // contextual identity so metadata, bytes and the record drawer stay linked.
+  const attachmentId = externalId;
   const title = String(attachment["title"] ?? "Arquivo de origem");
   const key = await hash(
     JSON.stringify({
@@ -58,9 +63,6 @@ export async function preserveClickUpFile(
       title,
       size: attachment["size"],
       updated: attachment["date_updated"] ?? attachment["date"],
-      missingIdContext: attachmentId
-        ? null
-        : [attachment["_parent_task_id"], attachment["_observation_index"]],
     }),
   );
   const previous = await supabaseAdmin

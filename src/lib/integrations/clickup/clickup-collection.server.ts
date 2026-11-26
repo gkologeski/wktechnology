@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { preserveImportRecords } from "@/lib/projects/imports/import-preservation.server";
+import {
+  prepareImportRecords,
+  preserveImportRecords,
+} from "@/lib/projects/imports/import-preservation.server";
 import {
   clickUpGetForWorkspace as clickUpGet,
   clickUpId,
@@ -492,13 +495,19 @@ async function relatedPage(ctx: Ctx, runId: string, c: CollectCursor) {
     if (!Array.isArray(result.data)) throw new Error("Resposta de arquivos incompleta.");
     for (const [attachmentIndex, attachment] of result.data.entries()) {
       const observation = `task:${id}:attachment:${c.attachmentCursor ?? "first"}:${attachmentIndex}`;
+      // The singleton preserve call adds :0 to its observation key. Reuse the
+      // exact ledger identity, including page cursor, without modifying raw data.
+      const externalId = prepareImportRecords([
+        {
+          entity: "attachment",
+          externalId: attachment["id"] == null ? null : String(attachment["id"]),
+          payload: attachment,
+          observationKey: `${observation}:0`,
+        },
+      ])[0]!.external_id;
       // Metadata survives a timeout/crash during binary transfer. File manifest is a separate private record.
       await preserve(ctx, runId, teamId, "attachment", [attachment], observation);
-      const file = await preserveClickUpFile(ctx, runId, teamId, {
-        ...attachment,
-        _parent_task_id: id,
-        _observation_index: attachmentIndex,
-      });
+      const file = await preserveClickUpFile(ctx, runId, teamId, attachment, externalId);
       await preserve(
         ctx,
         runId,

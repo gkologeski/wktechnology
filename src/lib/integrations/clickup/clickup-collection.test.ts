@@ -22,7 +22,8 @@ const mocks = vi.hoisted(() => ({
   preserve: vi.fn(async () => undefined),
   admin: { rpc: vi.fn(), from: vi.fn() },
 }));
-vi.mock("@/lib/projects/imports/import-preservation.server", () => ({
+vi.mock("@/lib/projects/imports/import-preservation.server", async (original) => ({
+  ...(await original<typeof import("@/lib/projects/imports/import-preservation.server")>()),
   preserveImportRecords: mocks.preserve,
 }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: mocks.admin }));
