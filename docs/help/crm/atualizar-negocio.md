@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 201
-version: 4
+version: 5
 is_published: true
 ---
 # Atualizar um negócio
@@ -32,6 +32,7 @@ O negócio passa a refletir o funil atualizado. Os documentos vinculados podem s
 ## Regras e limites
 - A criação de cotação fica desabilitada quando o negócio não tem itens de linha.
 - O rascunho de itens de linha fica guardado localmente por usuário e negócio, sendo limpo automaticamente após a gravação bem-sucedida. Se a gravação falhar ao clicar em **Concluído**, a janela continua aberta com o rascunho preservado.
+- Apagar todo o número em quantidade, desconto percentual, imposto ou percentual de cobrança equivale a zero. Ao sair do campo ou clicar em **Concluído**, o último dígito apagado não é recuperado.
 - O acesso ao negócio não concede automaticamente permissão para excluir.
 - Alterações e exclusões respeitam as permissões do registro, também no servidor e no banco.
 

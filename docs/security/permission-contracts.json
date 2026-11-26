@@ -12960,7 +12960,7 @@
         "src/components/deals/deal-line-items.tsx": "959ffcc01a5455bfd7638ce8c45399aa7c1e40b95e08eb3d22e1311e11fa1e21",
         "src/components/deals/line-item-billing-fields.tsx": "80d99286a91f1f7b4c2d2bad739b2937de7b5cfcbb2d09b11516787824bf01c8",
         "src/components/deals/line-item-card.tsx": "0b9b0eec7f1e9897775064fa259b2760c93038424ac55b4c68674cd9cff89325",
-        "src/components/deals/line-item-fields.tsx": "3f4a06ffb21677e947501ad273f58764f9cb66b3187544cb6ff9f7fe69f966ca",
+        "src/components/deals/line-item-fields.tsx": "b2179865f31989645c2413de35fe8b2541a718a93dd8e94e98678aa13d5e5896",
         "src/components/deals/use-line-items.ts": "d9efde1e2017250deabfce1e9bdd903895ee2300e3fd868195dc6d3b3e437360",
         "src/components/ui/currency-commit-input.tsx": "da54ad17fdd226469093a25a7332ef30d64c9055b26b7c24301d3ae4d58dfdf4",
         "src/lib/deals/line-item-write.ts": "5528e0ebd8d08c45f7b7b01cce08238765d856119475c7c4b425219b17ad2fa6"

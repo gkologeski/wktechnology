@@ -55,7 +55,7 @@ export function LabeledNumber({
             editedInFocus.current = true;
             onDirty?.();
             const num = Number(raw);
-            if (raw !== "" && !Number.isNaN(num)) onDraftChange?.(num);
+            if (!Number.isNaN(num)) onDraftChange?.(num);
           }}
           onBlur={() => {
             setFocused(false);
@@ -203,7 +203,7 @@ export function DiscountField({
               pctEdited.current = true;
               onDirty?.();
               const num = Number(raw);
-              if (raw !== "" && !Number.isNaN(num)) onDraftPct?.(num);
+              if (!Number.isNaN(num)) onDraftPct?.(num);
             }}
             onBlur={() => {
               setPctFocused(false);

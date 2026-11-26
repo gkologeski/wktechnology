@@ -58,6 +58,13 @@ describe("rascunho local de itens de linha", () => {
     expect(merged.unit_price).toBe(4500);
   });
 
+  it("preserva uma edição mais recente enquanto a gravação anterior termina", () => {
+    const drafts = setItemDraftField({}, "item-1", { discount_pct: 5, quantity: 2 });
+    const remaining = clearItemDraft(drafts, "item-1", { discount_pct: 0 });
+    expect(remaining).toEqual({ "item-1": { discount_pct: 5, quantity: 2 } });
+    expect(mergeItemWithDraft({ id: "item-1", discount_pct: 0 }, remaining).discount_pct).toBe(5);
+  });
+
   it("reconcilia descartando itens removidos e valores já salvos no servidor", () => {
     const drafts = {
       "item-1": { name: "Já salvo", quantity: 5 },

@@ -1,3 +1,11 @@
+# LIMPA-NUMERO-ITENS (P, 20–30 min)
+
+- [x] Confirmar falha e corrigir o rascunho vazio nos controles de quantidade, desconto, imposto e percentual de cobrança; preservar gravações e permissões existentes.
+- [x] 20 testes passaram, ESLint sem erros, permissions:check sem achados, Ajuda 256/256 e compilação automática OK. Playwright autenticou na tela de negócios e validou Backspace 10→1→vazio→0 nos componentes reais com persistência isolada em memória, sem pageerror. Não valida gravação em negócio real.
+- [x] Auditoria de código: ficha `/deals/$id` e etapa de itens do QuoteWizard usam o mesmo editor corrigido; quantidade/imposto/percentual usam LabeledNumber; desconto percentual usa DiscountField. Preço/base/desconto em valor já repassam vazio→null→0 via CurrencyCommitInput; faturas preservam null e serviços/contratos convertem vazio para zero, sem rascunho intermediário. use-line-items (autosave/Concluído/restauração), line-item-draft (limpeza conserva edições posteriores), line-item-write (RLS/retry), billing-model e recompute_deal_value SQL não recuperam dígitos e foram preservados. Prévia da cotação lê o snapshot, sem campo editável; nenhum job usa o rascunho local.
+- [x] Ajuda atualizar-negocio v5 e catálogo preparados, hash de autorização atualizado; nenhum schema, grant, policy, configuração ou registro comercial alterado. Um teste novo de campos (5 casos) e um caso adicional de concorrência do rascunho; nenhum arquivo removido. Revisão corrigiu formatação e narrowing apenas no teste.
+- [ ] CI integral/publicação e aplicação editorial da Ajuda aguardam liberação do usuário; perf:check falhou por verificação/build desatualizados ou incompletos. verify/build manuais não executados, pois compilação/tipos são automáticos. Validação manual: apagar todo o número em um item de negócio editável, sair do campo, Concluído e reabrir; deve permanecer zero, sem rascunho de dígito antigo. Não reparar valores históricos automaticamente.
+
 # ENDERECO-CNPJ-PRESTADORA (P, 30–45 min)
 
 - [x] Endereço estruturado no cadastro e consulta real por CNPJ/CEP com confirmação antes de substituir dados; campos ausentes são preservados.
