@@ -63,7 +63,7 @@ ALTER TABLE public.contract_commercial_acceptances ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contract_commercial_acceptance_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contract_acceptance_billing_releases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.service_execution_completions ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.contract_commercial_acceptances,public.contract_commercial_acceptance_links,public.contract_acceptance_billing_releases,public.service_execution_completions FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON public.contract_commercial_acceptances,public.contract_commercial_acceptance_links,public.contract_acceptance_billing_releases,public.service_execution_completions FROM PUBLIC,anon,authenticated,service_role;
 REVOKE ALL ON public.contract_commercial_acceptances,public.contract_commercial_acceptance_links,public.contract_acceptance_billing_releases,public.service_execution_completions FROM service_role;
 -- Reads and writes are finite DTOs through the authorized RPCs below. No raw public tokens/snapshots.
 
@@ -77,7 +77,7 @@ RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp
   'attachments',coalesce((SELECT jsonb_agg(jsonb_build_object('id',a.id,'kind',a.kind,'name',a.file_name,'source_id',a.source_id,'stamp',coalesce(a.source_stamp,public.contract_attachment_source_stamp(a.id))) ORDER BY a.created_at,a.id) FROM public.contract_attachments a WHERE a.contract_id=c.id AND a.workspace_id=c.workspace_id AND a.ready),'[]'::jsonb)
  )::text,'UTF8'),'sha256'),'hex') FROM public.contracts c WHERE c.id=p_contract
 $$;
-REVOKE ALL ON FUNCTION public.contract_commercial_content_hash(uuid) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.contract_commercial_content_hash(uuid) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.contract_commercial_authorize(p_contract uuid,p_permission text DEFAULT NULL,p_write boolean DEFAULT false)
 RETURNS uuid LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
@@ -90,14 +90,14 @@ DECLARE w uuid;ctx jsonb:=public.work_access_context();u uuid:=auth.uid();BEGIN
   RAISE EXCEPTION 'Contrato indisponível ou ação não autorizada.' USING ERRCODE='42501';END IF;
  RETURN w;
 END $$;
-REVOKE ALL ON FUNCTION public.contract_commercial_authorize(uuid,text,boolean) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.contract_commercial_authorize(uuid,text,boolean) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.contract_commercial_current(p_contract uuid)
 RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
  SELECT a.id FROM public.contract_commercial_acceptances a WHERE a.contract_id=p_contract AND a.revoked_at IS NULL
  AND a.content_hash=public.contract_commercial_content_hash(p_contract) ORDER BY a.recorded_at DESC,a.id LIMIT 1
 $$;
-REVOKE ALL ON FUNCTION public.contract_commercial_current(uuid) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.contract_commercial_current(uuid) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.contract_commercial_internal_approved(c public.contracts)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
@@ -137,7 +137,7 @@ DECLARE w uuid;h text;a uuid;c contracts;hist jsonb;current_row jsonb;blocked te
   'canManageLinks',NOT is_read_only_view() AND c.role::text='provider' AND work_record_access('techcontracts.contracts',c.id,'update') AND user_has_permission(auth.uid(),w,'techcontracts.contract_acceptance.manage.workspace') AND (user_has_permission(auth.uid(),w,'techcontracts.financials.view.workspace') OR user_has_permission(auth.uid(),w,'techcontracts.financials.view.team') OR user_has_permission(auth.uid(),w,'techcontracts.financials.view.own')) AND public.contract_commercial_annexes_visible(w,c.id,auth.uid()),
   'canReleaseBilling',NOT is_read_only_view() AND c.role::text='provider' AND work_record_access('techcontracts.contracts',c.id,'update') AND user_has_permission(auth.uid(),w,'techcontracts.contract_acceptance_billing.manage.workspace') AND user_has_permission(auth.uid(),w,'techservice.billing.manage.workspace'));
 END $$;
-REVOKE ALL ON FUNCTION public.contract_commercial_state(uuid) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.contract_commercial_state(uuid) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.contract_commercial_state(uuid) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.contract_commercial_record(p_contract uuid,p_accepted_at date,p_client_name text,p_evidence text,p_reason text DEFAULT NULL,p_expected_hash text DEFAULT NULL)
@@ -156,7 +156,7 @@ DECLARE w uuid;c contracts;h text;a uuid;BEGIN
  END IF;
  RETURN public.contract_commercial_state(c.id);
 END $$;
-REVOKE ALL ON FUNCTION public.contract_commercial_record(uuid,date,text,text,text,text) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.contract_commercial_record(uuid,date,text,text,text,text) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.contract_commercial_record(uuid,date,text,text,text,text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.contract_commercial_issue_link(p_contract uuid)
@@ -177,7 +177,7 @@ DECLARE w uuid;c contracts;t text;h text;expiry timestamptz:=now()+interval '30 
  INSERT INTO contract_events(workspace_id,contract_id,actor_id,event_type,payload) VALUES(w,c.id,auth.uid(),'commercial_acceptance_link_created',jsonb_build_object('content_hash',h,'expires_at',expiry));
  RETURN jsonb_build_object('token',t,'expiresAt',expiry,'path','/contract-acceptance/'||t);
 END $$;
-REVOKE ALL ON FUNCTION public.contract_commercial_issue_link(uuid) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.contract_commercial_issue_link(uuid) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.contract_commercial_issue_link(uuid) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.contract_commercial_revoke(p_contract uuid,p_reason text,p_links_only boolean DEFAULT false)
@@ -192,7 +192,7 @@ DECLARE w uuid;BEGIN
  INSERT INTO contract_events(workspace_id,contract_id,actor_id,event_type,payload) VALUES(w,p_contract,auth.uid(),CASE WHEN p_links_only THEN 'commercial_acceptance_link_revoked' ELSE 'commercial_acceptance_revoked' END,jsonb_build_object('reason',left(p_reason,4000),'existing_financial_entries_preserved',true));
  RETURN public.contract_commercial_state(p_contract);
 END $$;
-REVOKE ALL ON FUNCTION public.contract_commercial_revoke(uuid,text,boolean) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.contract_commercial_revoke(uuid,text,boolean) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.contract_commercial_revoke(uuid,text,boolean) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.contract_commercial_public_get(p_token text)
@@ -205,7 +205,7 @@ DECLARE l contract_commercial_acceptance_links;a contract_commercial_acceptances
  IF l.accepted_id IS NOT NULL THEN SELECT * INTO a FROM contract_commercial_acceptances WHERE id=l.accepted_id AND revoked_at IS NULL;IF a.id IS NULL THEN RETURN NULL;END IF;END IF;
  RETURN l.snapshot||jsonb_build_object('status',CASE WHEN a.id IS NULL THEN 'pending' ELSE 'accepted' END,'clientName',a.client_name,'acceptedAt',a.accepted_at,'expiresAt',l.expires_at);
 END $$;
-REVOKE ALL ON FUNCTION public.contract_commercial_public_get(text) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.contract_commercial_public_get(text) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.contract_commercial_public_get(text) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.contract_commercial_public_accept(p_token text,p_client_name text,p_client_email text DEFAULT NULL)
@@ -228,7 +228,7 @@ DECLARE l contract_commercial_acceptance_links;a uuid;at_time date;BEGIN
  SELECT accepted_at INTO at_time FROM contract_commercial_acceptances WHERE id=a;
  RETURN jsonb_build_object('accepted',true,'acceptedAt',at_time,'duplicate',false);
 END $$;
-REVOKE ALL ON FUNCTION public.contract_commercial_public_accept(text,text,text) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.contract_commercial_public_accept(text,text,text) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.contract_commercial_public_accept(text,text,text) TO service_role;
 
 -- This predicate is ONLY for service receivables. The signature predicate and
@@ -241,7 +241,7 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_t
  AND EXISTS(SELECT 1 FROM contract_acceptance_billing_releases r JOIN contract_commercial_acceptances a ON a.id=r.acceptance_id AND a.contract_id=r.contract_id AND a.workspace_id=r.workspace_id
  WHERE r.contract_id=c.id AND r.workspace_id=c.workspace_id AND r.content_hash=public.contract_commercial_content_hash(c.id) AND a.content_hash=r.content_hash AND a.revoked_at IS NULL))
 $$;
-REVOKE ALL ON FUNCTION public.contract_service_billing_eligible(public.contracts) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.contract_service_billing_eligible(public.contracts) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.service_execution_complete(p_service uuid,p_completed_on date,p_reason text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
@@ -270,7 +270,7 @@ DECLARE s services;w uuid;u uuid:=auth.uid();existing service_execution_completi
  IF s.contract_id IS NOT NULL THEN INSERT INTO contract_events(workspace_id,contract_id,actor_id,event_type,payload) VALUES(w,s.contract_id,u,'service_execution_completed',jsonb_build_object('service_id',s.id,'completed_on',p_completed_on,'reason',p_reason,'billing_hold',s.billing_hold));END IF;
  RETURN jsonb_build_object('service',jsonb_build_object('id',s.id,'status',s.status,'ends_at',s.ends_at,'billing_hold',s.billing_hold),'completion',to_jsonb(existing),'duplicate',false);
 END $$;
-REVOKE ALL ON FUNCTION public.service_execution_complete(uuid,date,text) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.service_execution_complete(uuid,date,text) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.service_execution_complete(uuid,date,text) TO authenticated;
 
 -- Billing RPCs retain their existing grants, checks and once-per-contract references.
@@ -462,7 +462,7 @@ DECLARE w uuid;c contracts;a uuid;r uuid;s services;generated int:=0;single_coun
  INSERT INTO contract_events(workspace_id,contract_id,actor_id,event_type,payload) VALUES(w,c.id,auth.uid(),'commercial_acceptance_billing_released',jsonb_build_object('release_id',r,'acceptance_id',a,'due_date',p_due_date,'reason',p_reason,'generated',generated,'signature_unchanged',true));
  RETURN jsonb_build_object('generated',generated,'duplicate',false,'state',public.contract_commercial_state(c.id));
 END $$;
-REVOKE ALL ON FUNCTION public.contract_commercial_release_billing(uuid,date,text,text) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.contract_commercial_release_billing(uuid,date,text,text) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.contract_commercial_release_billing(uuid,date,text,text) TO authenticated;
 
 COMMENT ON TABLE public.contract_commercial_acceptances IS 'Version-bound commercial assent, independent of legal signature; append-only evidence with explicit audited revocation.';
@@ -476,7 +476,7 @@ DECLARE w uuid;r jsonb;BEGIN
  SELECT jsonb_build_object('completed_on',completed_on,'reason',reason,'created_at',created_at) INTO r FROM public.service_execution_completions WHERE service_id=p_service AND workspace_id=w;
  RETURN r;
 END $$;
-REVOKE ALL ON FUNCTION public.service_execution_state(uuid) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.service_execution_state(uuid) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.service_execution_state(uuid) TO authenticated;
 
 -- Direct table edits cannot forge completion or remove a signature/acceptance
@@ -491,4 +491,4 @@ BEGIN
  IF (TG_OP='INSERT' AND (NEW.status='active' OR NEW.next_billing_at IS NOT NULL)) OR (TG_OP='UPDATE' AND ((NEW.status='active' AND OLD.status<>'active') OR NEW.next_billing_at IS DISTINCT FROM OLD.next_billing_at OR (OLD.status='active' AND (NEW.unit_price,NEW.quantity,NEW.cadence,NEW.starts_at,NEW.ends_at) IS DISTINCT FROM (OLD.unit_price,OLD.quantity,OLD.cadence,OLD.starts_at,OLD.ends_at)))) THEN PERFORM public.work_area_authorize('techservice.billing','manage');END IF;
  RETURN NEW;
 END $$;
-REVOKE ALL ON FUNCTION public.work_service_billing_guard() FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.work_service_billing_guard() FROM PUBLIC,anon,authenticated,service_role;

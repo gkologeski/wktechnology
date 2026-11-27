@@ -218,9 +218,29 @@ beforeAll(async () => {
     readFileSync("drizzle/migrations/0361_service_billing_awaits_signature.sql", "utf8"),
   );
   await db.unsafe(readFileSync("drizzle/migrations/0463_purchase_contract_payables.sql", "utf8"));
+  // Production grants EXECUTE on new public functions to these API roles and
+  // gives its sandbox principal raw table access despite RLS. Test those actual
+  // defaults rather than relying on a fresh PostgreSQL installation's ACLs.
+  await db.unsafe(`CREATE ROLE sandbox_exec NOLOGIN BYPASSRLS;
+    CREATE ROLE techerp_request_writer NOLOGIN NOSUPERUSER NOBYPASSRLS;
+    ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon,authenticated,service_role;
+    ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT ON TABLES TO sandbox_exec,techerp_request_writer;`);
   await db.unsafe(readFileSync(migration, "utf8"));
   await db.unsafe(
     readFileSync("drizzle/migrations/0485_contract_acceptance_public_attachments.sql", "utf8"),
+  );
+  // This suite loads the exact final private-table cleanup independently of the
+  // approval-substitution workflow; that workflow has its own real-PG suite.
+  const finalMigration = readFileSync(
+    "drizzle/migrations/0486_contract_approval_substitution.sql",
+    "utf8",
+  );
+  const privateAclStart = finalMigration.indexOf("DO $private_acl$");
+  const privateAclEnd = finalMigration.indexOf("END $private_acl$;", privateAclStart);
+  if (privateAclStart < 0 || privateAclEnd < 0)
+    throw Error("Missing reviewed private table ACL cleanup");
+  await db.unsafe(
+    finalMigration.slice(privateAclStart, privateAclEnd + "END $private_acl$;".length),
   );
   await db`insert into workspaces(id,name) values(${W},'Workspace de teste'),(${B},'Outro workspace')`;
   await db`insert into profiles(id,active_workspace_id) values(${U},${W})`;
@@ -891,4 +911,81 @@ it("anonymous and ordinary authenticated clients cannot execute the service-only
       await tx`select contract_commercial_public_accept(${"a".repeat(64)},'Cliente autorizado',null)`;
     }),
   ).rejects.toThrow(/permission denied/);
+});
+
+it("production default EXECUTE grants cannot expose private helpers to service or ordinary API roles", async () => {
+  const signatures = [
+    "contract_commercial_content_hash(uuid)",
+    "contract_commercial_authorize(uuid,text,boolean)",
+    "contract_commercial_current(uuid)",
+    "contract_commercial_internal_approved(public.contracts)",
+    "contract_commercial_annexes_visible(uuid,uuid,uuid)",
+    "contract_service_billing_eligible(public.contracts)",
+    "work_service_billing_guard()",
+  ];
+  for (const signature of signatures) {
+    const [row] =
+      await db`select bool_and(not has_function_privilege(role_name,${"public." + signature},'EXECUTE')) as private
+      from unnest(array['anon','authenticated','service_role']) role_name`;
+    expect(row.private, signature).toBe(true);
+  }
+});
+
+it("new authenticated RPCs remove inherited service execution while service-only public endpoints stay explicit", async () => {
+  const authenticatedOnly = [
+    "contract_commercial_state(uuid)",
+    "contract_commercial_record(uuid,date,text,text,text,text)",
+    "contract_commercial_issue_link(uuid)",
+    "contract_commercial_revoke(uuid,text,boolean)",
+    "contract_commercial_release_billing(uuid,date,text,text)",
+    "service_execution_complete(uuid,date,text)",
+    "service_execution_state(uuid)",
+  ];
+  for (const signature of authenticatedOnly) {
+    const [row] =
+      await db`select has_function_privilege('authenticated',${"public." + signature},'EXECUTE') as user_allowed,
+      has_function_privilege('service_role',${"public." + signature},'EXECUTE') as service_allowed,
+      has_function_privilege('anon',${"public." + signature},'EXECUTE') as anon_allowed`;
+    expect(row, signature).toEqual({
+      user_allowed: true,
+      service_allowed: false,
+      anon_allowed: false,
+    });
+  }
+  for (const signature of [
+    "contract_commercial_public_get(text)",
+    "contract_commercial_public_accept(text,text,text)",
+    "contract_commercial_public_attachment(text,uuid)",
+    "service_release_signature_billing(uuid)",
+  ]) {
+    const [row] =
+      await db`select has_function_privilege('authenticated',${"public." + signature},'EXECUTE') as user_allowed,
+      has_function_privilege('service_role',${"public." + signature},'EXECUTE') as service_allowed,
+      has_function_privilege('anon',${"public." + signature},'EXECUTE') as anon_allowed`;
+    expect(row, signature).toEqual({
+      user_allowed: false,
+      service_allowed: true,
+      anon_allowed: false,
+    });
+  }
+});
+
+it("BYPASSRLS sandbox defaults cannot read or write any private commercial proof table", async () => {
+  const [role] = await db`select rolbypassrls from pg_roles where rolname='sandbox_exec'`;
+  expect(role.rolbypassrls).toBe(true);
+  for (const table of [
+    "contract_commercial_acceptances",
+    "contract_commercial_acceptance_links",
+    "contract_acceptance_billing_releases",
+    "service_execution_completions",
+  ]) {
+    const [row] =
+      await db`select bool_and(not has_table_privilege(role_name,${"public." + table},'SELECT')
+      and not has_table_privilege(role_name,${"public." + table},'INSERT')
+      and not has_table_privilege(role_name,${"public." + table},'UPDATE')
+      and not has_table_privilege(role_name,${"public." + table},'DELETE')
+      and not has_any_column_privilege(role_name,${"public." + table},'SELECT')) as private
+      from unnest(array['anon','authenticated','service_role','sandbox_exec','techerp_request_writer']) role_name`;
+    expect(row.private, table).toBe(true);
+  }
 });

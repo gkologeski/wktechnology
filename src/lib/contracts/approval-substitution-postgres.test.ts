@@ -33,6 +33,13 @@ const D = "70000000-0000-4000-8000-000000000001";
 const HANDOFF = "80000000-0000-4000-8000-000000000001";
 const ACTIVITY = "90000000-0000-4000-8000-000000000001";
 const KEY = "techcontracts.approval_substitution.manage.workspace";
+const PRIVATE_PROOFS = [
+  "contract_commercial_acceptances",
+  "contract_commercial_acceptance_links",
+  "contract_acceptance_billing_releases",
+  "service_execution_completions",
+  "contract_service_signature_anchors",
+] as const;
 const KEYS = [
   KEY,
   "techcontracts.contracts.view.workspace",
@@ -211,6 +218,33 @@ beforeAll(async () => {
   await db.unsafe(
     "CREATE TRIGGER handoff_task_guard BEFORE INSERT OR UPDATE OR DELETE ON activities FOR EACH ROW EXECUTE FUNCTION contract_handoff_task_guard();",
   );
+  // Production grants new functions/tables to these roles by default. BYPASSRLS
+  // does not replace a privilege check: private evidence needs explicit revokes.
+  await db.unsafe(`CREATE ROLE sandbox_exec NOLOGIN BYPASSRLS;
+    ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon,authenticated,service_role;
+    ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO anon,authenticated,service_role;
+    ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT ON TABLES TO sandbox_exec;`);
+  for (const table of PRIVATE_PROOFS)
+    await db.unsafe(
+      `CREATE TABLE public.${table}(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid); ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY;`,
+    );
+  // These placeholder tables represent the already-applied core package. Load
+  // its actual known-role REVOKEs; the unexpected sandbox default stays present
+  // until migration 0486 removes it, even though that role bypasses RLS.
+  const baselineRevokes = [
+    "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+    "drizzle/migrations/0484_service_execution_signature_integrity.sql",
+  ].flatMap((file) =>
+    readFileSync(file, "utf8")
+      .split("\n")
+      .filter(
+        (line) =>
+          line.startsWith("REVOKE ALL ON public.contract_commercial_acceptances") ||
+          line.startsWith("REVOKE ALL ON public.contract_service_signature_anchors"),
+      ),
+  );
+  if (baselineRevokes.length < 2) throw Error("Missing production core evidence ACLs");
+  for (const statement of baselineRevokes) await db.unsafe(statement);
   await db.unsafe(readFileSync(MIGRATION, "utf8"));
   await db`insert into workspaces(id) values(${W}),(${B})`;
   await db`insert into profiles(id,active_workspace_id,full_name) values(${U},${W},'Responsável substituto'),(${O},${W},'Responsável original')`;
@@ -353,6 +387,41 @@ it("approval substitution SQL rejects inactive membership", async () => {
       { inactive: true },
     ),
   ).rejects.toMatchObject({ code: "42501" });
+});
+
+it("explicit substitution RPC ACLs close inherited default execute grants", async () => {
+  const functions = await db`
+    select p.proname,
+      has_function_privilege('anon',p.oid,'EXECUTE') as anon,
+      has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+      has_function_privilege('service_role',p.oid,'EXECUTE') as service,
+      exists(select 1 from aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a where a.grantee=0 and a.privilege_type='EXECUTE') as public_execute
+    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public' and p.proname in('contract_approval_substitution_authorize','contract_approval_substitution_context','contract_approval_assume')
+    order by p.proname`;
+  expect(functions).toHaveLength(3);
+  for (const row of functions) {
+    expect(row.anon).toBe(false);
+    expect(row.public_execute).toBe(false);
+    expect(row.service).toBe(false);
+    expect(row.authenticated).toBe(row.proname !== "contract_approval_substitution_authorize");
+  }
+});
+
+it("private evidence remains inaccessible despite table defaults and a BYPASSRLS sandbox role", async () => {
+  const [sandbox] = await db`select rolbypassrls from pg_roles where rolname='sandbox_exec'`;
+  expect(sandbox.rolbypassrls).toBe(true);
+  for (const table of PRIVATE_PROOFS) {
+    for (const role of ["anon", "authenticated", "service_role", "sandbox_exec"]) {
+      const [privilege] = await db`
+        select has_table_privilege(${role},${`public.${table}`},'SELECT,INSERT,UPDATE,DELETE') as raw_crud,
+          has_any_column_privilege(${role},${`public.${table}`},'SELECT,INSERT,UPDATE') as raw_columns`;
+      expect(privilege, `${role} must not access ${table}`).toEqual({
+        raw_crud: false,
+        raw_columns: false,
+      });
+    }
+  }
 });
 
 it("substitution does not inherit read-only access or omit existing approval capabilities", async () => {

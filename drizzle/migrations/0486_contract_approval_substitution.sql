@@ -46,7 +46,7 @@ DECLARE w uuid;u uuid:=auth.uid();c contracts;allowed boolean;rows jsonb;BEGIN
  ) a;
  RETURN jsonb_build_object('canAssume',allowed AND c.status::text='in_review','approvals',rows);
 END $$;
-REVOKE ALL ON FUNCTION public.contract_approval_substitution_context(uuid) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.contract_approval_substitution_context(uuid) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.contract_approval_substitution_context(uuid) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.contract_approval_assume(p_contract uuid,p_approval uuid,p_expected_approver uuid,p_reason text)
@@ -89,5 +89,20 @@ DECLARE w uuid;u uuid:=auth.uid();c contracts;a contract_approvals;previous_appr
   'reason',btrim(p_reason),'decision_unchanged',true));
  RETURN public.contract_approval_substitution_context(c.id);
 END $$;
-REVOKE ALL ON FUNCTION public.contract_approval_assume(uuid,uuid,uuid,text) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.contract_approval_assume(uuid,uuid,uuid,text) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.contract_approval_assume(uuid,uuid,uuid,text) TO authenticated;
+
+-- Some managed environments grant a BYPASSRLS sandbox principal SELECT/INSERT
+-- on every new public table by default. Clear only these private feature tables;
+-- do not change global defaults or grant any capability to another principal.
+DO $private_acl$
+DECLARE role_name text; table_name text;
+BEGIN
+ FOR role_name IN SELECT rolname FROM pg_roles WHERE rolname IN('sandbox_exec','techerp_request_writer') LOOP
+  FOREACH table_name IN ARRAY ARRAY['contract_commercial_acceptances','contract_commercial_acceptance_links','contract_acceptance_billing_releases','service_execution_completions','contract_service_signature_anchors'] LOOP
+   IF to_regclass(format('public.%I',table_name)) IS NOT NULL THEN
+    EXECUTE format('REVOKE ALL ON TABLE public.%I FROM %I',table_name,role_name);
+   END IF;
+  END LOOP;
+ END LOOP;
+END $private_acl$;
