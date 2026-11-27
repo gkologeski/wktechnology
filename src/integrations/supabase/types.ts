@@ -39745,6 +39745,10 @@ export type Database = {
         Args: { p_contract: string; p_ws: string }
         Returns: string
       }
+      hiring_contract_esign_body_without_attachments_purchase_v2: {
+        Args: { p_contract: string; p_ws: string }
+        Returns: string
+      }
       hiring_contract_esign_body_without_attachments_sales_v1: {
         Args: { p_contract: string; p_ws: string }
         Returns: string

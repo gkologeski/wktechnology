@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/forsign
 min_permission: techcontracts.forsign_settings.manage.workspace
 audience: internal
 sort_order: 97
-version: 10
+version: 11
 is_published: true
 ---
 # Enviar contratos para assinatura pelo ForSign
@@ -88,6 +88,12 @@ Nos formulários **Preparar assinatura no TechERP** e **Enviar pelo ForSign**, o
 - No formulário **Enviar pelo ForSign**, o quadro **Posicionamento das assinaturas e rubricas** informa para cada pessoa **Local da assinatura: identificado** ou **Local da assinatura: página de assinaturas adicionada** conforme os signatários escolhidos.
 - As **rubricas** de todos os signatários são posicionadas automaticamente lado a lado no rodapé de **todas as páginas** do PDF enviado, inclusive nas páginas dos anexos incluídos no pacote de assinatura.
 - A consulta do posicionamento usa exatamente as mesmas permissões do envio pelo ForSign (`techcontracts.forsign.manage.workspace` e `techcontracts.signature_evidence.manage.workspace`) e não consome créditos.
+
+## Cabeçalho e resumo financeiro do documento de assinatura
+- Em contratos de **venda (prestação)**, o cabeçalho do PDF exibe **Entidade prestadora** (sua empresa) e **Cliente** (contratante).
+- Em contratos de **compra (contratação de fornecedor)**, o cabeçalho exibe **Contratante** (sua empresa com CNPJ) e **Contratada / Fornecedor** (razão social/CNPJ da empresa ou nome completo do profissional PF), além de **Vigência**, **Valor total**, e, quando preenchidos, **Valor mensal**, **Horas/mês**, **Forma de pagamento**, **Dia de pagamento** e **Condições de pagamento**.
+- Em contratos de compra sem serviços vinculados, o rodapé não acrescenta a seção vazia "Serviços contratados".
+- Quando o modelo escolhido é um contrato-quadro por entregas (sem valor fixo nas cláusulas), inclua a proposta/orçamento do fornecedor como arquivo em **Documento > Anexos do contrato** para que o detalhamento acompanhe o PDF enviado.
 
 ## Avisar a equipe após a conclusão
 

@@ -12031,9 +12031,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: generated types add only the contract_purchase_payables_generate RPC signature; no table/grant change. 23/11/2026: regenerated for contract_purchase_sales table and contract_purchase_sale_set RPC (no new grants). | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass). | 26/11/2026: reviewed the additive generated declarations already present on main c031bf155 after imports 0479–0482. Compile-time types only; no runtime permission or grant change. | 27/11/2026: regenerated after additive project_updates.progress_value column (0483_project_updates_decimal_progress); compile-time types only, no runtime permission or grant change.",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: generated types add only the contract_purchase_payables_generate RPC signature; no table/grant change. 23/11/2026: regenerated for contract_purchase_sales table and contract_purchase_sale_set RPC (no new grants). | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass). | 26/11/2026: reviewed the additive generated declarations already present on main c031bf155 after imports 0479–0482. Compile-time types only; no runtime permission or grant change. | 27/11/2026: regenerated after additive project_updates.progress_value column (0483_project_updates_decimal_progress); compile-time types only, no runtime permission or grant change. | 27/11/2026: regenerated after private helper hiring_contract_esign_body_without_attachments_purchase_v2 (0484_purchase_contract_esign_header); compile-time declaration only, EXECUTE revoked from PUBLIC/anon/authenticated/service_role/techerp_request_writer.",
       "files": {
-        "src/integrations/supabase/types.ts": "7bc72699fb1c46ca3c0b93ee38c5d90feed28c6534133e539d2681044a90ca2f",
+        "src/integrations/supabase/types.ts": "179c0b0c57b02bbef39fd0d7c4748e245d5d075b6a8360869ed2a8463e0e8a56",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -28983,6 +28983,89 @@
         "boundary": "Hash compatibility for the exact same commercial provider document only. Workspace and parent are pinned; private cache upsert serializes captures; material terms and attachments continue invalidating prior signature evidence.",
         "revocation": "Material document changes invalidate the anchor comparison; canonical row access and readonly gates still control every service write. Deleting the parent invokes a private after-delete cache cleanup, without a parent FK lock during service updates.",
         "review_by": "2027-02-26"
+      }
+    },
+    {
+      "id": "purchase-contract-esign-header",
+      "kind": "internal",
+      "resources": [
+        "techcontracts.contracts",
+        "techcontracts.signature_evidence",
+        "techcontracts.forsign"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.signature_evidence.view.workspace",
+        "techcontracts.signature_evidence.manage.workspace",
+        "techcontracts.forsign.manage.workspace"
+      ],
+      "rationale": "Private definer SQL helpers format the e-signature header for TechContracts purchase contracts (role='client', hiring_request_origin IS NULL) with Contratante (WK legal entity + CNPJ), Contratada / Fornecedor (PJ legal_name+CNPJ or PF contact), values/payment summary, and omit empty Services footer while keeping sales (_sales_v1) and TechHire bodies and fingerprints byte-identical. EXECUTE is revoked from PUBLIC, anon, authenticated, service_role and techerp_request_writer; workspace_id is pinned in every lookup and callers remain gated by existing authorized signing RPCs.",
+      "files": {
+        "drizzle/migrations/0484_purchase_contract_esign_header.sql": "c49bd45a2cd5ce644c3c4632fe0eddea23bdc9059cad2a738aae7fd16e2d944e"
+      },
+      "controls": [
+        {
+          "file": "drizzle/migrations/0484_purchase_contract_esign_header.sql",
+          "symbol": "public.hiring_contract_esign_body_without_attachments_purchase_v2"
+        },
+        {
+          "file": "drizzle/migrations/0484_purchase_contract_esign_header.sql",
+          "symbol": "public.hiring_contract_esign_body_without_attachments"
+        },
+        {
+          "file": "drizzle/migrations/0484_purchase_contract_esign_header.sql",
+          "symbol": "public.hiring_contract_fingerprint_without_attachments"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0484_purchase_contract_esign_header.sql",
+          "symbol": "public.hiring_contract_esign_body_without_attachments_purchase_v2"
+        },
+        {
+          "file": "drizzle/migrations/0484_purchase_contract_esign_header.sql",
+          "symbol": "public.hiring_contract_esign_body_without_attachments"
+        },
+        {
+          "file": "drizzle/migrations/0484_purchase_contract_esign_header.sql",
+          "symbol": "public.hiring_contract_fingerprint_without_attachments"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/integrations/forsign/forsign-authorization.test.ts",
+          "name": "forsign allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/integrations/forsign/forsign-authorization.test.ts",
+          "name": "forsign rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/integrations/forsign/forsign-authorization.test.ts",
+          "name": "forsign rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/integrations/forsign/forsign-authorization.test.ts",
+          "name": "forsign rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/integrations/forsign/forsign-authorization.test.ts",
+          "name": "forsign rejects inactive member"
+        }
+      },
+      "exception": {
+        "mechanism": "Private SECURITY DEFINER helpers callable only by internal signing/packaging functions after caller authorization and active-workspace checks; EXECUTE is revoked from PUBLIC, anon, authenticated, service_role and techerp_request_writer.",
+        "boundary": "Read-only HTML header formatting and SHA-256 fingerprinting scoped to the exact (workspace_id, contract_id). Cross-workspace queries return NULL; no writes, no credential access, and sales/TechHire hashes remain unchanged.",
+        "revocation": "Calling signing/preview/ForSign entrypoints continues enforcing live workspace membership, deny precedence, contract record view/update, and signature evidence/ForSign permissions.",
+        "review_by": "2027-02-27"
       }
     },
     {

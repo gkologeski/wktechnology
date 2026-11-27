@@ -3389,6 +3389,13 @@
       "when": 1795785458653,
       "tag": "0483_project_updates_decimal_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 484,
+      "version": "7",
+      "when": 1795802078171,
+      "tag": "0484_purchase_contract_esign_header",
+      "breakpoints": true
     }
   ]
 }
