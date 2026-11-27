@@ -12031,9 +12031,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: generated types add only the contract_purchase_payables_generate RPC signature; no table/grant change. 23/11/2026: regenerated for contract_purchase_sales table and contract_purchase_sale_set RPC (no new grants). | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: generated types add only the contract_purchase_payables_generate RPC signature; no table/grant change. 23/11/2026: regenerated for contract_purchase_sales table and contract_purchase_sale_set RPC (no new grants). | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass). | 26/11/2026: reviewed the additive generated declarations already present on main c031bf155 after imports 0479–0482. Compile-time types only; no runtime permission or grant change.",
       "files": {
-        "src/integrations/supabase/types.ts": "668152afded6220d625c857f99a61babcbc30e8ad10c7ff2d9e43257c801d5ac",
+        "src/integrations/supabase/types.ts": "355358b02c744f66b078cab60e2d86c41beed08ab2d6b4aebe2c7a1fea710fd2",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -12864,9 +12864,10 @@
     {
       "id": "contracts-detail-next-step",
       "kind": "presentation",
-      "rationale": "PROXIMO-PASSO-CONTRATO: pure next-step rule and presentational stepper/card. No I/O; actions only switch tabs or navigate to existing gated screens whose permissions stay in their own contracts.",
+      "rationale": "PROXIMO-PASSO-CONTRATO: pure next-step rule and presentational stepper/card. No I/O; actions only switch tabs or navigate to existing gated screens whose permissions stay in their own contracts. Pure summary of already-authorized visible service states; no new read, action, or signature inference.",
       "files": {
-        "src/lib/contracts/contract-next-step.ts": "c90c0729e83efb75054f9dde2c25c505849914aa4d4cfe58ad116d7d2f0c892d"
+        "src/lib/contracts/contract-next-step.ts": "4d2e8ea7f0666cb098566e2a94893ab20f0152f671985e01ef966684ea617d6e",
+        "src/lib/deals/contracting-execution.ts": "c3d11a9fa3ad8b5e74014bad27700a1af63b4c89e26e5606428b8320c7ba8e03"
       }
     },
     {
@@ -13156,7 +13157,8 @@
       "resources": [
         "techservice.services",
         "techservice.billing",
-        "techfinance.entries"
+        "techfinance.entries",
+        "techservice.service_execution"
       ],
       "actions": [
         "update",
@@ -13174,17 +13176,18 @@
         "techservice.services.update.workspace",
         "techservice.billing.manage.workspace",
         "techfinance.entries.create.own",
-        "techfinance.entries.create.workspace"
+        "techfinance.entries.create.workspace",
+        "techservice.service_execution.manage.workspace"
       ],
-      "rationale": "CONDICOES-PAGAMENTO: activateService (requireWorkPermission techservice.services update) lê serviço e contrato pelo cliente do usuário (RLS) e, quando o contrato tem condições de pagamento válidas, chama service_activate_with_terms (0327, SECURITY DEFINER) com o cronograma calculado. A função exige sessão, repete as mesmas autorizações de service_bill_checked (work_area_authorize de serviço e billing, finance_scope_access e criação de lançamentos), confere contrato do mesmo workspace e soma igual ao valor do contrato, cria as contas uma única vez por contrato (external_ref) e desliga a cobrança automática do serviço para não cobrar em dobro. Recusa de autorização não cai na cobrança antiga. EXECUTE só para authenticated. O cartão da ficha do contrato é somente leitura sobre dados já autorizados. ATIVA-COBRA 14/11/2026: activation stays authorized by the same RPC checks; when the linked contract is unsigned, the RPCs activate without creating entries and hold billing. Release runs only from the contracts trigger through service-only service_release_signature_billing (revoked from anon/authenticated). Services page only shows the hold badge.",
+      "rationale": "CONDICOES-PAGAMENTO: activateService (requireWorkPermission techservice.services update) lê serviço e contrato pelo cliente do usuário (RLS) e, quando o contrato tem condições de pagamento válidas, chama service_activate_with_terms (0327, SECURITY DEFINER) com o cronograma calculado. A função exige sessão, repete as mesmas autorizações de service_bill_checked (work_area_authorize de serviço e billing, finance_scope_access e criação de lançamentos), confere contrato do mesmo workspace e soma igual ao valor do contrato, cria as contas uma única vez por contrato (external_ref) e desliga a cobrança automática do serviço para não cobrar em dobro. Recusa de autorização não cai na cobrança antiga. EXECUTE só para authenticated. O cartão da ficha do contrato é somente leitura sobre dados já autorizados. ATIVA-COBRA 14/11/2026: activation stays authorized by the same RPC checks; when the linked contract is unsigned, the RPCs activate without creating entries and hold billing. Release runs only from the contracts trigger through service-only service_release_signature_billing (revoked from anon/authenticated). Services page only shows the hold badge. | 26/11/2026: explicit service_execution_complete authorizes active membership, canonical service update and the dedicated execution key; immutable dated proof, no invoices and retained hold. Billing activation is independent of completion. PostgreSQL acceptance scenarios additionally test each special action and denials.",
       "files": {
         "drizzle/migrations/0327_service_activate_payment_terms.sql": "13b08044f99e75576b63e6a01fdf667bbeb694f8904d19f3ef7966f5c70a00d6",
         "src/lib/services/activation-terms.ts": "cbcc49d31367a2a3e00306de4d1eb77b4a3f639eebb4864388c6d451490c3068",
         "src/lib/services/activation-terms.write.ts": "9188bd5a91297a19257babf48e4e03d7a1c38d3f3e85a530864c6de872ac9a63",
-        "src/lib/services.functions.ts": "9d6a16a1b1a31b016d7de2a495c9b27eaf227a5eedebe608908b19fb239123a7",
-        "src/components/contracts/contract-payment-terms-card.tsx": "90a8279ecece45c912b0ffb6c84ff23a86088421fc40e9785bd25dc9f5037d24",
+        "src/lib/services.functions.ts": "fb2912f20a89c3dff2a25acb5116125ea44d822e26cf58f07b8799d47609a888",
+        "src/components/contracts/contract-payment-terms-card.tsx": "e2b9713ddc7fe49f4e677ff03b7b59ec634ed6e79d68c76bc83e010b5e6000c5",
         "drizzle/migrations/0361_service_billing_awaits_signature.sql": "82a8098a1050b905ba2fe05113f587954177819f2ecdc421eec51f00a3583486",
-        "src/routes/_authenticated/services.$id.tsx": "82bf2f316c4f7a110caa9bef14929219c18cabe158d67b4e24e83b1801581888"
+        "src/routes/_authenticated/services.$id.tsx": "f8bde3ab3c798415d721fa024d3c2834a56d914e2ce61818a30e33fdd3da1776"
       },
       "controls": [
         {
@@ -13224,28 +13227,32 @@
         {
           "file": "drizzle/migrations/0361_service_billing_awaits_signature.sql",
           "symbol": "service_release_signature_billing"
+        },
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.service_execution_complete"
         }
       ],
       "tests": {
         "allowed": {
-          "file": "src/lib/services/activation-terms.write.test.ts",
-          "name": "service activation terms allows authorized active member"
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL permits an authorized active member"
         },
         "missing_permission": {
-          "file": "src/lib/services/activation-terms.write.test.ts",
-          "name": "service activation terms refuses missing permission"
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL rejects missing permissions"
         },
         "explicit_deny": {
-          "file": "src/lib/services/activation-terms.write.test.ts",
-          "name": "service activation terms refuses an explicit deny"
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL respects explicit deny"
         },
         "foreign_workspace": {
-          "file": "src/lib/services/activation-terms.write.test.ts",
-          "name": "service activation terms refuses a foreign workspace contract"
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL isolates another workspace"
         },
         "inactive_member": {
-          "file": "src/lib/services/activation-terms.write.test.ts",
-          "name": "service activation terms refuses an inactive member"
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL rejects inactive membership"
         }
       }
     },
@@ -14627,13 +14634,16 @@
         "techcontracts.contract_drafts",
         "techcontracts.contracts",
         "techcontracts.signature_evidence",
-        "techservice.services"
+        "techservice.services",
+        "techcontracts.approvals",
+        "techcontracts.audit"
       ],
       "actions": [
         "view",
         "create",
         "approve",
-        "update"
+        "update",
+        "manage"
       ],
       "scopes": [
         "own",
@@ -14647,9 +14657,13 @@
         "techcontracts.contract_drafts.create.workspace",
         "techcontracts.contract_drafts.view.workspace",
         "techcontracts.contract_drafts.approve.workspace",
-        "techcontracts.signature_evidence.view.workspace"
+        "techcontracts.signature_evidence.view.workspace",
+        "techcontracts.approvals.view.workspace",
+        "techcontracts.approvals.manage.workspace",
+        "techcontracts.approvals.approve.workspace",
+        "techcontracts.audit.view.workspace"
       ],
-      "rationale": "Ficha aprovada: resumo somente de negócio autorizado, consultas opcionais precedidas por gate de cada área e filtradas por workspace/negócio sob RLS. Não retorna corpos, tokens ou arquivos. Uma origem explícita por jornada. Abertura de minuta manual exige create próprio, membro ativo e proposta/negócio visíveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concessão automática. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveniência e proíbe alterações posteriores. Contratos históricos preservados. Assinatura real via hiring_contract_signature_context; status ativo não basta. Ações existentes mantêm seus gates (sales/work capabilities, send/share/approve/esign/serviços); readonly nega novas ações. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir histórico; carregamento de um corpo por vez. Revisão jurídica continua exigindo aprovador listado, CAS e nova aprovação do cliente; chamadas diretas sujeitas às mesmas invariantes. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass).",
+      "rationale": "Ficha aprovada: resumo somente de negócio autorizado, consultas opcionais precedidas por gate de cada área e filtradas por workspace/negócio sob RLS. Não retorna corpos, tokens ou arquivos. Uma origem explícita por jornada. Abertura de minuta manual exige create próprio, membro ativo e proposta/negócio visíveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concessão automática. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveniência e proíbe alterações posteriores. Contratos históricos preservados. Assinatura real via hiring_contract_signature_context; status ativo não basta. Ações existentes mantêm seus gates (sales/work capabilities, send/share/approve/esign/serviços); readonly nega novas ações. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir histórico; carregamento de um corpo por vez. Revisão jurídica continua exigindo aprovador listado, CAS e nova aprovação do cliente; chamadas diretas sujeitas às mesmas invariantes. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass). | 26/11/2026: approval panel only adds PT-BR labels for commercial acceptance and execution audit events. Existing approval/audit reads, manage/approve and parent capabilities are unchanged; no new action or recipient.",
       "controls": [
         {
           "file": "src/lib/deals/contracting-journey.server.ts",
@@ -14730,14 +14744,15 @@
       },
       "files": {
         "drizzle/migrations/0356_deal_contracting_journey.sql": "8fc0fa2805b2c5ae3f9508242532cb01fe3bf62cb0411d3f78eded6ac6bd5f6f",
-        "src/components/deals/deal-contracting-journey.tsx": "a3fe7d707dc23406a770561fc0b0879f6e416f5f40b404ac18362c38fb2987f5",
+        "src/components/deals/deal-contracting-journey.tsx": "1646943a27aeec97a88f0b031a82d1692618b2cd6ebe2111607fab5146f8b5dd",
         "src/lib/deals/contracting-journey.functions.ts": "20e51a0e73599b7462b188572d108e1a28cf23256a11e7dd78a68b9584a7897d",
         "src/lib/deals/contracting-journey.server.ts": "05f66246a079641b91bef1254a23b9bc02951ec06b41f2ac4af77e3d2a16fff4",
         "src/routes/_authenticated/deals.$id.tsx": "4a86b9805a7a53ae6cbf992dc059fa86fcefc8460d25cd5b0e0b1ee65ad98839",
         "src/components/contracts/deal-contracts.tsx": "798d83688f028c055dd9fa1553079663f29b088746855fb5afd3efd75c96b4ac",
-        "src/components/services/contract-services.tsx": "4955f2c4e631f47e3b94592c4b0713562874ef9c17a1f17048325ccbb412ed9a",
+        "src/components/services/contract-services.tsx": "2e0fa984c420744b1413d33396c96a56166becd9ed53130437c5c35e1326eb19",
         "src/lib/workflows/engine/accepted-commercial-source.server.ts": "fda10abfddc77a282eaa181dc07f400b8852a393386d4885f9b847ff1b9572ec",
-        "src/components/deals/deal-quotes.tsx": "c2dd3a60a071861cad60efb37769adc2c322e2b2f953a659d267afd6f5255909"
+        "src/components/deals/deal-quotes.tsx": "c2dd3a60a071861cad60efb37769adc2c322e2b2f953a659d267afd6f5255909",
+        "src/components/contracts/contract-approvals-panel.tsx": "f4aa21b2e2fa160d25702fa36b87f495b07a0f9d71efa7e1b66e60397768c352"
       }
     },
     {
@@ -26813,7 +26828,7 @@
         "src/components/contracts/legacy/contract-legacy-panel.tsx": "c434e08ea45d5f0f37678bb05e87e9053df7e09f2ea23b9b516b119e1f666b0a",
         "src/lib/contracts/legacy.functions.ts": "29e306393c0daf2590d88a720bfd89bbe5683e9400af3efc0ebd85f04c3736a6",
         "src/lib/contracts/legacy.server.ts": "fdb7b015d3ccd7f3a081bb38900b362ab097d65a118d20420a4ea1a274dc5f47",
-        "src/routes/_authenticated/contracts.$id.tsx": "8daeb079649441c438c7b16ca2d594314b68d6fae6453a621499774c717dee47",
+        "src/routes/_authenticated/contracts.$id.tsx": "da2b2a1e07e8cffd5e3e1fc4961ca9323928e30e0df656b3e8f161772ab784a9",
         "drizzle/migrations/0454_contract_legacy_discard_pending.sql": "7ee86112069b893634b01b4babc64a3339947bf9b02524cbc8152a35ad8fbe72",
         "drizzle/migrations/0455_contract_legacy_discard_list_batch.sql": "255ab07053c066122545fc1c0a1f856a52241d543f95e055b3c90213a17621ab"
       }
@@ -28752,6 +28767,302 @@
         "src/lib/integrations/jibble/jibble-engine.server.ts": "11b68561b4dab14a995ca84c0961e7ee8b0bd69e171f4794bf9b2f39b239d85f",
         "src/lib/integrations/jibble/jibble-screenshot.ts": "c038af732de8016f9171629bc34e93f97a07b40c208316c4b58008993bccd1c6",
         "src/lib/integrations/jibble/jibble-store.server.ts": "af2190f35058bbb84defdfff8e5b6a8c1a337672f341addeaa14f44fa1b707a9"
+      }
+    },
+    {
+      "id": "contract-commercial-acceptance-execution",
+      "kind": "public",
+      "resources": [
+        "techcontracts.contracts",
+        "techcontracts.contract_acceptance",
+        "techcontracts.contract_acceptance_billing",
+        "techservice.services",
+        "techservice.service_execution",
+        "techservice.billing",
+        "techfinance.entries"
+      ],
+      "actions": [
+        "view",
+        "update",
+        "approve",
+        "manage",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.contract_acceptance.approve.workspace",
+        "techcontracts.contract_acceptance.manage.workspace",
+        "techcontracts.contract_acceptance_billing.manage.workspace",
+        "techservice.service_execution.manage.workspace",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.update.workspace",
+        "techservice.billing.manage.workspace",
+        "techfinance.entries.create.workspace"
+      ],
+      "rationale": "Commercial acceptance is distinct from signature and execution. Authenticated actions use the caller RLS client and SQL current active workspace, membership, record scope, readonly and per-action deny checks. New keys grant no roles automatically. Explicit Finance release preserves internal approvals, creates provider receivables only using the held schedule and agreed due date, never sets signature fields, and is idempotent. Public read/assent is limited to a revocable 256-bit hashed capability for the current immutable commercial revision, requiring a currently active authorized issuer; no finance or signature is possible via the public boundary. Completion stores dated proof with no financial mutation. Canonical old activation grants remain enforced.",
+      "files": {
+        "drizzle/migrations/0483_contract_commercial_acceptance.sql": "6c48b520541b95ea5d2d19374a2daec093ab2f7ad5be3dfe03d3c71b069ebcd6",
+        "src/lib/contracts/acceptance.functions.ts": "7930fc4fa5b0e9bc594121279c15262204900d9ecf82fe5ecc14fca1a006182d",
+        "src/components/contracts/contract-acceptance-card.tsx": "6a350dc2a8ef25932d5f905d280697d120146af59be3beca0d64d639c4a2527f",
+        "src/routes/contract-acceptance.$token.tsx": "6c9bd5a0dc0d2e8458ccdb6652335f3cc5ef291a51901abc7510fca1a327a4de",
+        "src/components/services/service-execution-button.tsx": "8f1a4f7fd1b1cf2d61828f2f34ffcb0a1c187f0c2a33133ffba50f1296e63a4a"
+      },
+      "controls": [
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.contract_commercial_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.contract_commercial_public_get"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/contracts/acceptance.functions.ts",
+          "symbol": "getPublicContractAcceptance"
+        },
+        {
+          "file": "src/lib/contracts/acceptance.functions.ts",
+          "symbol": "decidePublicContractAcceptance"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.contract_commercial_acceptances"
+        },
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.contract_commercial_acceptance_links"
+        },
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.contract_acceptance_billing_releases"
+        },
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.service_execution_completions"
+        },
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.contract_commercial_record"
+        },
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.contract_commercial_release_billing"
+        },
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.contract_commercial_public_get"
+        },
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.contract_commercial_public_accept"
+        },
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.service_execution_complete"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL permits an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL rejects missing permissions"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL isolates another workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL rejects inactive membership"
+        }
+      },
+      "exception": {
+        "mechanism": "Only getPublicContractAcceptance/decidePublicContractAcceptance are public. A random 256-bit token is stored hashed and resolved by service-only RPCs, checked against current content, expiry, revocation and the active authorized issuer. Other server handlers require authenticated caller context and the specific action.",
+        "boundary": "One selected provider contract customer document and its explicit commercial assent. No listing, credentials, internal metadata, signature or invoice creation is returned or performed publicly.",
+        "revocation": "Revoke link/acceptance, change material content, expire token, deactivate/remove or deny issuer. Existing financial entries and signed evidence remain preserved.",
+        "review_by": "2027-02-26"
+      }
+    },
+    {
+      "id": "service-execution-signature-compatibility",
+      "kind": "internal",
+      "resources": [
+        "techservice.services",
+        "techcontracts.signature_evidence"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techservice.services.update.workspace"
+      ],
+      "rationale": "A private BEFORE UPDATE trigger preserves the currently canonical provider document hash only when service operational progress changes. It cannot attest signature, expose documents, authorize writes or create finance. Canonical membership/record/action gates are unchanged and covered by the commercial workflow SQL scenarios; independent service-signature-integrity-postgres tests verify unchanged native/ForSign hashes through activation/completion/hold release, continued invalidation for clauses/values/annexes and fully revoked helper/table ACL. No existing evidence, package or record is rewritten. Purchases retain their prior signature semantics.",
+      "files": {
+        "drizzle/migrations/0484_service_execution_signature_integrity.sql": "91e58570c0055b9bf50505be3cc2429b34ddba469a350eb6535ef12b3b3bcbd5"
+      },
+      "controls": [
+        {
+          "file": "drizzle/migrations/0484_service_execution_signature_integrity.sql",
+          "symbol": "public.service_execution_preserve_signature_hash"
+        },
+        {
+          "file": "drizzle/migrations/0484_service_execution_signature_integrity.sql",
+          "symbol": "public.hiring_contract_fingerprint_without_attachments"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0484_service_execution_signature_integrity.sql",
+          "symbol": "public.contract_service_signature_anchors"
+        },
+        {
+          "file": "drizzle/migrations/0484_service_execution_signature_integrity.sql",
+          "symbol": "public.service_execution_preserve_signature_hash"
+        },
+        {
+          "file": "drizzle/migrations/0484_service_execution_signature_integrity.sql",
+          "symbol": "public.contract_service_commercial_signature_hash"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL permits an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL rejects missing permissions"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL isolates another workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/commercial-acceptance-postgres.test.ts",
+          "name": "commercial workflow SQL rejects inactive membership"
+        }
+      },
+      "exception": {
+        "mechanism": "Private definer helpers callable only by their database trigger/owner through an already-authorized canonical service update. All SQL EXECUTE/table privileges revoked from anon, authenticated, service_role and the request writer.",
+        "boundary": "Hash compatibility for the exact same commercial provider document only. Workspace and parent are pinned; private cache upsert serializes captures; material terms and attachments continue invalidating prior signature evidence.",
+        "revocation": "Material document changes invalidate the anchor comparison; canonical row access and readonly gates still control every service write. Deleting the parent invokes a private after-delete cache cleanup, without a parent FK lock during service updates.",
+        "review_by": "2027-02-26"
+      }
+    },
+    {
+      "id": "contract-commercial-acceptance-public-annexes",
+      "kind": "public",
+      "resources": [
+        "techcontracts.contract_acceptance",
+        "techcontracts.contracts",
+        "techsales.quotes",
+        "techsales.proposals"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.contract_acceptance.manage.workspace",
+        "techcontracts.contracts.view.workspace"
+      ],
+      "rationale": "Public read capability authorizes only a ready attachment from its exact current provider contract and workspace; issuer active membership, current parent scope/financial view/manage and current content are checked by the canonical acceptance token RPC. Attachment metadata and private paths remain server-only. Original/frozen bytes require stored SHA256; unfrozen commercial PDFs use only the SQL-selected source with workspace validation. Capability/content is rechecked after download/render. No signature, assent or finance write. Independent PG tests verify same/foreign attachment and all token revocations; unit tests verify no privileged IO on denial and post-render revalidation.",
+      "files": {
+        "drizzle/migrations/0485_contract_acceptance_public_attachments.sql": "a744b66d6e2208ff34db84be83893d6c839a9123015665c48a1ffac4e55fc887",
+        "src/lib/contracts/acceptance-attachment.server.ts": "55ba3bbed8724e608d2f7bfe7dd880eb3985ae9263044c9752b86ae551e114f2",
+        "src/routes/api/public/contract-acceptance/$token/attachments/$attachmentId.ts": "347fd91f031c56b3e4d97aa8c22576a23979cfce3325282061543071a0b6842e"
+      },
+      "controls": [
+        {
+          "file": "src/lib/contracts/acceptance-attachment.server.ts",
+          "symbol": "loadContractAcceptanceAttachment"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "drizzle/migrations/0485_contract_acceptance_public_attachments.sql",
+          "symbol": "public.contract_commercial_public_attachment"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0485_contract_acceptance_public_attachments.sql",
+          "symbol": "public.contract_commercial_public_attachment"
+        },
+        {
+          "file": "drizzle/migrations/0483_contract_commercial_acceptance.sql",
+          "symbol": "public.contract_commercial_public_get"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/acceptance-attachment.server.test.ts",
+          "name": "acceptance annex permits only the authorized same document with verified bytes"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/acceptance-attachment.server.test.ts",
+          "name": "acceptance annex rejects a missing capability before privileged IO"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/acceptance-attachment.server.test.ts",
+          "name": "acceptance annex respects a revoked capability without downloading files"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/acceptance-attachment.server.test.ts",
+          "name": "acceptance annex rejects a foreign attachment identifier without file access"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/acceptance-attachment.server.test.ts",
+          "name": "acceptance annex rejects an inactive issuer denied by the canonical SQL boundary"
+        }
+      },
+      "exception": {
+        "mechanism": "The same random hashed 256-bit acceptance token; only the service-role server may execute the SQL resolver after the live capability check. Browser never receives storage paths, source tokens or raw records.",
+        "boundary": "One attached document bound to the selected contract/workspace and immutable current commercial hash, with private no-store attachment responses.",
+        "revocation": "Token expiry/revoke, acceptance revoke, inactive/denied/reassigned issuer, changed material document or removed attachment. The live boundary runs before and after IO.",
+        "review_by": "2027-02-26"
       }
     }
   ],

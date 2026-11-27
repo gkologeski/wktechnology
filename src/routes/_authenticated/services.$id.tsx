@@ -35,6 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { ServiceExecutionButton } from "@/components/services/service-execution-button";
 export const Route = createFileRoute("/_authenticated/services/$id")({
   head: () => ({ meta: [{ title: "Serviço" }] }),
   component: Order3RouteAccess,
@@ -138,6 +139,9 @@ function ServiceDetail() {
       toast.success("Alterações salvas.");
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["services"] });
+      qc.invalidateQueries({ queryKey: ["contract-acceptance"] });
+      qc.invalidateQueries({ queryKey: ["contract-services", row?.contract_id] });
+      qc.invalidateQueries({ queryKey: ["journey-services"] });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -150,7 +154,7 @@ function ServiceDetail() {
       const res = (await activate({ data: { id } })) as { billing_hold?: string | null } | null;
       toast.success(
         res?.billing_hold === "awaiting_signature"
-          ? "Serviço ativado. A cobrança será gerada quando o contrato for assinado."
+          ? "Serviço ativado. Cobrança retida até a liberação do contrato por aceite ou assinatura."
           : "Serviço ativado.",
       );
       qc.invalidateQueries({ queryKey: ["service", id] });
@@ -219,11 +223,19 @@ function ServiceDetail() {
           </Badge>
           {row.billing_hold === "awaiting_signature" ? (
             <Badge variant="outline" role="status">
-              Cobrança aguardando assinatura do contrato
+              {row.role === "provider"
+                ? "Cobrança retida · conferir aceite ou assinatura"
+                : "Cobrança aguardando assinatura do contrato"}
             </Badge>
           ) : null}
         </div>
         <div className="flex items-center gap-2">
+          <ServiceExecutionButton
+            serviceId={id}
+            status={row.status}
+            contractId={row.contract_id}
+            canUpdate={access.for(id).can_update}
+          />
           {row.status === "pending" && canBill ? (
             <WorkAction resource="techservice.services" action="update" id={id}>
               <Button variant="outline" onClick={activateNow}>
@@ -252,6 +264,22 @@ function ServiceDetail() {
         </div>
       </div>
 
+      {row.execution_completion && (
+        <section className="rounded-md bg-muted/40 p-4 text-sm" aria-label="Conclusão da execução">
+          <p className="font-medium">
+            Execução concluída em{" "}
+            {row.execution_completion.completed_on.split("-").reverse().join("/")}.
+          </p>
+          <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+            {row.execution_completion.reason}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Registrada em {formatDateTime(row.execution_completion.created_at)}. A assinatura e a
+            cobrança são acompanhadas separadamente.
+          </p>
+        </section>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -273,18 +301,31 @@ function ServiceDetail() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={status} onValueChange={setStatus}>
+                <Select
+                  value={status}
+                  onValueChange={setStatus}
+                  disabled={row.status === "completed"}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>
+                      <SelectItem
+                        key={k}
+                        value={k}
+                        disabled={k === "completed" && row.status !== "completed"}
+                      >
                         {v}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  {row.status === "completed"
+                    ? "Execução já concluída. O registro auditado é preservado."
+                    : "Para registrar a entrega com data e motivo, use Concluir execução."}
+                </p>
               </div>
               {row.type === "recurring" ? (
                 <div className="space-y-2">

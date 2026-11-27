@@ -8,7 +8,7 @@ route_pattern:
 min_permission:
 audience: internal
 sort_order: 3
-version: 1
+version: 2
 is_published: true
 ---
 # Permissões do TechContracts
@@ -26,6 +26,10 @@ Artigos internos usam o acesso ao módulo e às permissões efetivas do workspac
 | Modelos | techcontracts.contract_templates: view, create, update, delete |
 | Padrões | techcontracts.defaults: view; salvar exige manage e techcontracts.contracts.update.workspace |
 | Serviços | techservice.services: view, create, update, delete no escopo aplicável |
+| Concluir execução | Atualização do serviço + techservice.service_execution.manage.workspace; não concede faturamento |
+| Compartilhar aceite do contrato | Leitura e atualização do contrato + techcontracts.contract_acceptance.manage.workspace e leitura de techcontracts.financials no escopo autorizado |
+| Registrar aceite recebido | Leitura e atualização do contrato + techcontracts.contract_acceptance.approve.workspace, com evidência do cliente |
+| Liberar faturamento por aceite | Aceite vigente de contrato de prestação + techcontracts.contract_acceptance_billing.manage.workspace, cobrança e criação/leitura financeira verificadas no servidor |
 | Associação ao catálogo | Caminho da ficha exige techservice.services.create.own |
 | Evidência de assinatura | techcontracts.signature_evidence.view.workspace; gerenciar exige manage.workspace e capacidade do servidor |
 | Preparação de assinatura | Também criação em techcontracts.esign no escopo aceito |
@@ -43,3 +47,5 @@ O material preserva o comportamento existente. Diferenças entre menu, tela e co
 ## Relacionados
 - [Aprovações](/ajuda/contracts/iniciar-aprovacoes)
 - [Medições](/ajuda/contracts/preparar-medicao)
+- [Aceite comercial do contrato](/ajuda/contracts/aceitar-contrato)
+- [Concluir execução](/ajuda/contracts/concluir-execucao-servico)

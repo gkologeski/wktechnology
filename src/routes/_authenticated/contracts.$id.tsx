@@ -1,4 +1,5 @@
 import { ContractAttachmentsCard } from "@/components/contracts/contract-attachments-card";
+import { ContractAcceptanceCard } from "@/components/contracts/contract-acceptance-card";
 import { serviceTypeLabel } from "@/lib/contracts/import-schemas";
 import { ContractSignatureCard } from "@/components/hiring/contract-signature-card";
 import { ContractLegacyPanel } from "@/components/contracts/legacy/contract-legacy-panel";
@@ -307,6 +308,22 @@ function ContractDetail() {
     contract?.contracting_legal_entity_id ??
     (contract as { legal_entity_id?: string | null } | null)?.legal_entity_id ??
     "";
+  const acceptanceHasUnsavedChanges =
+    !!contract &&
+    (title.trim() !== (contract.title ?? "").trim() ||
+      role !== contract.role ||
+      status !== contract.status ||
+      documentKind !==
+        ((contract as { document_kind?: string }).document_kind === "amendment"
+          ? "amendment"
+          : "main") ||
+      totalValue !== Number(contract.total_value ?? 0) ||
+      startsAt !== (contract.starts_at?.slice(0, 10) ?? "") ||
+      endsAt !== (contract.ends_at?.slice(0, 10) ?? "") ||
+      autoRenew !== Boolean(contract.auto_renew) ||
+      noticeDays !== Number(contract.notice_days ?? 30) ||
+      bodyHtml !== (contract.body_html ?? "") ||
+      legalEntityId !== savedLegalEntityId);
   const hasAcceptedDraft = Boolean(
     contract?.metadata &&
     typeof contract.metadata === "object" &&
@@ -384,6 +401,7 @@ function ContractDetail() {
       qc.invalidateQueries({ queryKey: ["contract", id] });
       qc.invalidateQueries({ queryKey: ["contract-link-events", id] });
       qc.invalidateQueries({ queryKey: ["contracts"] });
+      qc.invalidateQueries({ queryKey: ["contract-acceptance"] });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -762,10 +780,20 @@ function ContractDetail() {
             />
           ) : null}
 
+          {legacy.gate !== "discarded" && (
+            <ContractAcceptanceCard
+              contractId={contract.id}
+              role={contract.role}
+              hasUnsavedChanges={acceptanceHasUnsavedChanges}
+            />
+          )}
+
           <ContractPaymentTermsCard
             raw={(contract as { payment_terms?: unknown }).payment_terms}
             total={Number(contract.total_value ?? 0)}
             currency={contract.currency ?? "BRL"}
+            startsAt={contract.starts_at}
+            signedAt={contract.signed_at}
           />
 
           <Card>

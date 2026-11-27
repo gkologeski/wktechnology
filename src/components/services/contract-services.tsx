@@ -21,6 +21,7 @@ import { SENIORITY_LABEL } from "@/lib/job-profiles-shared";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { formatLineItemIdentity } from "@/lib/line-item-display";
 import { LinkCatalogServiceDialog } from "@/components/services/link-catalog-service-dialog";
+import { ServiceExecutionButton } from "@/components/services/service-execution-button";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Pendente",
@@ -107,7 +108,7 @@ export function ContractServices({
       const res = (await activate({ data: { id } })) as { billing_hold?: string | null } | null;
       toast.success(
         res?.billing_hold === "awaiting_signature"
-          ? "Serviço ativado. A cobrança será gerada quando o contrato for assinado."
+          ? "Serviço ativado. Cobrança retida até a liberação do contrato por aceite ou assinatura."
           : "Serviço ativado.",
       );
       qc.invalidateQueries({ queryKey: ["contract-services", contractId] });
@@ -229,11 +230,24 @@ export function ContractServices({
                 ) : null}
                 {s.billing_hold === "awaiting_signature" ? (
                   <p className="mt-1 text-xs text-muted-foreground" role="status">
-                    Cobrança aguardando assinatura do contrato.
+                    {s.role === "provider"
+                      ? "Cobrança retida. Confira o aceite comercial ou a assinatura no contrato."
+                      : "Cobrança aguardando assinatura do contrato."}
                   </p>
                 ) : null}
-                {s.status === "pending" && writable && capabilities.for(s.id).can_update ? (
-                  <div className="mt-2">
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {s.status === "pending" &&
+                  writable &&
+                  capabilities.for(s.id).can_update &&
+                  permissions.can("techservice.billing.manage.workspace") &&
+                  permissions.canAny([
+                    "techfinance.entries.create.own",
+                    "techfinance.entries.create.workspace",
+                  ]) &&
+                  permissions.canAny([
+                    "techfinance.entries.view.own",
+                    "techfinance.entries.view.workspace",
+                  ]) ? (
                     <Button
                       size="sm"
                       variant="outline"
@@ -243,8 +257,14 @@ export function ContractServices({
                       <Play className="h-3.5 w-3.5 mr-1" />
                       {activatingId === s.id ? "Ativando…" : "Ativar"}
                     </Button>
-                  </div>
-                ) : null}
+                  ) : null}
+                  <ServiceExecutionButton
+                    serviceId={s.id}
+                    status={s.status}
+                    canUpdate={writable && capabilities.for(s.id).can_update}
+                    contractId={contractId}
+                  />
+                </div>
               </div>
             );
           })}

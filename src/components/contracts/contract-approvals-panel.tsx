@@ -47,6 +47,12 @@ const EVENT_LABEL: Record<string, string> = {
   approvals_reset: "Fluxo de aprovação reiniciado",
   approval_approved: "Etapa aprovada",
   approval_rejected: "Etapa rejeitada",
+  commercial_accepted: "Aceite comercial do contrato registrado",
+  commercial_acceptance_link_created: "Link de aceite comercial criado",
+  commercial_acceptance_link_revoked: "Link de aceite comercial revogado",
+  commercial_acceptance_revoked: "Aceite comercial revogado",
+  commercial_acceptance_billing_released: "Faturamento liberado pelo aceite comercial",
+  service_execution_completed: "Execução do serviço concluída",
 };
 
 export function ContractApprovalsPanel({ contractId }: { contractId: string }) {

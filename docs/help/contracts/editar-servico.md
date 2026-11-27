@@ -8,7 +8,7 @@ route_pattern: /services/$id
 min_permission:
 audience: internal
 sort_order: 81
-version: 2
+version: 3
 is_published: true
 ---
 # Editar a ficha de um serviço
@@ -34,6 +34,8 @@ A mensagem "Alterações salvas." confirma a gravação.
 - Direção é A receber quando a WK presta o serviço; no caso contrário, A pagar.
 - Lançamentos gerados mostram até 50 registros recentes por vencimento, com acesso financeiro próprio.
 - Salvar o status Ativo não executa o mesmo procedimento da ação "Ativar".
+- Para registrar a entrega, use **Concluir execução**, informe a data real e a comprovação. A ação permite concluir a execução com assinatura pendente, inclusive em serviços do tipo Único, e preserva a cobrança retida quando ainda não há liberação válida.
+- Alterar Status não substitui o registro da conclusão nem o aceite comercial ou a assinatura do contrato.
 
 ## Erros comuns
 "Serviço não encontrado.": volte à lista. "Nenhum lançamento ainda." não significa falha; pode não haver lançamento ou acesso financeiro.
@@ -41,3 +43,5 @@ A mensagem "Alterações salvas." confirma a gravação.
 ## Relacionados
 - [Ativar serviço](/ajuda/contracts/ativar-servico)
 - [Consultar serviços](/ajuda/contracts/consultar-servicos)
+- [Concluir a execução de um serviço](/ajuda/contracts/concluir-execucao-servico)
+- [Registrar o aceite do contrato e liberar faturamento](/ajuda/contracts/aceitar-contrato)

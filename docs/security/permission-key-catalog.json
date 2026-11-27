@@ -678,6 +678,9 @@
     "techcontracts.clauses.delete.workspace",
     "techcontracts.clauses.update.workspace",
     "techcontracts.clauses.view.workspace",
+    "techcontracts.contract_acceptance.approve.workspace",
+    "techcontracts.contract_acceptance.manage.workspace",
+    "techcontracts.contract_acceptance_billing.manage.workspace",
     "techcontracts.contract_activation.manage.workspace",
     "techcontracts.contract_draft_approvers.manage.workspace",
     "techcontracts.contract_draft_client_bypass.approve.workspace",
@@ -2842,6 +2845,7 @@
     "techservice.products.view.own",
     "techservice.products.view.team",
     "techservice.products.view.workspace",
+    "techservice.service_execution.manage.workspace",
     "techservice.services.assign.workspace",
     "techservice.services.create.own",
     "techservice.services.create.team",
@@ -3242,6 +3246,18 @@
     },
     "system.whatsapp_templates.delete.workspace": {
       "migration": "drizzle/migrations/0403_whatsapp_template_center.sql"
+    },
+    "techcontracts.contract_acceptance.approve.workspace": {
+      "migration": "drizzle/migrations/0483_contract_commercial_acceptance.sql"
+    },
+    "techcontracts.contract_acceptance.manage.workspace": {
+      "migration": "drizzle/migrations/0483_contract_commercial_acceptance.sql"
+    },
+    "techcontracts.contract_acceptance_billing.manage.workspace": {
+      "migration": "drizzle/migrations/0483_contract_commercial_acceptance.sql"
+    },
+    "techservice.service_execution.manage.workspace": {
+      "migration": "drizzle/migrations/0483_contract_commercial_acceptance.sql"
     }
   }
 }
