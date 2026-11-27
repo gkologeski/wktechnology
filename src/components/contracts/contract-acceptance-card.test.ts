@@ -13,6 +13,7 @@ const m = vi.hoisted(() => ({
   revokeLink: vi.fn(),
   keys: new Set<string>(),
   readonly: false,
+  parentUpdate: true,
   selectedDate: "2026-11-26",
 }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (f: unknown) => f }));
@@ -33,6 +34,9 @@ vi.mock("@/lib/access-control/use-permissions", () => ({
   }),
 }));
 vi.mock("@/lib/view-as-client", () => ({ readViewAs: () => ({ readOnly: m.readonly }) }));
+vi.mock("@/lib/access-control/use-work-capabilities", () => ({
+  useWorkCapabilities: () => ({ for: () => ({ can_update: m.parentUpdate }) }),
+}));
 vi.mock("@/components/iso-date-picker", () => ({
   IsoDatePicker: ({
     id,
@@ -78,6 +82,7 @@ beforeEach(() => {
     "techfinance.entries.view.workspace",
   ]);
   m.readonly = false;
+  m.parentUpdate = true;
   m.selectedDate = "2026-11-26";
   m.get.mockResolvedValue(fixture());
   m.record.mockResolvedValue({ accepted: true });
@@ -237,5 +242,54 @@ it("keeps the originally reviewed hash and blocks a form if the current version 
   await flush();
   expect(document.body.textContent).toContain("O documento mudou durante esta conferência");
   expect(button("Confirmar aceite recebido")?.disabled).toBe(true);
+  expect(m.record).not.toHaveBeenCalled();
+});
+it("allows link cleanup after sharing access is revoked without requiring the acceptance approval key", async () => {
+  m.keys = new Set([
+    "techcontracts.contracts.view.workspace",
+    "techcontracts.contract_acceptance.manage.workspace",
+  ]);
+  m.get.mockResolvedValue(
+    fixture({ canRecord: false, canManageLinks: false, canReleaseBilling: false }),
+  );
+  m.revokeLink.mockResolvedValue(fixture({ canManageLinks: false }));
+  await render();
+  expect(button("Gerar link de aceite")).toBeUndefined();
+  expect(button("Registrar aceite recebido")).toBeUndefined();
+  await click("Revogar links pendentes");
+  expect(m.revokeLink).toHaveBeenCalledWith({ data: { contractId: "c" } });
+  expect(m.createLink).not.toHaveBeenCalled();
+  expect(m.record).not.toHaveBeenCalled();
+});
+it("hides link cleanup after losing parent update access even with a readable loaded acceptance state", async () => {
+  m.get.mockResolvedValue(
+    fixture({ canRecord: false, canManageLinks: false, canReleaseBilling: false }),
+  );
+  await render();
+  expect(button("Revogar links pendentes")).toBeTruthy();
+  m.parentUpdate = false;
+  await render();
+  expect(button("Revogar links pendentes")).toBeUndefined();
+  expect(m.revokeLink).not.toHaveBeenCalled();
+});
+it("keeps cleanup available for a previously issued link after sharing access is removed", async () => {
+  m.createLink.mockResolvedValue({
+    path: `/contract-acceptance/${"a".repeat(64)}`,
+    expiresAt: "2026-12-01T12:00:00Z",
+  });
+  await render();
+  await click("Gerar link de aceite");
+  m.keys.delete("techcontracts.contract_acceptance.approve.workspace");
+  m.get.mockResolvedValue(fixture({ canRecord: false, canManageLinks: false }));
+  await act(async () =>
+    qc.setQueryData(
+      ["contract-acceptance", "w", "c", ""],
+      fixture({ canRecord: false, canManageLinks: false }),
+    ),
+  );
+  await flush();
+  expect(button("Gerar link de aceite")).toBeUndefined();
+  await click("Revogar link de aceite");
+  expect(m.revokeLink).toHaveBeenCalledWith({ data: { contractId: "c" } });
   expect(m.record).not.toHaveBeenCalled();
 });

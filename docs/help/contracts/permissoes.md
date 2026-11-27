@@ -28,7 +28,8 @@ Artigos internos usam o acesso ao módulo e às permissões efetivas do workspac
 | Padrões | techcontracts.defaults: view; salvar exige manage e techcontracts.contracts.update.workspace |
 | Serviços | techservice.services: view, create, update, delete no escopo aplicável |
 | Concluir execução | Atualização do serviço + techservice.service_execution.manage.workspace; não concede faturamento |
-| Compartilhar aceite do contrato | Leitura e atualização do contrato + techcontracts.contract_acceptance.manage.workspace e leitura de techcontracts.financials no escopo autorizado |
+| Gerar link de aceite | Leitura e atualização do contrato + techcontracts.contract_acceptance.manage.workspace e techcontracts.esign_share.manage.workspace (Compartilhar links de assinaturas eletrônicas — workspace) |
+| Revogar links de aceite | Leitura e atualização do contrato + techcontracts.contract_acceptance.manage.workspace; retirar o acesso ao link não exige a autoridade adicional de compartilhamento |
 | Registrar aceite recebido | Leitura e atualização do contrato + techcontracts.contract_acceptance.approve.workspace, com evidência do cliente |
 | Liberar faturamento por aceite | Aceite vigente de contrato de prestação + techcontracts.contract_acceptance_billing.manage.workspace, cobrança e criação/leitura financeira verificadas no servidor |
 | Associação ao catálogo | Caminho da ficha exige techservice.services.create.own |
@@ -38,6 +39,8 @@ Artigos internos usam o acesso ao módulo e às permissões efetivas do workspac
 | Provisões | techfinance.provisions e acesso a tarifas de TechProjects, conforme ação |
 
 Escopos own, team e workspace não são intercambiáveis. Um botão visível não comprova autorização. Responsável pelo cadastro é informação operacional, não substitui controle de acesso.
+
+A permissão existente **Compartilhar links de assinaturas eletrônicas — workspace** (`techcontracts.esign_share.manage.workspace`) representa a autoridade para compartilhar publicamente o contrato. Gerar links de aceite exige também a permissão específica de aceite. A revogação utiliza a autorização de gerenciar o aceite e o acesso ao contrato. O aceite comercial continua separado da assinatura e não preenche assinaturas do cliente.
 
 ## Ações especiais
 Enviar, cancelar e compartilhar assinatura, aprovar ou gerar medição e revisar provisões possuem verificações próprias. Acesso ao módulo não concede essas ações. Para mudar acesso, procure o responsável pelas permissões; não use outra conta nem tente contornar pela URL.

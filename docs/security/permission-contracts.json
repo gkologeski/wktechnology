@@ -28778,7 +28778,8 @@
         "techservice.services",
         "techservice.service_execution",
         "techservice.billing",
-        "techfinance.entries"
+        "techfinance.entries",
+        "techcontracts.esign_share"
       ],
       "actions": [
         "view",
@@ -28800,13 +28801,14 @@
         "techcontracts.contracts.view.workspace",
         "techcontracts.contracts.update.workspace",
         "techservice.billing.manage.workspace",
-        "techfinance.entries.create.workspace"
+        "techfinance.entries.create.workspace",
+        "techcontracts.esign_share.manage.workspace"
       ],
-      "rationale": "Commercial acceptance is distinct from signature and execution. Authenticated actions use the caller RLS client and SQL current active workspace, membership, record scope, readonly and per-action deny checks. New keys grant no roles automatically. Explicit Finance release preserves internal approvals, creates provider receivables only using the held schedule and agreed due date, never sets signature fields, and is idempotent. Public read/assent is limited to a revocable 256-bit hashed capability for the current immutable commercial revision, requiring a currently active authorized issuer; no finance or signature is possible via the public boundary. Completion stores dated proof with no financial mutation. Canonical old activation grants remain enforced. Real managed Postgres default function/table grants are reproduced in isolated SQL tests. Private helpers and authenticated-only new RPCs explicitly revoke inherited service-role EXECUTE. The five private proof/cache tables also revoke optional sandbox/request-writer raw grants, including a BYPASSRLS sandbox role, without altering global defaults.",
+      "rationale": "Commercial acceptance is distinct from signature and execution. Authenticated actions use the caller RLS client and SQL current active workspace, membership, record scope, readonly and per-action deny checks. New keys grant no roles automatically. Explicit Finance release preserves internal approvals, creates provider receivables only using the held schedule and agreed due date, never sets signature fields, and is idempotent. Public read/assent is limited to a revocable 256-bit hashed capability for the current immutable commercial revision, requiring a currently active authorized issuer; no finance or signature is possible via the public boundary. Completion stores dated proof with no financial mutation. Canonical old activation grants remain enforced. Real managed Postgres default function/table grants are reproduced in isolated SQL tests. Private helpers and authenticated-only new RPCs explicitly revoke inherited service-role EXECUTE. The five private proof/cache tables also revoke optional sandbox/request-writer raw grants, including a BYPASSRLS sandbox role, without altering global defaults. Installation tests load the original canonical RBAC DDL (label_pt/is_system, enum action/scope and required defaults), not a permissive synthetic table. These two corrected migration headers have never been applied; the failed install was fully rolled back and the ledger remains at 0482. Generating and resolving a public acceptance link require the existing registered esign_share.manage.workspace authority, current parent view/update and the new acceptance manage key; nonexistent financial-view keys are not used. Links-only revocation retains acceptance management and parent update for privacy cleanup after sharing authority is lost.",
       "files": {
-        "drizzle/migrations/0483_contract_commercial_acceptance.sql": "0d75a9e26ab29c03b199905078a6939ec76e40591a2d9e3ac4ef83a6ebb61536",
+        "drizzle/migrations/0483_contract_commercial_acceptance.sql": "635b2e290194d28c52f621bca622baa1c33d7e53f6d369698e67168a2926a4d0",
         "src/lib/contracts/acceptance.functions.ts": "7930fc4fa5b0e9bc594121279c15262204900d9ecf82fe5ecc14fca1a006182d",
-        "src/components/contracts/contract-acceptance-card.tsx": "8c983c9111b4c87d640f039df0e0b61c2d35cd3e1b9ce77476934863a68e5160",
+        "src/components/contracts/contract-acceptance-card.tsx": "e7d7dd6b08abb8fc2a9e15a489e5cc1930f2ba2227a9a30f2ea14f24a1d0ff7c",
         "src/routes/contract-acceptance.$token.tsx": "6c9bd5a0dc0d2e8458ccdb6652335f3cc5ef291a51901abc7510fca1a327a4de",
         "src/components/services/service-execution-button.tsx": "8f1a4f7fd1b1cf2d61828f2f34ffcb0a1c187f0c2a33133ffba50f1296e63a4a"
       },
@@ -28990,7 +28992,8 @@
         "techcontracts.contract_acceptance",
         "techcontracts.contracts",
         "techsales.quotes",
-        "techsales.proposals"
+        "techsales.proposals",
+        "techcontracts.esign_share"
       ],
       "actions": [
         "view",
@@ -29003,9 +29006,10 @@
       ],
       "permission_keys": [
         "techcontracts.contract_acceptance.manage.workspace",
-        "techcontracts.contracts.view.workspace"
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.esign_share.manage.workspace"
       ],
-      "rationale": "Public read capability authorizes only a ready attachment from its exact current provider contract and workspace; issuer active membership, current parent scope/financial view/manage and current content are checked by the canonical acceptance token RPC. Attachment metadata and private paths remain server-only. Original/frozen bytes require stored SHA256; unfrozen commercial PDFs use only the SQL-selected source with workspace validation. Capability/content is rechecked after download/render. No signature, assent or finance write. Independent PG tests verify same/foreign attachment and all token revocations; unit tests verify no privileged IO on denial and post-render revalidation.",
+      "rationale": "Public read capability authorizes only a ready attachment from its exact current provider contract and workspace; issuer active membership, current parent view/update scope, registered external-document sharing authority and acceptance-link management and current content are checked by the canonical acceptance token RPC. Attachment metadata and private paths remain server-only. Original/frozen bytes require stored SHA256; unfrozen commercial PDFs use only the SQL-selected source with workspace validation. Capability/content is rechecked after download/render. No signature, assent or finance write. Independent PG tests verify same/foreign attachment and all token revocations; unit tests verify no privileged IO on denial and post-render revalidation. Generating and resolving a public acceptance link require the existing registered esign_share.manage.workspace authority, current parent view/update and the new acceptance manage key; nonexistent financial-view keys are not used. Links-only revocation retains acceptance management and parent update for privacy cleanup after sharing authority is lost.",
       "files": {
         "drizzle/migrations/0485_contract_acceptance_public_attachments.sql": "a744b66d6e2208ff34db84be83893d6c839a9123015665c48a1ffac4e55fc887",
         "src/lib/contracts/acceptance-attachment.server.ts": "55ba3bbed8724e608d2f7bfe7dd880eb3985ae9263044c9752b86ae551e114f2",
@@ -29094,9 +29098,9 @@
         "techcontracts.contracts.view.workspace",
         "techcontracts.contracts.update.workspace"
       ],
-      "rationale": "An explicitly authorized active member may assume a current pending approval personally, never impersonating the previous assignee or deciding through the substitution endpoint. Requires the sensitive substitution key plus exact workspace approval manage/approve, parent update and record visibility, with effective deny and readonly enforced under the caller. No existing role receives a grant. Parent-first lock, current assignee CAS and reauthorization protect concurrent review. Canonical decide still enforces assignment and prior-stage order. Existing matching pending handoff/task is retargeted without changing deadlines, creator, task id or decision; immutable events preserve original assignee, actual actor and required reason. Context is finite and excludes hidden approvals. Standalone PostgreSQL tests exercise actual RBAC, SQL and canonical decide. Query cache keys include active workspace and effective permissions; cached approvals and audit details are hidden immediately when parent or area visibility is revoked. UI regressions cover permission revocation and workspace transitions. Real managed Postgres default function/table grants are reproduced in isolated SQL tests. Private helpers and authenticated-only new RPCs explicitly revoke inherited service-role EXECUTE. The five private proof/cache tables also revoke optional sandbox/request-writer raw grants, including a BYPASSRLS sandbox role, without altering global defaults.",
+      "rationale": "An explicitly authorized active member may assume a current pending approval personally, never impersonating the previous assignee or deciding through the substitution endpoint. Requires the sensitive substitution key plus exact workspace approval manage/approve, parent update and record visibility, with effective deny and readonly enforced under the caller. No existing role receives a grant. Parent-first lock, current assignee CAS and reauthorization protect concurrent review. Canonical decide still enforces assignment and prior-stage order. Existing matching pending handoff/task is retargeted without changing deadlines, creator, task id or decision; immutable events preserve original assignee, actual actor and required reason. Context is finite and excludes hidden approvals. Standalone PostgreSQL tests exercise actual RBAC, SQL and canonical decide. Query cache keys include active workspace and effective permissions; cached approvals and audit details are hidden immediately when parent or area visibility is revoked. UI regressions cover permission revocation and workspace transitions. Real managed Postgres default function/table grants are reproduced in isolated SQL tests. Private helpers and authenticated-only new RPCs explicitly revoke inherited service-role EXECUTE. The five private proof/cache tables also revoke optional sandbox/request-writer raw grants, including a BYPASSRLS sandbox role, without altering global defaults. Installation tests load the original canonical RBAC DDL (label_pt/is_system, enum action/scope and required defaults), not a permissive synthetic table. These two corrected migration headers have never been applied; the failed install was fully rolled back and the ledger remains at 0482.",
       "files": {
-        "drizzle/migrations/0486_contract_approval_substitution.sql": "a4604f8541349fb8f35a23ce0771d48ecbfbbe2d8a5288371a1a0e755d1221f9",
+        "drizzle/migrations/0486_contract_approval_substitution.sql": "3a39a8ed4d3fb56889cbaebbb9b0e398ab0bbb5b6589d5af81f759e547ee8135",
         "src/lib/contracts/approval-substitution.functions.ts": "41470608789a3262603a3bc4a42be243d2a072d302eb977f09cfa71d17410d4f",
         "src/components/contracts/contract-approvals-panel.tsx": "cff4ae111d50dd20209ee61c97eddbbaf8119506c7d3e400c65ed68f4faeef81"
       },

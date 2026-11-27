@@ -169,6 +169,16 @@ beforeAll(async () => {
   }
   if (!ready) throw Error("Disposable PostgreSQL did not start");
   await db.unsafe(readFileSync("tests/fixtures/permission-postgres-ci.sql", "utf8"));
+  // Install the real catalogue before loading domain functions. A permissive
+  // mock must never invent columns to make a new migration appear compatible.
+  await db.unsafe("DROP TABLE public.permissions; DROP TYPE public.perm_action;");
+  const rbacSource = readFileSync(
+    "supabase/migrations/20260702145220_0423591a-1165-453f-8ced-e86718fead46.sql",
+    "utf8",
+  );
+  const catalogueEnd = rbacSource.indexOf("CREATE TABLE IF NOT EXISTS public.permission_sets");
+  if (catalogueEnd < 0) throw Error("Missing canonical permissions catalogue DDL");
+  await db.unsafe(rbacSource.slice(0, catalogueEnd));
   for (const [file, name] of [
     ["drizzle/migrations/0031_workspace_members_status_inactive.sql", "is_workspace_member"],
     ["drizzle/migrations/0127_rbac_wk_vis_local_per_role.sql", "user_effective_permissions"],
@@ -179,8 +189,7 @@ beforeAll(async () => {
     ["drizzle/migrations/0218_order3_completion_prepare.sql", "work_context_access"],
   ])
     await db.unsafe(sourceFunction(file, name));
-  await db.unsafe(`ALTER TABLE permissions ADD COLUMN label text,ADD COLUMN is_sensitive boolean;
-    ALTER TABLE profiles ADD COLUMN full_name text;
+  await db.unsafe(`ALTER TABLE profiles ADD COLUMN full_name text;
     CREATE TYPE contract_status AS ENUM('draft','in_review','in_negotiation','awaiting_signature','active','renewing','ended','terminated');
     CREATE TYPE contract_approval_status AS ENUM('pending','approved','rejected');
     CREATE TYPE contract_approval_stage AS ENUM('legal','finance','purchasing');
@@ -252,7 +261,7 @@ beforeAll(async () => {
   await db`insert into job_roles(id,workspace_id) values(${R},${W}),(${OR},${W})`;
   await db`insert into user_job_roles(role_id,user_id,workspace_id,owner_id) values(${R},${U},${W},${U}),(${OR},${O},${W},${O})`;
   for (const key of KEYS) {
-    await db`insert into permissions(key,module,resource,action,scope) values(${key},'fixture','fixture','view','workspace') on conflict(key) do nothing`;
+    await db`insert into permissions(key,module,resource,action,scope,label_pt,is_system) values(${key},'fixture','fixture','view','workspace',${key},true) on conflict(key) do nothing`;
     for (const role of [R, OR])
       await db`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${role},${key},'grant')`;
   }
@@ -387,6 +396,56 @@ it("approval substitution SQL rejects inactive membership", async () => {
       { inactive: true },
     ),
   ).rejects.toMatchObject({ code: "42501" });
+});
+
+it("approval substitution installs against the canonical strict permissions catalogue", async () => {
+  const columns = await db`
+    select column_name,is_nullable,column_default,udt_name
+    from information_schema.columns
+    where table_schema='public' and table_name='permissions'
+    order by ordinal_position`;
+  expect(columns.map((column) => column.column_name)).toEqual([
+    "key",
+    "module",
+    "resource",
+    "action",
+    "scope",
+    "label_pt",
+    "description",
+    "is_system",
+    "created_at",
+  ]);
+  expect(columns.find((column) => column.column_name === "action")).toMatchObject({
+    udt_name: "perm_action",
+    is_nullable: "NO",
+  });
+  expect(columns.find((column) => column.column_name === "scope")).toMatchObject({
+    udt_name: "perm_scope",
+    is_nullable: "NO",
+  });
+  expect(columns.find((column) => column.column_name === "label_pt")).toMatchObject({
+    is_nullable: "NO",
+    column_default: null,
+  });
+  expect(columns.find((column) => column.column_name === "is_system")).toMatchObject({
+    is_nullable: "NO",
+    column_default: "true",
+  });
+  expect(columns.find((column) => column.column_name === "created_at")).toMatchObject({
+    is_nullable: "NO",
+    column_default: "now()",
+  });
+  const [registered] =
+    await db`select module,resource,action::text,scope::text,label_pt,is_system,created_at is not null as timestamped from permissions where key=${KEY}`;
+  expect(registered).toEqual({
+    module: "techcontracts",
+    resource: "approval_substitution",
+    action: "manage",
+    scope: "workspace",
+    label_pt: "Assumir etapa de aprovação de contrato",
+    is_system: true,
+    timestamped: true,
+  });
 });
 
 it("explicit substitution RPC ACLs close inherited default execute grants", async () => {

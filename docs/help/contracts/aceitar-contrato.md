@@ -38,7 +38,8 @@ O contrato mostra o aceite comercial e sua evidência. A liberação autorizada 
 - Substituir o vencimento pelo valor combinado é permitido para uma parcela única. Cronogramas parcelados devem ser conferidos no contrato; parcelas por marco seguem a medição e o aceite da entrega.
 - O aceite corresponde à versão apresentada. Alterações relevantes no conteúdo ou nas condições impedem o uso do aceite antigo; obtenha um novo aceite antes de nova liberação. O histórico permanece preservado.
 - Link vencido, revogado ou de outra versão não permite uma nova decisão válida.
-- Compartilhar o documento exige acesso aos dados financeiros do contrato. Se o emissor perder seu acesso ou deixar de ser membro ativo, o link fica indisponível; outra pessoa autorizada deve gerar um novo link.
+- Gerar um link exige leitura e atualização do contrato, `techcontracts.contract_acceptance.manage.workspace` e a permissão existente **Compartilhar links de assinaturas eletrônicas — workspace** (`techcontracts.esign_share.manage.workspace`), que representa a autoridade de compartilhar o contrato publicamente. O aceite continua separado da assinatura. Se o emissor perder essa autoridade, o acesso ao contrato ou seu vínculo ativo com o workspace, o link fica indisponível; outra pessoa autorizada deve gerar um novo link.
+- Revogar links utiliza a permissão de gerenciar o aceite e o acesso ao contrato. Retirar esse acesso não exige a autoridade adicional de compartilhamento.
 - A assinatura posterior não deve duplicar títulos já gerados pelo aceite. Confira e concilie lançamentos existentes antes de qualquer cobrança adicional.
 - Revogar o aceite ou o link preserva o histórico e os títulos já gerados. A revogação não cancela cobranças: o Financeiro precisa conferir e conciliar esses lançamentos.
 - Não mude o contrato para assinado nem use regularização de legado para substituir um aceite comercial.

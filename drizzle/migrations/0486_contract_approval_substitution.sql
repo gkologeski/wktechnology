@@ -1,6 +1,6 @@
 -- Explicit supervised substitution, independent from the approval decision.
 -- No role or workspace is granted this sensitive capability automatically.
-INSERT INTO public.permissions(key,module,resource,action,scope,label,description,is_sensitive)
+INSERT INTO public.permissions(key,module,resource,action,scope,label_pt,description,is_system)
 VALUES('techcontracts.approval_substitution.manage.workspace','techcontracts','approval_substitution','manage','workspace',
  'Assumir etapa de aprovação de contrato','Assumir pessoalmente uma etapa pendente, com justificativa e histórico do responsável anterior. A decisão continua no nome de quem a realizar.',true)
 ON CONFLICT(key) DO NOTHING;
