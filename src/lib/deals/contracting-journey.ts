@@ -58,7 +58,11 @@ export function journeyOrigins(d: JourneyData) {
       .filter((q) => !d.proposals.some((p) => p.quote_id === q.id && p.status !== "canceled"))
       .map((q) => ({ id: `quote:${q.id}`, label: q.title || q.number || "Cotação" })),
     ...d.contracts
-      .filter((c) => !c.proposal_id || !d.proposals.some((p) => p.id === c.proposal_id))
+      .filter(
+        (c) =>
+          (!c.proposal_id || !d.proposals.some((p) => p.id === c.proposal_id)) &&
+          (c.document_kind !== "amendment" || !!c.proposal_id),
+      )
       .map((c) => ({
         id: `contract:${c.id}`,
         label: `${c.title || c.number || "Contrato"} · origem histórica/restrita`,
@@ -87,9 +91,13 @@ export function selectJourney(d: JourneyData, origin: string | null) {
       d.drafts.find((x) => x.proposal_id === proposal.id) ??
       null)
     : null;
-  const candidates = proposal
+  const mainCandidates = proposal
     ? d.contracts.filter((c) => c.proposal_id === proposal.id && c.document_kind !== "amendment")
     : [];
+  const amendmentCandidates = proposal
+    ? d.contracts.filter((c) => c.proposal_id === proposal.id && c.document_kind === "amendment")
+    : [];
+  const candidates = mainCandidates.length > 0 ? mainCandidates : amendmentCandidates;
   contract = contract ?? candidates[0] ?? null;
   const proposalSigned =
     !!proposal && proposal.status === "accepted" && proposal.locked && !!proposal.decided_at;

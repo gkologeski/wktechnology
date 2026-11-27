@@ -207,6 +207,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
     >(null),
     [quotePreview, setQuotePreview] = useState<string | null>(null),
     [wizard, setWizard] = useState<ContractWizardSource | null>(null),
+    [openedContractId, setOpenedContractId] = useState<string | null>(null),
     [busy, setBusy] = useState(false);
   const writable =
     !readViewAs()?.readOnly && readViewAs()?.mode !== "role" && !p.isLoading && !p.isError;
@@ -269,6 +270,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
     onOriginChange(v);
     setViewed(null);
     setSheet(null);
+    setOpenedContractId(null);
   };
   const openDraft = () => setSheet("draft");
   const createDraft = () =>
@@ -287,6 +289,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
           ...(effectiveEntityId ? { contractingLegalEntityId: effectiveEntityId } : {}),
         },
       });
+      setOpenedContractId(r.contract.id);
       await q.refetch();
       setSheet("contract");
       toast.success(
@@ -401,7 +404,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
               </Link>
             </Button>
           )}
-          {j.contract && canCreateContract && (
+          {j.contract && j.contract.document_kind !== "amendment" && canCreateContract && (
             <PurchaseFromSaleButton saleContractId={j.contract.id} />
           )}
         </div>
@@ -416,7 +419,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
             </Link>
           </Button>
         )}
-        {j.contract && canCreateContract && (
+        {j.contract && j.contract.document_kind !== "amendment" && canCreateContract && (
           <PurchaseFromSaleButton saleContractId={j.contract.id} />
         )}
       </div>
@@ -590,7 +593,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
             )}
             {j.ambiguous && (
               <p role="alert" className="mb-4 rounded-md border p-3 text-sm">
-                Há mais de um contrato principal nesta origem. Abra Documentos para conferir cada
+                Há mais de um contrato vinculado a esta origem. Abra Documentos para conferir cada
                 vínculo; a jornada não presume qual assinatura libera a operação.
               </p>
             )}
@@ -871,6 +874,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
         onOpenChange={(open) => {
           if (!open) {
             setSheet(null);
+            setOpenedContractId(null);
             refresh();
           }
         }}
@@ -948,56 +952,83 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                   </p>
                 </>
               )}
-              {sheet === "contract" && j.contract && (
-                <>
-                  <Button asChild variant="outline">
-                    <Link to="/contracts/$id" params={{ id: j.contract.id }}>
-                      Abrir ficha completa do contrato
-                    </Link>
-                  </Button>
-                  <ApprovalsPanel contractId={j.contract.id} />
-                  <ContractAcceptanceCard contractId={j.contract.id} role="provider" />
-                  {p.can("techcontracts.signature_evidence.view.workspace") && (
-                    <SignatureCard
-                      contractId={j.contract.id}
-                      revisionKey={j.contract.updated_at ?? j.contract.created_at}
-                    />
-                  )}
-                </>
-              )}
+              {sheet === "contract" &&
+                (j.contract ? (
+                  <>
+                    <Button asChild variant="outline">
+                      <Link to="/contracts/$id" params={{ id: j.contract.id }}>
+                        Abrir ficha completa do contrato
+                      </Link>
+                    </Button>
+                    <ApprovalsPanel contractId={j.contract.id} />
+                    <ContractAcceptanceCard contractId={j.contract.id} role="provider" />
+                    {p.can("techcontracts.signature_evidence.view.workspace") && (
+                      <SignatureCard
+                        contractId={j.contract.id}
+                        revisionKey={j.contract.updated_at ?? j.contract.created_at}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <div role="status" className="space-y-3 rounded-md border bg-muted/30 p-4">
+                    <p className="text-sm">
+                      {openedContractId
+                        ? "O contrato desta origem já existe, mas não está visível neste resumo no momento."
+                        : "Nenhum contrato carregado para esta origem no momento."}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {openedContractId && (
+                        <Button asChild variant="outline">
+                          <Link to="/contracts/$id" params={{ id: openedContractId }}>
+                            Abrir ficha completa do contrato
+                          </Link>
+                        </Button>
+                      )}
+                      <Button variant="outline" onClick={() => void q.refetch()}>
+                        Tentar novamente
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               {sheet === "other" && (
                 <>
                   <p className="text-sm text-muted-foreground">
                     Aditivos e renovações começam pelo contrato existente. Não substituem o aceite
                     de uma nova contratação.
                   </p>
-                  {d.contracts
-                    .filter((c) => c.document_kind !== "amendment")
-                    .map((c) => (
-                      <div key={c.id} className="space-y-3 rounded-md border p-4">
-                        <p className="font-medium">{c.title || c.number}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {canCreateContract && (
-                            <Button
-                              size="sm"
-                              onClick={() => setWizard({ dealId, companyId, mainContractId: c.id })}
-                            >
-                              Preparar aditivo
+                  {(() => {
+                    const mainContracts = d.contracts.filter(
+                      (c) => c.document_kind !== "amendment",
+                    );
+                    return mainContracts.length > 0 ? (
+                      mainContracts.map((c) => (
+                        <div key={c.id} className="space-y-3 rounded-md border p-4">
+                          <p className="font-medium">{c.title || c.number}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {canCreateContract && (
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  setWizard({ dealId, companyId, mainContractId: c.id })
+                                }
+                              >
+                                Preparar aditivo
+                              </Button>
+                            )}
+                            <Button size="sm" variant="outline" asChild>
+                              <Link to="/contracts/$id" params={{ id: c.id }}>
+                                Renovação e condições do contrato
+                              </Link>
                             </Button>
-                          )}
-                          <Button size="sm" variant="outline" asChild>
-                            <Link to="/contracts/$id" params={{ id: c.id }}>
-                              Renovação e condições do contrato
-                            </Link>
-                          </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  {d.contracts.length === 0 && (
-                    <p className="text-sm">
-                      Nenhum contrato principal visível para aditivo ou renovação.
-                    </p>
-                  )}
+                      ))
+                    ) : (
+                      <p className="text-sm">
+                        Nenhum contrato principal visível para aditivo ou renovação.
+                      </p>
+                    );
+                  })()}
                   <Button asChild variant="outline">
                     <Link to="/contracts" search={{} as never}>
                       Contratos avulsos no TechContracts

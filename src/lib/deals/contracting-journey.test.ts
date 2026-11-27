@@ -92,10 +92,35 @@ describe("deal contracting journey lineage", () => {
     d.contracts = [{ ...contract, status: "active" }];
     expect(selectJourney(d, null).stage).toBe(3);
   });
-  it("does not select an amendment as the main contract", () => {
+  it("selects a single amendment linked to the proposal when no main contract exists", () => {
     const d = data();
     d.contracts = [{ ...contract, document_kind: "amendment" }];
-    expect(selectJourney(d, null).contract).toBeNull();
+    const j = selectJourney(d, null);
+    expect(j.contract?.id).toBe("c");
+    expect(j.ambiguous).toBe(false);
+  });
+  it("prefers the main contract over an amendment linked to the same proposal", () => {
+    const d = data();
+    d.contracts = [
+      { ...contract, id: "amendment", document_kind: "amendment" },
+      { ...contract, id: "main", document_kind: "main" },
+    ];
+    const j = selectJourney(d, null);
+    expect(j.contract?.id).toBe("main");
+    expect(j.ambiguous).toBe(false);
+  });
+  it("flags ambiguity when multiple amendments share the same proposal without a main contract", () => {
+    const d = data();
+    d.contracts = [
+      { ...contract, id: "a1", document_kind: "amendment" },
+      { ...contract, id: "a2", document_kind: "amendment" },
+    ];
+    expect(selectJourney(d, null).ambiguous).toBe(true);
+  });
+  it("does not list an amendment without a proposal as a separate historical origin", () => {
+    const d = data();
+    d.contracts = [{ ...contract, id: "a1", proposal_id: null, document_kind: "amendment" }];
+    expect(journeyOrigins(d).map((x) => x.id)).toEqual(["proposal:p"]);
   });
   it("flags multiple principal contracts instead of assuming signature is sufficient", () => {
     const d = data();

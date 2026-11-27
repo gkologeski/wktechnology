@@ -48,7 +48,7 @@ it("journey read allows an authorized visible deal with explicit workspace predi
   expect(d.contracts[0]?.legal_approved).toBe(true);
   expect(d.access.drafts).toBe(true);
   expect(f.filters).toContainEqual(["role", "provider"]);
-  expect(f.filters).toContainEqual(["document_kind", "main"]);
+  expect(f.filters).not.toContainEqual(["document_kind", "main"]);
 });
 for (const reason of [
   "missing permission",

@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 1
-version: 8
+version: 9
 is_published: true
 ---
 # Acompanhar a jornada comercial e contratação
@@ -44,7 +44,7 @@ Cotação → proposta aceita → minuta aprovada pelo cliente → contrato e ac
 - A assinatura posterior não deve gerar novamente títulos já liberados pelo aceite. A liberação não emite nota fiscal nem envia cobrança automaticamente.
 - O resumo carrega até 100 documentos por categoria e avisa quando há mais. Use as listagens completas nesse caso.
 - O status **Ativo** não comprova assinatura. A liberação usa a evidência válida da versão atual e as regras do contrato.
-- Aditivos e renovações começam no contrato existente. Contratos avulsos ficam no TechContracts.
+- Quando uma proposta aceita já está vinculada a um aditivo (sem contrato principal próprio), a jornada reconhece esse aditivo no passo **Contrato e assinaturas** sem duplicar o documento. Novos aditivos, renovações e contratações de fornecedor continuam partindo do contrato principal existente; contratos avulsos ficam no TechContracts.
 - Em painéis estreitos, abas e etapas se organizam em mais de uma linha; o histórico usa rótulos de status em português.
 - O papel Financeiro identifica o responsável operacional; não concede privilégios nem fixa uma pessoa.
 

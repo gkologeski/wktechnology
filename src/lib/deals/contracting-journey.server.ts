@@ -31,7 +31,7 @@ export async function loadDealContractingJourney(
       .select(columns)
       .eq("workspace_id", ws)
       .eq("deal_id", dealId);
-    if (table === "contracts") query = query.eq("role", "provider").eq("document_kind", "main");
+    if (table === "contracts") query = query.eq("role", "provider");
     const { data, error } = await query
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })

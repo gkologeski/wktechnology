@@ -79,7 +79,7 @@ vi.mock("@/components/contracts/contract-handoffs", () => ({ ContractHandoffs: (
 vi.mock("@/components/contracts/deal-contracts", () => ({ DealContracts: () => null }));
 vi.mock("@/components/contracts/contract-wizard", () => ({ ContractWizard: () => null }));
 vi.mock("@/components/contracts/purchase-from-sale-dialog", () => ({
-  PurchaseFromSaleButton: () => null,
+  PurchaseFromSaleButton: () => createElement("button", null, "Contratar fornecedor"),
 }));
 vi.mock("@/components/deals/quote-internal-preview", () => ({ QuoteInternalPreview: () => null }));
 vi.mock("@/components/deals/quote-wizard", () => ({ QuoteWizard: () => null }));
@@ -369,4 +369,37 @@ it("hides cached acceptance evidence when contract read access is removed", asyn
   await render();
   expect(state.acceptance).not.toHaveBeenCalled();
   expect(host.textContent).not.toContain("Contrato aceito comercialmente");
+});
+it("recognizes an amendment linked to the accepted proposal and hides main-only supplier purchase", async () => {
+  const d = fixture();
+  d.contracts = [
+    { ...contract, id: "amendment-1", number: "C-202611-5749", document_kind: "amendment" },
+  ];
+  state.get.mockResolvedValue(d);
+  await render();
+  expect(host.textContent).toContain("C-202611-5749");
+  expect(host.textContent).not.toContain("Contratar fornecedor");
+  await click("Conferir aprovações e assinaturas");
+  expect(document.body.textContent).toContain("Abrir ficha completa do contrato");
+});
+it("shows fallback link and retry instead of a blank panel when a reused contract is not in the journey summary", async () => {
+  state.create.mockResolvedValue({ contract: { id: "reused-contract" }, reused: true });
+  await render();
+  await click("Conferir e preparar contrato");
+  await click("Preparar contrato da minuta aceita");
+  expect(document.body.textContent).toContain(
+    "O contrato desta origem já existe, mas não está visível neste resumo no momento.",
+  );
+  expect(document.body.textContent).toContain("Abrir ficha completa do contrato");
+  expect(document.body.textContent).toContain("Tentar novamente");
+});
+it("shows empty principal message in Outras operações when only an amendment exists on the deal", async () => {
+  const d = fixture();
+  d.contracts = [{ ...contract, id: "amendment-1", document_kind: "amendment" }];
+  state.get.mockResolvedValue(d);
+  await render();
+  await click("Outras operações: aditivo, renovação e avulso");
+  expect(document.body.textContent).toContain(
+    "Nenhum contrato principal visível para aditivo ou renovação.",
+  );
 });
