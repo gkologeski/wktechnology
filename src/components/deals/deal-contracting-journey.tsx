@@ -1,4 +1,8 @@
 import { ContractHandoffs } from "@/components/contracts/contract-handoffs";
+import { ContractAcceptanceCard } from "@/components/contracts/contract-acceptance-card";
+import { getContractAcceptance } from "@/lib/contracts/acceptance.functions";
+import { listServices } from "@/lib/services.functions";
+import { journeyExecutionState } from "@/lib/deals/contracting-execution";
 import { PurchaseFromSaleButton } from "@/components/contracts/purchase-from-sale-dialog";
 import { lazy, Suspense, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -117,21 +121,56 @@ function useJourney(dealId: string, origin: string | null) {
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
   });
-  return { q, j, permissions, signature };
+  const listServiceRecords = useServerFn(listServices);
+  const permissionScope = Array.from(permissions.permissions ?? [])
+    .sort()
+    .join("|");
+  const canReadServices =
+    !!j?.contract &&
+    !j.ambiguous &&
+    !!permissions.workspaceId &&
+    !permissions.isLoading &&
+    !permissions.isError &&
+    permissions.canAny(scopeKeys("techservice.services", "view"));
+  const services = useQuery({
+    queryKey: ["journey-services", permissions.workspaceId, j?.contract?.id, permissionScope],
+    queryFn: () => listServiceRecords({ data: { contractId: j!.contract!.id, limit: 500 } }),
+    enabled: canReadServices,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
+    retry: false,
+  });
+  const getAcceptance = useServerFn(getContractAcceptance);
+  const canReadAcceptance =
+    !!j?.contract &&
+    !j.ambiguous &&
+    !!permissions.workspaceId &&
+    !permissions.isLoading &&
+    !permissions.isError &&
+    permissions.canAny(scopeKeys("techcontracts.contracts", "view"));
+  const acceptance = useQuery({
+    queryKey: ["contract-acceptance", permissions.workspaceId, j?.contract?.id, permissionScope],
+    queryFn: () => getAcceptance({ data: { contractId: j!.contract!.id } }),
+    enabled: canReadAcceptance,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
+    retry: false,
+  });
+  return { q, j, permissions, signature, services, acceptance, canReadServices, canReadAcceptance };
 }
 const titles = [
   "Apresente os valores ao cliente",
   "Formalize as condições comerciais",
   "Minuta para avaliação das cláusulas",
   "Contrato e assinaturas",
-  "Início do serviço",
+  "Execução do serviço",
 ];
 const explanations = [
   "Envie a cotação para o cliente conhecer o escopo e o investimento. Após a concordância, prepare a proposta.",
   "A assinatura da proposta confirma as condições comerciais. O serviço ainda depende do contrato definitivo.",
   "A revisão jurídica acontece antes do envio. O cliente aprova as cláusulas ou solicita ajustes; esse aceite não é a assinatura do contrato.",
   "Após o aceite da minuta, o Financeiro confere a versão final e conduz as assinaturas de cliente e WK.",
-  "A execução depende da assinatura verificável da versão atual e das demais aprovações operacionais. O fechamento financeiro é mensal; o faturamento depende das horas aprovadas.",
+  "Acompanhe a execução, o aceite comercial e a assinatura separadamente. É possível concluir um serviço entregue com a assinatura pendente. O faturamento depende da liberação financeira pelo aceite ou pela assinatura e das regras de medição aplicáveis.",
 ];
 type Props = {
   dealId: string;
@@ -141,7 +180,19 @@ type Props = {
 };
 
 export function DealContractingJourney({ dealId, companyId, origin, onOriginChange }: Props) {
-  const { q, j, permissions: p, signature } = useJourney(dealId, origin);
+  const {
+    q,
+    j,
+    permissions: p,
+    signature,
+    services,
+    acceptance,
+    canReadServices,
+    canReadAcceptance,
+  } = useJourney(dealId, origin);
+  const execution = journeyExecutionState(
+    canReadServices && services.isSuccess ? services.data : null,
+  );
   const qc = useQueryClient();
   const prepare = useServerFn(prepareDealContractDraft),
     create = useServerFn(createContractFromSales);
@@ -338,6 +389,11 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
       return (
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => setSheet("contract")}>Conferir aprovações e assinaturas</Button>
+          {j.contract && p.canAny(scopeKeys("techservice.services", "view")) && (
+            <Button variant="outline" onClick={() => setTab("delivery")}>
+              Acompanhar execução
+            </Button>
+          )}
           {j.contract && (
             <Button asChild variant="outline">
               <Link to="/contracts/$id/flow" params={{ id: j.contract.id }}>
@@ -385,6 +441,10 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                 void q.refetch();
                 if (j.contract && p.can("techcontracts.signature_evidence.view.workspace"))
                   void signature.refetch();
+                if (j.contract && p.canAny(scopeKeys("techservice.services", "view")))
+                  void services.refetch();
+                if (j.contract && p.canAny(scopeKeys("techcontracts.contracts", "view")))
+                  void acceptance.refetch();
               }}
             >
               <RefreshCw className={cn("size-4", q.isFetching && "animate-spin")} />
@@ -418,7 +478,8 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
             <TabsTrigger value="journey">Jornada</TabsTrigger>
             <TabsTrigger value="documents">Documentos</TabsTrigger>
             <TabsTrigger value="activity">Histórico</TabsTrigger>
-            {(ready || p.canAny(scopeKeys("techprojects.projects", "view"))) && (
+            {((j.contract && p.canAny(scopeKeys("techservice.services", "view"))) ||
+              p.canAny(scopeKeys("techprojects.projects", "view"))) && (
               <TabsTrigger value="delivery">Entrega</TabsTrigger>
             )}
           </TabsList>
@@ -433,7 +494,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                   j.proposalSigned,
                   j.clausesApproved,
                   ready,
-                  false,
+                  execution.complete,
                 ][i];
                 return (
                   <li key={name} className="min-w-0">
@@ -477,6 +538,43 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                 );
               })}
             </ol>
+            {j.contract && (
+              <section
+                className="mb-5 space-y-2 rounded-md bg-muted/40 p-3 text-xs"
+                aria-label="Execução, aceite e assinatura"
+              >
+                <p className="font-medium">
+                  {services.isError
+                    ? "Não foi possível consultar a execução dos serviços."
+                    : execution.label}
+                </p>
+                <p>
+                  {canReadAcceptance && acceptance.isSuccess
+                    ? `${acceptance.data.accepted ? "Contrato aceito comercialmente" : "Aceite comercial pendente"} · ${acceptance.data.signaturePending ? "Assinatura pendente" : "Assinatura registrada"}`
+                    : "Aceite e assinatura devem ser conferidos no contrato."}
+                </p>
+                {execution.held > 0 && (
+                  <p>
+                    Cobrança retida em {execution.held} serviço(s). Confira a liberação financeira
+                    no contrato.
+                  </p>
+                )}
+                <p className="text-muted-foreground">
+                  Resumo dos serviços disponíveis ao seu acesso. Concluir a execução não registra
+                  assinatura ou pagamento.
+                </p>
+                {p.canAny(scopeKeys("techservice.services", "view")) && (
+                  <Button
+                    size="sm"
+                    variant="link"
+                    className="h-auto p-0"
+                    onClick={() => setTab("delivery")}
+                  >
+                    Acompanhar execução dos serviços
+                  </Button>
+                )}
+              </section>
+            )}
             {restricted && (
               <div className="mb-4 rounded-md border bg-muted/50 p-3 text-xs text-muted-foreground">
                 <LockKeyhole className="mr-1 inline size-3.5" />
@@ -504,9 +602,11 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                 <h3 className="text-xl font-semibold">{titles[viewedStage]}</h3>
                 <p className="text-sm text-muted-foreground">{explanations[viewedStage]}</p>
                 <p className="text-sm">
-                  {viewedStage > stage
-                    ? `Conclua ${JOURNEY_STEPS[stage].toLowerCase()} antes de avançar. As etapas não são alteradas por este indicador.`
-                    : "Consulte os documentos e seus estados registrados. Nenhum aceite ausente é reconstruído automaticamente."}
+                  {viewedStage === 4 && j.contract
+                    ? "A execução e a entrega são acompanhadas separadamente das pendências de assinatura. Abra a aba Entrega para conferir os serviços."
+                    : viewedStage > stage
+                      ? `Conclua ${JOURNEY_STEPS[stage].toLowerCase()} antes de avançar. As etapas não são alteradas por este indicador.`
+                      : "Consulte os documentos e seus estados registrados. Nenhum aceite ausente é reconstruído automaticamente."}
                 </p>
                 <Button onClick={() => setViewed(null)}>Voltar à etapa atual</Button>
               </div>
@@ -745,15 +845,17 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
               negócio.
             </p>
           </TabsContent>
-          {(ready || p.canAny(scopeKeys("techprojects.projects", "view"))) && (
+          {((j.contract && p.canAny(scopeKeys("techservice.services", "view"))) ||
+            p.canAny(scopeKeys("techprojects.projects", "view"))) && (
             <TabsContent value="delivery" className="m-0 p-4">
               <Suspense fallback={loading}>
-                {ready && j.contract && p.canAny(scopeKeys("techservice.services", "view")) && (
+                {j.contract && p.canAny(scopeKeys("techservice.services", "view")) && (
                   <section className="mb-6 space-y-3">
-                    <h3 className="font-semibold">Iniciar serviços do contrato</h3>
+                    <h3 className="font-semibold">Execução dos serviços do contrato</h3>
                     <p className="text-sm text-muted-foreground">
                       Confira cada serviço e sua data de início antes de ativar. A ativação usa as
-                      validações financeiras e de assinatura existentes.
+                      validações financeiras existentes. A execução pode ser concluída mantendo
+                      assinatura pendente e cobrança retida.
                     </p>
                     <ContractServices contractId={j.contract.id} />
                   </section>
@@ -854,6 +956,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                     </Link>
                   </Button>
                   <ApprovalsPanel contractId={j.contract.id} />
+                  <ContractAcceptanceCard contractId={j.contract.id} role="provider" />
                   {p.can("techcontracts.signature_evidence.view.workspace") && (
                     <SignatureCard
                       contractId={j.contract.id}
@@ -978,7 +1081,11 @@ export function DealJourneySummary({
   origin: string | null;
   onOpen?: () => void;
 }) {
-  const { j, q, signature, permissions } = useJourney(dealId, origin);
+  const { j, q, signature, permissions, services, acceptance, canReadServices, canReadAcceptance } =
+    useJourney(dealId, origin);
+  const execution = journeyExecutionState(
+    canReadServices && services.isSuccess ? services.data : null,
+  );
   const forsignFn = useServerFn(getContractForsign);
   const forsign = useQuery({
     queryKey: ["contract-forsign", j?.contract?.id, "journey-summary"],
@@ -1031,6 +1138,14 @@ export function DealJourneySummary({
       tone: j.clausesApproved ? "signed" : "pending",
       hint: j.clausesSource === "contract" ? "Aprovadas pelo Jurídico no contrato" : undefined,
     },
+    {
+      label:
+        canReadAcceptance && acceptance.data?.accepted
+          ? "Contrato aceito comercialmente"
+          : "Aceite comercial do contrato",
+      tone: canReadAcceptance && acceptance.data?.accepted ? "signed" : "pending",
+      hint: "Aceite separado da assinatura",
+    },
     ready
       ? { label: "Assinatura verificável da versão atual", tone: "signed" }
       : progress
@@ -1050,6 +1165,21 @@ export function DealJourneySummary({
         <p className="text-xs text-muted-foreground">
           Etapa {ready ? 5 : j.stage + 1} de 5 · {JOURNEY_STEPS[ready ? 4 : j.stage]}
         </p>
+        {j.contract && (
+          <div className="space-y-1 text-xs" aria-label="Resumo da execução">
+            <p
+              className={execution.complete ? "font-medium text-primary" : "text-muted-foreground"}
+            >
+              {services.isError ? "Execução indisponível para consulta" : execution.label}
+            </p>
+            {execution.complete && !ready && <p>Execução concluída · assinatura a conferir</p>}
+            {execution.held > 0 && (
+              <p className="text-muted-foreground">
+                Cobrança retida em {execution.held} serviço(s).
+              </p>
+            )}
+          </div>
+        )}
         <p className="text-sm font-medium">
           {ready
             ? "Operações"
@@ -1088,7 +1218,7 @@ export function DealJourneySummary({
         <p className="rounded-md border-l-2 border-primary/30 bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
           {ready
             ? "Assinatura válida. Recrutamento e execução ainda respeitam as aprovações e alocações aplicáveis."
-            : "O status do negócio ou do contrato não substitui a assinatura. Consulte a jornada para conferir as pendências."}
+            : "Execução, aceite comercial e assinatura têm registros separados. O faturamento exige liberação financeira; a conclusão do serviço não substitui a assinatura."}
         </p>
       </CardContent>
     </Card>

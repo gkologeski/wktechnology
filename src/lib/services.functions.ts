@@ -139,7 +139,14 @@ export const getService = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw error;
-    return row;
+    if (!row) return null;
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const execution = await workRpc<{
+      completed_on: string;
+      reason: string;
+      created_at: string;
+    } | null>(supabase, "service_execution_state", { p_service: data.id });
+    return { ...row, execution_completion: execution };
   });
 
 // ============= CREATE =============
@@ -591,4 +598,27 @@ export const listServiceDealDivergences = createServerFn({ method: "POST" })
       if (fields.length > 0) out.push({ serviceId: String(s.id), fields });
     }
     return out;
+  });
+
+// Execution is audited independently of signature and invoice generation.
+export const completeServiceExecution = createServerFn({ method: "POST" })
+  .middleware([requireWorkPermission("techservice.services", "update")])
+  .inputValidator(
+    z.object({
+      id: z.string().uuid(),
+      completedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      reason: z.string().trim().min(10).max(4000),
+    }),
+  )
+  .handler(async ({ context, data }) => {
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<{
+      service: { id: string; status: string; ends_at: string | null; billing_hold: string | null };
+      completion: { completed_on: string; reason: string; created_at: string };
+      duplicate: boolean;
+    }>(context.supabase, "service_execution_complete", {
+      p_service: data.id,
+      p_completed_on: data.completedAt,
+      p_reason: data.reason,
+    });
   });

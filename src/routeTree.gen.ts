@@ -59,6 +59,7 @@ import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$t
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as CareersIndexRouteImport } from './routes/careers.index'
 import { Route as CareersSlugRouteImport } from './routes/careers.$slug'
+import { Route as ContractAcceptanceTokenRouteImport } from './routes/contract-acceptance.$token'
 import { Route as InterviewTokenRouteImport } from './routes/interview.$token'
 import { Route as KbIndexRouteImport } from './routes/kb.index'
 import { Route as KbSlugRouteImport } from './routes/kb.$slug'
@@ -446,6 +447,7 @@ import { Route as ApiPublicV1AtsJobsRouteImport } from './routes/api/public/v1/a
 import { Route as ApiPublicWhatsappCloudConnectionIdRouteImport } from './routes/api/public/whatsapp/cloud/$connectionId'
 import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
 import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
+import { Route as ApiPublicContractAcceptanceTokenAttachmentsAttachmentIdRouteImport } from './routes/api/public/contract-acceptance/$token/attachments/$attachmentId'
 import { Route as ApiPublicScimV2UsersIdRouteImport } from './routes/api/public/scim/v2/Users.$id'
 import { Route as ApiPublicV1MeetingsIdCancelRouteImport } from './routes/api/public/v1/meetings.$id.cancel'
 import { Route as ApiPublicV1MeetingsIdRescheduleRouteImport } from './routes/api/public/v1/meetings.$id.reschedule'
@@ -708,6 +710,11 @@ const CareersIndexRoute = CareersIndexRouteImport.update({
 const CareersSlugRoute = CareersSlugRouteImport.update({
   id: '/careers/$slug',
   path: '/careers/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContractAcceptanceTokenRoute = ContractAcceptanceTokenRouteImport.update({
+  id: '/contract-acceptance/$token',
+  path: '/contract-acceptance/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InterviewTokenRoute = InterviewTokenRouteImport.update({
@@ -2954,6 +2961,12 @@ const ApiPublicZapierUnsubscribeIdRoute =
     path: '/api/public/zapier/unsubscribe/$id',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicContractAcceptanceTokenAttachmentsAttachmentIdRoute =
+  ApiPublicContractAcceptanceTokenAttachmentsAttachmentIdRouteImport.update({
+    id: '/api/public/contract-acceptance/$token/attachments/$attachmentId',
+    path: '/api/public/contract-acceptance/$token/attachments/$attachmentId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicScimV2UsersIdRoute = ApiPublicScimV2UsersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -3026,6 +3039,7 @@ export interface FileRoutesByFullPath {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
+  '/contract-acceptance/$token': typeof ContractAcceptanceTokenRoute
   '/interview/$token': typeof InterviewTokenRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
@@ -3415,6 +3429,7 @@ export interface FileRoutesByFullPath {
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
   '/projects/settings/imports/': typeof AuthenticatedProjectsSettingsImportsIndexRoute
+  '/api/public/contract-acceptance/$token/attachments/$attachmentId': typeof ApiPublicContractAcceptanceTokenAttachmentsAttachmentIdRoute
   '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
   '/api/public/v1/meetings/$id/cancel': typeof ApiPublicV1MeetingsIdCancelRoute
   '/api/public/v1/meetings/$id/reschedule': typeof ApiPublicV1MeetingsIdRescheduleRoute
@@ -3463,6 +3478,7 @@ export interface FileRoutesByTo {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
+  '/contract-acceptance/$token': typeof ContractAcceptanceTokenRoute
   '/interview/$token': typeof InterviewTokenRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
@@ -3851,6 +3867,7 @@ export interface FileRoutesByTo {
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
   '/projects/settings/imports': typeof AuthenticatedProjectsSettingsImportsIndexRoute
+  '/api/public/contract-acceptance/$token/attachments/$attachmentId': typeof ApiPublicContractAcceptanceTokenAttachmentsAttachmentIdRoute
   '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
   '/api/public/v1/meetings/$id/cancel': typeof ApiPublicV1MeetingsIdCancelRoute
   '/api/public/v1/meetings/$id/reschedule': typeof ApiPublicV1MeetingsIdRescheduleRoute
@@ -3906,6 +3923,7 @@ export interface FileRoutesById {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
+  '/contract-acceptance/$token': typeof ContractAcceptanceTokenRoute
   '/interview/$token': typeof InterviewTokenRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
@@ -4295,6 +4313,7 @@ export interface FileRoutesById {
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
   '/_authenticated/projects/settings/imports/': typeof AuthenticatedProjectsSettingsImportsIndexRoute
+  '/api/public/contract-acceptance/$token/attachments/$attachmentId': typeof ApiPublicContractAcceptanceTokenAttachmentsAttachmentIdRoute
   '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
   '/api/public/v1/meetings/$id/cancel': typeof ApiPublicV1MeetingsIdCancelRoute
   '/api/public/v1/meetings/$id/reschedule': typeof ApiPublicV1MeetingsIdRescheduleRoute
@@ -4350,6 +4369,7 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/careers/$slug'
+    | '/contract-acceptance/$token'
     | '/interview/$token'
     | '/kb/$slug'
     | '/lp/$slug'
@@ -4739,6 +4759,7 @@ export interface FileRouteTypes {
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
     | '/projects/settings/imports/'
+    | '/api/public/contract-acceptance/$token/attachments/$attachmentId'
     | '/api/public/scim/v2/Users/$id'
     | '/api/public/v1/meetings/$id/cancel'
     | '/api/public/v1/meetings/$id/reschedule'
@@ -4787,6 +4808,7 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/careers/$slug'
+    | '/contract-acceptance/$token'
     | '/interview/$token'
     | '/kb/$slug'
     | '/lp/$slug'
@@ -5175,6 +5197,7 @@ export interface FileRouteTypes {
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
     | '/projects/settings/imports'
+    | '/api/public/contract-acceptance/$token/attachments/$attachmentId'
     | '/api/public/scim/v2/Users/$id'
     | '/api/public/v1/meetings/$id/cancel'
     | '/api/public/v1/meetings/$id/reschedule'
@@ -5229,6 +5252,7 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/careers/$slug'
+    | '/contract-acceptance/$token'
     | '/interview/$token'
     | '/kb/$slug'
     | '/lp/$slug'
@@ -5618,6 +5642,7 @@ export interface FileRouteTypes {
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
     | '/_authenticated/projects/settings/imports/'
+    | '/api/public/contract-acceptance/$token/attachments/$attachmentId'
     | '/api/public/scim/v2/Users/$id'
     | '/api/public/v1/meetings/$id/cancel'
     | '/api/public/v1/meetings/$id/reschedule'
@@ -5645,6 +5670,7 @@ export interface RootRouteChildren {
   AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
   BookSlugRoute: typeof BookSlugRoute
   CareersSlugRoute: typeof CareersSlugRoute
+  ContractAcceptanceTokenRoute: typeof ContractAcceptanceTokenRoute
   InterviewTokenRoute: typeof InterviewTokenRoute
   KbSlugRoute: typeof KbSlugRoute
   LpSlugRoute: typeof LpSlugRoute
@@ -5766,6 +5792,7 @@ export interface RootRouteChildren {
   ApiPublicWhatsappCloudConnectionIdRoute: typeof ApiPublicWhatsappCloudConnectionIdRoute
   ApiPublicZapierTriggersEventRoute: typeof ApiPublicZapierTriggersEventRoute
   ApiPublicZapierUnsubscribeIdRoute: typeof ApiPublicZapierUnsubscribeIdRoute
+  ApiPublicContractAcceptanceTokenAttachmentsAttachmentIdRoute: typeof ApiPublicContractAcceptanceTokenAttachmentsAttachmentIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -6118,6 +6145,13 @@ declare module '@tanstack/react-router' {
       path: '/careers/$slug'
       fullPath: '/careers/$slug'
       preLoaderRoute: typeof CareersSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contract-acceptance/$token': {
+      id: '/contract-acceptance/$token'
+      path: '/contract-acceptance/$token'
+      fullPath: '/contract-acceptance/$token'
+      preLoaderRoute: typeof ContractAcceptanceTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/interview/$token': {
@@ -8829,6 +8863,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicZapierUnsubscribeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/contract-acceptance/$token/attachments/$attachmentId': {
+      id: '/api/public/contract-acceptance/$token/attachments/$attachmentId'
+      path: '/api/public/contract-acceptance/$token/attachments/$attachmentId'
+      fullPath: '/api/public/contract-acceptance/$token/attachments/$attachmentId'
+      preLoaderRoute: typeof ApiPublicContractAcceptanceTokenAttachmentsAttachmentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/scim/v2/Users/$id': {
       id: '/api/public/scim/v2/Users/$id'
       path: '/$id'
@@ -9815,6 +9856,7 @@ const rootRouteChildren: RootRouteChildren = {
   AcceptInviteTokenRoute: AcceptInviteTokenRoute,
   BookSlugRoute: BookSlugRoute,
   CareersSlugRoute: CareersSlugRoute,
+  ContractAcceptanceTokenRoute: ContractAcceptanceTokenRoute,
   InterviewTokenRoute: InterviewTokenRoute,
   KbSlugRoute: KbSlugRoute,
   LpSlugRoute: LpSlugRoute,
@@ -9951,6 +9993,8 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicWhatsappCloudConnectionIdRoute,
   ApiPublicZapierTriggersEventRoute: ApiPublicZapierTriggersEventRoute,
   ApiPublicZapierUnsubscribeIdRoute: ApiPublicZapierUnsubscribeIdRoute,
+  ApiPublicContractAcceptanceTokenAttachmentsAttachmentIdRoute:
+    ApiPublicContractAcceptanceTokenAttachmentsAttachmentIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

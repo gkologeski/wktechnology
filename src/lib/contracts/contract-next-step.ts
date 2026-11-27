@@ -169,7 +169,8 @@ function commonNextStep(input: NextStepInput): NextStep {
     return {
       stageIndex: 2,
       headline: "Aguardando assinatura",
-      explanation: "Quando todos assinarem, ative o contrato para iniciar os serviços.",
+      explanation:
+        "Acompanhe as assinaturas. A execução dos serviços e o aceite comercial para faturamento têm registros separados na visão geral.",
       primary: { label: "Acompanhar assinatura", target: tab("approvals") },
       secondary: [
         {
