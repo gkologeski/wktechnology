@@ -32,7 +32,7 @@ const Q = "80000000-0000-4000-8000-000000000001";
 const ALL_KEYS = [
   "techcontracts.contracts.view.workspace",
   "techcontracts.contracts.update.workspace",
-  "techcontracts.financials.view.workspace",
+  "techcontracts.esign_share.manage.workspace",
   "techcontracts.contract_acceptance.approve.workspace",
   "techcontracts.contract_acceptance.manage.workspace",
   "techcontracts.contract_acceptance_billing.manage.workspace",
@@ -129,6 +129,16 @@ beforeAll(async () => {
   }
   if (!ready) throw Error("Disposable PostgreSQL did not become ready");
   await db.unsafe(readFileSync("tests/fixtures/permission-postgres-ci.sql", "utf8"));
+  // Install the actual catalogue DDL, including enum types and NOT NULL fields.
+  // Inventing compatibility columns here would hide a real production failure.
+  const catalogueSource = readFileSync(
+    "supabase/migrations/20260702145220_0423591a-1165-453f-8ced-e86718fead46.sql",
+    "utf8",
+  );
+  const catalogueEnd = catalogueSource.indexOf("CREATE TABLE IF NOT EXISTS public.permission_sets");
+  if (catalogueEnd < 0) throw Error("Canonical permission catalogue DDL changed");
+  await db.unsafe("DROP TABLE public.permissions; DROP TYPE public.perm_action;");
+  await db.unsafe(catalogueSource.slice(0, catalogueEnd));
   for (const [file, name] of [
     ["drizzle/migrations/0031_workspace_members_status_inactive.sql", "is_workspace_member"],
     ["drizzle/migrations/0127_rbac_wk_vis_local_per_role.sql", "user_effective_permissions"],
@@ -151,7 +161,6 @@ beforeAll(async () => {
     SELECT EXISTS(SELECT 1 FROM public.user_effective_permissions(_user_id,_workspace_id) k WHERE k=_permission_key) $$;`);
   await db.unsafe(readFileSync("tests/fixtures/contract-proposal.sql", "utf8"));
   await db.unsafe(`CREATE SCHEMA extensions; CREATE EXTENSION pgcrypto WITH SCHEMA extensions;
-    ALTER TABLE permissions ADD COLUMN label text,ADD COLUMN is_sensitive boolean;
     ALTER TABLE workspaces ADD COLUMN name text;
     ALTER TABLE contracts ADD COLUMN role text,ADD COLUMN title text,ADD COLUMN number text,ADD COLUMN signed_at timestamptz,ADD COLUMN body_html text,ADD COLUMN total_value numeric,ADD COLUMN currency text,ADD COLUMN starts_at date,ADD COLUMN ends_at date,ADD COLUMN payment_terms jsonb,ADD COLUMN contracting_legal_entity_id uuid,ADD COLUMN legal_entity_id uuid,ADD COLUMN counterparty_contact_id uuid;
     ALTER TABLE legal_entities ADD COLUMN name text,ADD COLUMN cnpj text;
@@ -247,8 +256,10 @@ beforeAll(async () => {
   await db`insert into workspace_members(workspace_id,user_id) values(${W},${U})`;
   await db`insert into job_roles(id,workspace_id) values(${R},${W})`;
   await db`insert into user_job_roles(role_id,user_id,workspace_id,owner_id) values(${R},${U},${W},${U})`;
+  await db`insert into permissions(key,module,resource,action,scope,label_pt,is_system)
+    values('techcontracts.esign_share.manage.workspace','techcontracts','esign_share','manage','workspace','Compartilhar documentos de contrato externamente',true)`;
   for (const key of ALL_KEYS)
-    await db`insert into permissions(key,module,resource,action,scope) values(${key},'fixture','fixture','view','workspace') on conflict(key) do nothing`;
+    await db`insert into permissions(key,module,resource,action,scope,label_pt) values(${key},'fixture','fixture','view','workspace',${key}) on conflict(key) do nothing`;
   await db`insert into contracts(id,workspace_id,owner_id,status,role,title,body_html,total_value,currency,starts_at,payment_terms,metadata)
     values(${C},${W},${U},'awaiting_signature','provider','Contrato teste','<p>Prestação de serviços e condições comerciais acordadas com o cliente.</p>',4500,'BRL',current_date-2,'{"plan":"single"}', '{"internal_cost":1234,"private_note":"Segredo interno"}'),
     (${PC},${W},${U},'awaiting_signature','client','Compra teste','<p>Compra de serviços e condições comerciais acordadas com o fornecedor.</p>',4500,'BRL',current_date-2,'{"plan":"single"}','{}')`;
@@ -587,6 +598,8 @@ for (const invalidation of [
   "body",
   "issuer-inactive",
   "issuer-deny",
+  "issuer-share-missing",
+  "issuer-share-deny",
   "tenant",
 ] as const) {
   it(`public bearer fails closed after ${invalidation}`, async () => {
@@ -603,6 +616,10 @@ for (const invalidation of [
         await tx`update workspace_members set status='inactive' where user_id=${U} and workspace_id=${W}`;
       if (invalidation === "issuer-deny")
         await tx`update job_role_permission_overrides set effect='deny' where workspace_id=${W} and role_id=${R} and permission_key='techcontracts.contract_acceptance.manage.workspace'`;
+      if (invalidation === "issuer-share-missing")
+        await tx`delete from job_role_permission_overrides where workspace_id=${W} and role_id=${R} and permission_key='techcontracts.esign_share.manage.workspace'`;
+      if (invalidation === "issuer-share-deny")
+        await tx`update job_role_permission_overrides set effect='deny' where workspace_id=${W} and role_id=${R} and permission_key='techcontracts.esign_share.manage.workspace'`;
       if (invalidation === "tenant")
         await tx`update contract_commercial_acceptance_links set workspace_id=${B} where contract_id=${C}`;
       await publicService(tx);
@@ -988,4 +1005,104 @@ it("BYPASSRLS sandbox defaults cannot read or write any private commercial proof
       from unnest(array['anon','authenticated','service_role','sandbox_exec','techerp_request_writer']) role_name`;
     expect(row.private, table).toBe(true);
   }
+});
+
+it("installs against the canonical production permission catalogue without synthetic compatibility columns", async () => {
+  const columns = await db`select column_name,is_nullable,udt_name from information_schema.columns
+    where table_schema='public' and table_name='permissions' order by ordinal_position`;
+  expect(columns.map((column) => column.column_name)).toEqual([
+    "key",
+    "module",
+    "resource",
+    "action",
+    "scope",
+    "label_pt",
+    "description",
+    "is_system",
+    "created_at",
+  ]);
+  expect(columns.find((column) => column.column_name === "action")).toMatchObject({
+    is_nullable: "NO",
+    udt_name: "perm_action",
+  });
+  expect(columns.find((column) => column.column_name === "scope")).toMatchObject({
+    is_nullable: "NO",
+    udt_name: "perm_scope",
+  });
+  for (const field of ["label_pt", "is_system", "created_at"])
+    expect(columns.find((column) => column.column_name === field)?.is_nullable).toBe("NO");
+  const rows = await db`select key,label_pt,is_system,scope::text,action::text from permissions
+    where key in ('techcontracts.contract_acceptance.approve.workspace','techcontracts.contract_acceptance.manage.workspace','techcontracts.contract_acceptance_billing.manage.workspace','techservice.service_execution.manage.workspace') order by key`;
+  expect(rows).toHaveLength(4);
+  for (const row of rows) {
+    expect(row.label_pt.length).toBeGreaterThan(10);
+    expect(row.is_system).toBe(true);
+    expect(row.scope).toBe("workspace");
+    expect(["manage", "approve"]).toContain(row.action);
+  }
+});
+
+it("the real catalogue sharing permission enables links without nonexistent financial-projection keys", async () => {
+  await subject(async (tx) => {
+    const [catalogue] =
+      await tx`select count(*)::int as n from permissions where key like 'techcontracts.financials.%'`;
+    expect(catalogue.n).toBe(0);
+    const [state] = await tx`select contract_commercial_state(${C}::uuid) as r`;
+    expect(state.r.canManageLinks).toBe(true);
+    const { token } = await issue(tx);
+    await publicService(tx);
+    expect(await publicGet(tx, token)).not.toBeNull();
+  });
+});
+
+it.each(["missing", "deny"] as const)(
+  "external sharing %s blocks both link availability and issuance",
+  async (failure) => {
+    await expect(
+      subject(
+        async (tx) => {
+          const [state] = await tx`select contract_commercial_state(${C}::uuid) as r`;
+          expect(state.r.canManageLinks).toBe(false);
+          await issue(tx);
+        },
+        failure === "missing"
+          ? { keys: ALL_KEYS.filter((key) => key !== "techcontracts.esign_share.manage.workspace") }
+          : { deny: "techcontracts.esign_share.manage.workspace" },
+      ),
+    ).rejects.toMatchObject({ code: "42501" });
+  },
+);
+
+it.each(["missing", "deny"] as const)(
+  "privacy cleanup can revoke a link after external-sharing authority is removed (%s)",
+  async (failure) => {
+    await subject(async (tx) => {
+      await issue(tx);
+      await privileged(tx);
+      if (failure === "missing")
+        await tx`delete from job_role_permission_overrides where workspace_id=${W} and role_id=${R} and permission_key='techcontracts.esign_share.manage.workspace'`;
+      else
+        await tx`update job_role_permission_overrides set effect='deny' where workspace_id=${W} and role_id=${R} and permission_key='techcontracts.esign_share.manage.workspace'`;
+      await tx.unsafe("SET LOCAL ROLE authenticated");
+      const [result] =
+        await tx`select contract_commercial_revoke(${C}::uuid,'Revogar o link externo com justificativa.',true) as r`;
+      expect(result.r.canManageLinks).toBe(false);
+      await privileged(tx);
+      const [link] =
+        await tx`select revoked_at from contract_commercial_acceptance_links where contract_id=${C}`;
+      expect(link.revoked_at).not.toBeNull();
+    });
+  },
+);
+
+it("revoking commercial evidence keeps its independent approval permission without requiring document sharing", async () => {
+  await subject(
+    async (tx) => {
+      await record(tx);
+      const [result] =
+        await tx`select contract_commercial_revoke(${C}::uuid,'Corrigir o registro do aceite comercial conforme revisão.',false) as r`;
+      expect(result.r.accepted).toBe(false);
+    },
+    { keys: ALL_KEYS.filter((key) => key !== "techcontracts.esign_share.manage.workspace") },
+  );
 });

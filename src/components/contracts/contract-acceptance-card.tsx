@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { IsoDatePicker } from "@/components/iso-date-picker";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
 import { readViewAs } from "@/lib/view-as-client";
 import { formatDateOnly, formatDateTime } from "@/lib/crm";
 import { formatIsoDate } from "@/lib/iso-date";
@@ -42,6 +43,7 @@ export function ContractAcceptanceCard({
   hasUnsavedChanges?: boolean;
 }) {
   const permissions = usePermissions();
+  const parentAccess = useWorkCapabilities("techcontracts.contracts", [contractId]);
   const get = useServerFn(getContractAcceptance);
   const record = useServerFn(recordContractAcceptance);
   const createLink = useServerFn(createContractAcceptanceLink);
@@ -84,6 +86,13 @@ export function ContractAcceptanceCard({
   const canManage =
     writable &&
     !!d?.canManageLinks &&
+    permissions.can("techcontracts.contract_acceptance.manage.workspace");
+  // Revoking a public link is privacy cleanup and does not require sharing permission.
+  const canRevokeLinks =
+    writable &&
+    q.isSuccess &&
+    !!d &&
+    parentAccess.for(contractId).can_update &&
     permissions.can("techcontracts.contract_acceptance.manage.workspace");
   const canRelease =
     writable &&
@@ -205,7 +214,7 @@ export function ContractAcceptanceCard({
                   Registrar aceite recebido
                 </Button>
               )}
-              {!d.accepted && canManage && (
+              {!d.accepted && canRevokeLinks && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -296,7 +305,7 @@ export function ContractAcceptanceCard({
                 <p className="text-xs text-muted-foreground">
                   Expira em {formatDateTime(link.expiresAt)}.
                 </p>
-                {canManage && (
+                {canRevokeLinks && (
                   <Button
                     size="sm"
                     variant="ghost"
