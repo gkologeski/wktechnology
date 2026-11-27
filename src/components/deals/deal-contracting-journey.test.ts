@@ -8,9 +8,13 @@ const state = vi.hoisted(() => ({
   prepare: vi.fn(),
   create: vi.fn(),
   signature: vi.fn(),
+  services: vi.fn(),
+  acceptance: vi.fn(),
   write: true,
   readonly: false,
   signatureView: true,
+  serviceView: true,
+  contractView: true,
 }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@tanstack/react-router", () => ({
@@ -18,17 +22,31 @@ vi.mock("@tanstack/react-router", () => ({
     createElement("a", { ...props, href: to }, children),
 }));
 vi.mock("@/lib/access-control/use-permissions", () => ({
-  usePermissions: () => ({
-    workspaceId: "ws",
-    isLoading: false,
-    isError: false,
-    refetch: vi.fn(),
-    can: (key: string) =>
+  usePermissions: () => {
+    const can = (key: string) =>
       key === "techcontracts.signature_evidence.view.workspace"
         ? state.signatureView
-        : state.write || key.includes(".view."),
-    canAny: (keys: string[]) => keys.some((k) => state.write || k.includes(".view.")),
-  }),
+        : key.startsWith("techservice.services.view.")
+          ? state.serviceView
+          : key.startsWith("techcontracts.contracts.view.")
+            ? state.contractView
+            : state.write || key.includes(".view.");
+    return {
+      workspaceId: "ws",
+      isLoading: false,
+      isError: false,
+      permissions: new Set(
+        [
+          "techservice.services.view.workspace",
+          "techcontracts.contracts.view.workspace",
+          "techcontracts.signature_evidence.view.workspace",
+        ].filter(can),
+      ),
+      refetch: vi.fn(),
+      can,
+      canAny: (keys: string[]) => keys.some(can),
+    };
+  },
 }));
 vi.mock("@/lib/view-as-client", () => ({
   readViewAs: () => (state.readonly ? { readOnly: true } : null),
@@ -38,6 +56,13 @@ vi.mock("@/lib/deals/contracting-journey.functions", () => ({
   prepareDealContractDraft: state.prepare,
 }));
 vi.mock("@/lib/hiring/signature.functions", () => ({ getContractSignature: state.signature }));
+vi.mock("@/lib/services.functions", () => ({ listServices: state.services }));
+vi.mock("@/lib/contracts/acceptance.functions", () => ({
+  getContractAcceptance: state.acceptance,
+}));
+vi.mock("@/components/contracts/contract-acceptance-card", () => ({
+  ContractAcceptanceCard: () => createElement("p", null, "Gestão de aceite comercial"),
+}));
 vi.mock("@/lib/integrations/forsign/forsign.functions", () => ({
   getContractForsign: vi.fn().mockResolvedValue({ operations: [] }),
 }));
@@ -128,8 +153,16 @@ beforeEach(() => {
   state.write = true;
   state.readonly = false;
   state.signatureView = true;
+  state.serviceView = true;
+  state.contractView = true;
   state.get.mockResolvedValue(fixture());
   state.signature.mockResolvedValue({ reason: "Assinatura incompleta" });
+  state.services.mockResolvedValue([]);
+  state.acceptance.mockResolvedValue({
+    accepted: false,
+    signaturePending: true,
+    billingReleased: false,
+  });
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
@@ -272,4 +305,68 @@ it("keeps the complete journey closed until opened from the sidebar card", async
   expect(
     document.body.querySelector('ol[aria-label="Etapas da contratação"]')?.querySelectorAll("li"),
   ).toHaveLength(5);
+});
+
+it("shows completed delivery with accepted contract, pending signature and retained billing", async () => {
+  const d = fixture();
+  d.contracts = [{ ...contract, status: "awaiting_signature" }];
+  state.get.mockResolvedValue(d);
+  state.services.mockResolvedValue([
+    { id: "service", status: "completed", billing_hold: "awaiting_signature" },
+  ]);
+  state.acceptance.mockResolvedValue({
+    accepted: true,
+    signaturePending: true,
+    billingReleased: false,
+  });
+  await render();
+  await flush();
+  expect(host.textContent).toContain("Execução: 1 de 1 serviço(s) concluído(s)");
+  expect(host.textContent).toContain("Contrato aceito comercialmente · Assinatura pendente");
+  expect(host.textContent).toContain("Cobrança retida em 1 serviço(s)");
+  const milestones = host
+    .querySelector('ol[aria-label="Etapas da contratação"]')!
+    .querySelectorAll("li");
+  expect(milestones[3].textContent).toContain("Etapa atual");
+  expect(milestones[4].textContent).toContain("Concluída");
+  expect(host.textContent).not.toContain("Assinatura válida para a versão atual");
+  await click("Acompanhar execução");
+  expect(host.textContent).toContain("Serviços do contrato");
+  expect(state.services).toHaveBeenCalledWith({ data: { contractId: "contract", limit: 500 } });
+});
+
+it("does not fetch or reuse cached service results when service read permission is removed", async () => {
+  const d = fixture();
+  d.contracts = [contract];
+  state.get.mockResolvedValue(d);
+  client.setQueryDefaults(["journey-services"], { gcTime: Infinity });
+  state.services.mockResolvedValue([
+    { id: "cached-service", status: "completed", billing_hold: "awaiting_signature" },
+  ]);
+  await render();
+  expect(host.textContent).toContain("Execução: 1 de 1 serviço(s) concluído(s)");
+  state.services.mockClear();
+  state.serviceView = false;
+  await render();
+  expect(state.services).not.toHaveBeenCalled();
+  expect(host.textContent).not.toContain("Execução: 1 de 1 serviço(s) concluído(s)");
+  expect(host.textContent).not.toContain("Cobrança retida em 1 serviço(s)");
+  expect(host.textContent).not.toContain("Acompanhar execução dos serviços");
+});
+it("hides cached acceptance evidence when contract read access is removed", async () => {
+  const d = fixture();
+  d.contracts = [contract];
+  state.get.mockResolvedValue(d);
+  state.acceptance.mockResolvedValue({
+    accepted: true,
+    signaturePending: true,
+    billingReleased: false,
+  });
+  await render();
+  expect(host.textContent).toContain("Contrato aceito comercialmente");
+  state.acceptance.mockClear();
+  state.contractView = false;
+  await render();
+  expect(state.acceptance).not.toHaveBeenCalled();
+  expect(host.textContent).not.toContain("Contrato aceito comercialmente");
 });

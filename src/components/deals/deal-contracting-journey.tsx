@@ -122,34 +122,41 @@ function useJourney(dealId: string, origin: string | null) {
     refetchOnWindowFocus: true,
   });
   const listServiceRecords = useServerFn(listServices);
+  const permissionScope = Array.from(permissions.permissions ?? [])
+    .sort()
+    .join("|");
+  const canReadServices =
+    !!j?.contract &&
+    !j.ambiguous &&
+    !!permissions.workspaceId &&
+    !permissions.isLoading &&
+    !permissions.isError &&
+    permissions.canAny(scopeKeys("techservice.services", "view"));
   const services = useQuery({
-    queryKey: ["journey-services", permissions.workspaceId, j?.contract?.id],
+    queryKey: ["journey-services", permissions.workspaceId, j?.contract?.id, permissionScope],
     queryFn: () => listServiceRecords({ data: { contractId: j!.contract!.id, limit: 500 } }),
-    enabled:
-      !!j?.contract &&
-      !j.ambiguous &&
-      !permissions.isLoading &&
-      !permissions.isError &&
-      permissions.canAny(scopeKeys("techservice.services", "view")),
+    enabled: canReadServices,
     staleTime: 15_000,
     refetchOnWindowFocus: true,
     retry: false,
   });
   const getAcceptance = useServerFn(getContractAcceptance);
+  const canReadAcceptance =
+    !!j?.contract &&
+    !j.ambiguous &&
+    !!permissions.workspaceId &&
+    !permissions.isLoading &&
+    !permissions.isError &&
+    permissions.canAny(scopeKeys("techcontracts.contracts", "view"));
   const acceptance = useQuery({
-    queryKey: ["contract-acceptance", permissions.workspaceId, j?.contract?.id],
+    queryKey: ["contract-acceptance", permissions.workspaceId, j?.contract?.id, permissionScope],
     queryFn: () => getAcceptance({ data: { contractId: j!.contract!.id } }),
-    enabled:
-      !!j?.contract &&
-      !j.ambiguous &&
-      !permissions.isLoading &&
-      !permissions.isError &&
-      permissions.canAny(scopeKeys("techcontracts.contracts", "view")),
+    enabled: canReadAcceptance,
     staleTime: 15_000,
     refetchOnWindowFocus: true,
     retry: false,
   });
-  return { q, j, permissions, signature, services, acceptance };
+  return { q, j, permissions, signature, services, acceptance, canReadServices, canReadAcceptance };
 }
 const titles = [
   "Apresente os valores ao cliente",
@@ -173,8 +180,19 @@ type Props = {
 };
 
 export function DealContractingJourney({ dealId, companyId, origin, onOriginChange }: Props) {
-  const { q, j, permissions: p, signature, services, acceptance } = useJourney(dealId, origin);
-  const execution = journeyExecutionState(services.isSuccess ? services.data : null);
+  const {
+    q,
+    j,
+    permissions: p,
+    signature,
+    services,
+    acceptance,
+    canReadServices,
+    canReadAcceptance,
+  } = useJourney(dealId, origin);
+  const execution = journeyExecutionState(
+    canReadServices && services.isSuccess ? services.data : null,
+  );
   const qc = useQueryClient();
   const prepare = useServerFn(prepareDealContractDraft),
     create = useServerFn(createContractFromSales);
@@ -531,7 +549,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                     : execution.label}
                 </p>
                 <p>
-                  {acceptance.isSuccess
+                  {canReadAcceptance && acceptance.isSuccess
                     ? `${acceptance.data.accepted ? "Contrato aceito comercialmente" : "Aceite comercial pendente"} · ${acceptance.data.signaturePending ? "Assinatura pendente" : "Assinatura registrada"}`
                     : "Aceite e assinatura devem ser conferidos no contrato."}
                 </p>
@@ -1063,8 +1081,11 @@ export function DealJourneySummary({
   origin: string | null;
   onOpen?: () => void;
 }) {
-  const { j, q, signature, permissions, services, acceptance } = useJourney(dealId, origin);
-  const execution = journeyExecutionState(services.isSuccess ? services.data : null);
+  const { j, q, signature, permissions, services, acceptance, canReadServices, canReadAcceptance } =
+    useJourney(dealId, origin);
+  const execution = journeyExecutionState(
+    canReadServices && services.isSuccess ? services.data : null,
+  );
   const forsignFn = useServerFn(getContractForsign);
   const forsign = useQuery({
     queryKey: ["contract-forsign", j?.contract?.id, "journey-summary"],
@@ -1118,10 +1139,11 @@ export function DealJourneySummary({
       hint: j.clausesSource === "contract" ? "Aprovadas pelo Jurídico no contrato" : undefined,
     },
     {
-      label: acceptance.data?.accepted
-        ? "Contrato aceito comercialmente"
-        : "Aceite comercial do contrato",
-      tone: acceptance.data?.accepted ? "signed" : "pending",
+      label:
+        canReadAcceptance && acceptance.data?.accepted
+          ? "Contrato aceito comercialmente"
+          : "Aceite comercial do contrato",
+      tone: canReadAcceptance && acceptance.data?.accepted ? "signed" : "pending",
       hint: "Aceite separado da assinatura",
     },
     ready

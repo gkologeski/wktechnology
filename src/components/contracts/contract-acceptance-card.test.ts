@@ -232,7 +232,7 @@ it("keeps the originally reviewed hash and blocks a form if the current version 
   await click("Escolher data");
   await fill("contract-acceptance-evidence", "Aceite do documento revisado pelo cliente.");
   await act(async () =>
-    qc.setQueryData(["contract-acceptance", "w", "c"], fixture({ currentHash: "new-hash" })),
+    qc.setQueryData(["contract-acceptance", "w", "c", ""], fixture({ currentHash: "new-hash" })),
   );
   await flush();
   expect(document.body.textContent).toContain("O documento mudou durante esta conferência");

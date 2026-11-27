@@ -65,8 +65,11 @@ export function ContractAcceptanceCard({
     ["own", "team", "workspace"].some((s) => permissions.can(`techcontracts.contracts.view.${s}`));
   const writable =
     viewAllowed && !hasUnsavedChanges && !readViewAs()?.readOnly && readViewAs()?.mode !== "role";
+  const permissionScope = Array.from(permissions.permissions ?? [])
+    .sort()
+    .join("|");
   const q = useQuery({
-    queryKey: ["contract-acceptance", permissions.workspaceId, contractId],
+    queryKey: ["contract-acceptance", permissions.workspaceId, contractId, permissionScope],
     queryFn: () => get({ data: { contractId } }),
     enabled: viewAllowed && role === "provider",
     staleTime: 15_000,
