@@ -8,7 +8,7 @@ route_pattern:
 min_permission:
 audience: internal
 sort_order: 3
-version: 2
+version: 3
 is_published: true
 ---
 # Permissões do TechContracts
@@ -22,6 +22,7 @@ Artigos internos usam o acesso ao módulo e às permissões efetivas do workspac
 | Mudança de status | Atualização do registro + techcontracts.contract_transition.manage.workspace |
 | Ativação manual | Também techcontracts.contract_activation.manage.workspace |
 | Aprovações | techcontracts.approvals: view, manage, approve conforme ação |
+| Assumir aprovação pendente | techcontracts.approval_substitution.manage.workspace + gestão e aprovação de etapas, leitura e atualização do contrato; exige justificativa e preserva a ordem da cadeia |
 | Histórico de aprovação | techcontracts.audit: view |
 | Modelos | techcontracts.contract_templates: view, create, update, delete |
 | Padrões | techcontracts.defaults: view; salvar exige manage e techcontracts.contracts.update.workspace |

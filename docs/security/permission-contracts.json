@@ -14663,7 +14663,7 @@
         "techcontracts.approvals.approve.workspace",
         "techcontracts.audit.view.workspace"
       ],
-      "rationale": "Ficha aprovada: resumo somente de negócio autorizado, consultas opcionais precedidas por gate de cada área e filtradas por workspace/negócio sob RLS. Não retorna corpos, tokens ou arquivos. Uma origem explícita por jornada. Abertura de minuta manual exige create próprio, membro ativo e proposta/negócio visíveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concessão automática. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveniência e proíbe alterações posteriores. Contratos históricos preservados. Assinatura real via hiring_contract_signature_context; status ativo não basta. Ações existentes mantêm seus gates (sales/work capabilities, send/share/approve/esign/serviços); readonly nega novas ações. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir histórico; carregamento de um corpo por vez. Revisão jurídica continua exigindo aprovador listado, CAS e nova aprovação do cliente; chamadas diretas sujeitas às mesmas invariantes. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass). | 26/11/2026: approval panel only adds PT-BR labels for commercial acceptance and execution audit events. Existing approval/audit reads, manage/approve and parent capabilities are unchanged; no new action or recipient. New execution/acceptance summaries hide cached results immediately when the current read gate is denied; permission scope is part of the query key and cached-data regressions cover allowed-to-restricted transitions.",
+      "rationale": "Ficha aprovada: resumo somente de negócio autorizado, consultas opcionais precedidas por gate de cada área e filtradas por workspace/negócio sob RLS. Não retorna corpos, tokens ou arquivos. Uma origem explícita por jornada. Abertura de minuta manual exige create próprio, membro ativo e proposta/negócio visíveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concessão automática. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveniência e proíbe alterações posteriores. Contratos históricos preservados. Assinatura real via hiring_contract_signature_context; status ativo não basta. Ações existentes mantêm seus gates (sales/work capabilities, send/share/approve/esign/serviços); readonly nega novas ações. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir histórico; carregamento de um corpo por vez. Revisão jurídica continua exigindo aprovador listado, CAS e nova aprovação do cliente; chamadas diretas sujeitas às mesmas invariantes. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant. | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass). | 26/11/2026: approval panel only adds PT-BR labels for commercial acceptance and execution audit events. Existing approval/audit reads, manage/approve and parent capabilities are unchanged; no new action or recipient. New execution/acceptance summaries hide cached results immediately when the current read gate is denied; permission scope is part of the query key and cached-data regressions cover allowed-to-restricted transitions. | Explicit approval substitution in this panel is separately governed by contract-approval-supervised-substitution; it does not decide for the previous reviewer.",
       "controls": [
         {
           "file": "src/lib/deals/contracting-journey.server.ts",
@@ -14751,8 +14751,7 @@
         "src/components/contracts/deal-contracts.tsx": "798d83688f028c055dd9fa1553079663f29b088746855fb5afd3efd75c96b4ac",
         "src/components/services/contract-services.tsx": "2e0fa984c420744b1413d33396c96a56166becd9ed53130437c5c35e1326eb19",
         "src/lib/workflows/engine/accepted-commercial-source.server.ts": "fda10abfddc77a282eaa181dc07f400b8852a393386d4885f9b847ff1b9572ec",
-        "src/components/deals/deal-quotes.tsx": "c2dd3a60a071861cad60efb37769adc2c322e2b2f953a659d267afd6f5255909",
-        "src/components/contracts/contract-approvals-panel.tsx": "f4aa21b2e2fa160d25702fa36b87f495b07a0f9d71efa7e1b66e60397768c352"
+        "src/components/deals/deal-quotes.tsx": "c2dd3a60a071861cad60efb37769adc2c322e2b2f953a659d267afd6f5255909"
       }
     },
     {
@@ -29063,6 +29062,97 @@
         "boundary": "One attached document bound to the selected contract/workspace and immutable current commercial hash, with private no-store attachment responses.",
         "revocation": "Token expiry/revoke, acceptance revoke, inactive/denied/reassigned issuer, changed material document or removed attachment. The live boundary runs before and after IO.",
         "review_by": "2027-02-26"
+      }
+    },
+    {
+      "id": "contract-approval-supervised-substitution",
+      "kind": "business",
+      "resources": [
+        "techcontracts.contracts",
+        "techcontracts.approvals",
+        "techcontracts.approval_substitution",
+        "techcontracts.audit",
+        "techcontracts.handoffs",
+        "techsales.activities"
+      ],
+      "actions": [
+        "view",
+        "update",
+        "manage",
+        "approve"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.approval_substitution.manage.workspace",
+        "techcontracts.approvals.view.workspace",
+        "techcontracts.approvals.manage.workspace",
+        "techcontracts.approvals.approve.workspace",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.update.workspace"
+      ],
+      "rationale": "An explicitly authorized active member may assume a current pending approval personally, never impersonating the previous assignee or deciding through the substitution endpoint. Requires the sensitive substitution key plus exact workspace approval manage/approve, parent update and record visibility, with effective deny and readonly enforced under the caller. No existing role receives a grant. Parent-first lock, current assignee CAS and reauthorization protect concurrent review. Canonical decide still enforces assignment and prior-stage order. Existing matching pending handoff/task is retargeted without changing deadlines, creator, task id or decision; immutable events preserve original assignee, actual actor and required reason. Context is finite and excludes hidden approvals. Standalone PostgreSQL tests exercise actual RBAC, SQL and canonical decide. Query cache keys include active workspace and effective permissions; cached approvals and audit details are hidden immediately when parent or area visibility is revoked. UI regressions cover permission revocation and workspace transitions.",
+      "files": {
+        "drizzle/migrations/0486_contract_approval_substitution.sql": "ed5327194f03aaf4e2596caf6fe0d0d152f6396c556565a6741491c500a5f922",
+        "src/lib/contracts/approval-substitution.functions.ts": "41470608789a3262603a3bc4a42be243d2a072d302eb977f09cfa71d17410d4f",
+        "src/components/contracts/contract-approvals-panel.tsx": "cff4ae111d50dd20209ee61c97eddbbaf8119506c7d3e400c65ed68f4faeef81"
+      },
+      "controls": [
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "drizzle/migrations/0486_contract_approval_substitution.sql",
+          "symbol": "public.contract_approval_substitution_authorize"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0486_contract_approval_substitution.sql",
+          "symbol": "public.contract_approval_substitution_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0486_contract_approval_substitution.sql",
+          "symbol": "public.contract_approval_substitution_context"
+        },
+        {
+          "file": "drizzle/migrations/0486_contract_approval_substitution.sql",
+          "symbol": "public.contract_approval_assume"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/approval-substitution-postgres.test.ts",
+          "name": "approval substitution SQL permits an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/approval-substitution-postgres.test.ts",
+          "name": "approval substitution SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/approval-substitution-postgres.test.ts",
+          "name": "approval substitution SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/approval-substitution-postgres.test.ts",
+          "name": "approval substitution SQL isolates another workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/approval-substitution-postgres.test.ts",
+          "name": "approval substitution SQL rejects inactive membership"
+        }
       }
     }
   ],

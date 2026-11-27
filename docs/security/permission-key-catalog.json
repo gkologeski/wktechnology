@@ -2869,7 +2869,8 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace"
+    "techservice.tickets.view.workspace",
+    "techcontracts.approval_substitution.manage.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -3258,6 +3259,9 @@
     },
     "techservice.service_execution.manage.workspace": {
       "migration": "drizzle/migrations/0483_contract_commercial_acceptance.sql"
+    },
+    "techcontracts.approval_substitution.manage.workspace": {
+      "migration": "drizzle/migrations/0486_contract_approval_substitution.sql"
     }
   }
 }
