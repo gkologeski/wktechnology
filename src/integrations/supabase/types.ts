@@ -6796,6 +6796,64 @@ export type Database = {
           },
         ]
       }
+      contract_acceptance_billing_releases: {
+        Row: {
+          acceptance_id: string
+          content_hash: string
+          contract_id: string
+          created_at: string
+          created_by: string
+          due_date: string | null
+          id: string
+          reason: string
+          workspace_id: string
+        }
+        Insert: {
+          acceptance_id: string
+          content_hash: string
+          contract_id: string
+          created_at?: string
+          created_by: string
+          due_date?: string | null
+          id?: string
+          reason: string
+          workspace_id: string
+        }
+        Update: {
+          acceptance_id?: string
+          content_hash?: string
+          contract_id?: string
+          created_at?: string
+          created_by?: string
+          due_date?: string | null
+          id?: string
+          reason?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_acceptance_billing_releases_acceptance_id_fkey"
+            columns: ["acceptance_id"]
+            isOneToOne: false
+            referencedRelation: "contract_commercial_acceptances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_acceptance_billing_releases_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_acceptance_billing_releases_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_approvals: {
         Row: {
           approver_id: string | null
@@ -6923,6 +6981,136 @@ export type Database = {
           },
           {
             foreignKeyName: "contract_attachments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_commercial_acceptance_links: {
+        Row: {
+          accepted_id: string | null
+          content_hash: string
+          contract_id: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          revoked_at: string | null
+          snapshot: Json
+          token_hash: string
+          workspace_id: string
+        }
+        Insert: {
+          accepted_id?: string | null
+          content_hash: string
+          contract_id: string
+          created_at?: string
+          created_by: string
+          expires_at: string
+          id?: string
+          revoked_at?: string | null
+          snapshot: Json
+          token_hash: string
+          workspace_id: string
+        }
+        Update: {
+          accepted_id?: string | null
+          content_hash?: string
+          contract_id?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          revoked_at?: string | null
+          snapshot?: Json
+          token_hash?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_commercial_acceptance_links_accepted_id_fkey"
+            columns: ["accepted_id"]
+            isOneToOne: false
+            referencedRelation: "contract_commercial_acceptances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_commercial_acceptance_links_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_commercial_acceptance_links_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_commercial_acceptances: {
+        Row: {
+          accepted_at: string
+          client_name: string
+          content_hash: string
+          contract_id: string
+          evidence: string
+          id: string
+          reason: string | null
+          recorded_at: string
+          recorded_by: string | null
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          source: string
+          workspace_id: string
+        }
+        Insert: {
+          accepted_at: string
+          client_name: string
+          content_hash: string
+          contract_id: string
+          evidence: string
+          id?: string
+          reason?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source: string
+          workspace_id: string
+        }
+        Update: {
+          accepted_at?: string
+          client_name?: string
+          content_hash?: string
+          contract_id?: string
+          evidence?: string
+          id?: string
+          reason?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_commercial_acceptances_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_commercial_acceptances_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -7988,6 +8176,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contract_service_signature_anchors: {
+        Row: {
+          captured_at: string
+          commercial_hash: string
+          contract_id: string
+          signature_base_hash: string
+          workspace_id: string
+        }
+        Insert: {
+          captured_at?: string
+          commercial_hash: string
+          contract_id: string
+          signature_base_hash: string
+          workspace_id: string
+        }
+        Update: {
+          captured_at?: string
+          commercial_hash?: string
+          contract_id?: string
+          signature_base_hash?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       contract_signature_packages: {
         Row: {
@@ -32073,6 +32285,51 @@ export type Database = {
           },
         ]
       }
+      service_execution_completions: {
+        Row: {
+          completed_on: string
+          created_at: string
+          created_by: string
+          id: string
+          reason: string
+          service_id: string
+          workspace_id: string
+        }
+        Insert: {
+          completed_on: string
+          created_at?: string
+          created_by: string
+          id?: string
+          reason: string
+          service_id: string
+          workspace_id: string
+        }
+        Update: {
+          completed_on?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          reason?: string
+          service_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_execution_completions_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: true
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_execution_completions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           assigned_to: string | null
@@ -38179,12 +38436,29 @@ export type Database = {
         Args: { _dom: string; _ws: string }
         Returns: string[]
       }
+      contract_approval_assume: {
+        Args: {
+          p_approval: string
+          p_contract: string
+          p_expected_approver: string
+          p_reason: string
+        }
+        Returns: Json
+      }
       contract_approval_decide: {
         Args: { p_approval: string; p_comment?: string; p_decision: string }
         Returns: Json
       }
       contract_approval_start: {
         Args: { p_contract: string; p_reset?: boolean; p_stages?: string[] }
+        Returns: Json
+      }
+      contract_approval_substitution_authorize: {
+        Args: { p_contract: string; p_write?: boolean }
+        Returns: string
+      }
+      contract_approval_substitution_context: {
+        Args: { p_contract: string }
         Returns: Json
       }
       contract_attachment_manage: {
@@ -38219,6 +38493,71 @@ export type Database = {
         Args: { p_contract: string; p_evidence?: Json; p_patch: Json }
         Returns: Json
       }
+      contract_commercial_annexes_visible: {
+        Args: { p_actor: string; p_contract: string; p_ws: string }
+        Returns: boolean
+      }
+      contract_commercial_authorize: {
+        Args: { p_contract: string; p_permission?: string; p_write?: boolean }
+        Returns: string
+      }
+      contract_commercial_content_hash: {
+        Args: { p_contract: string }
+        Returns: string
+      }
+      contract_commercial_current: {
+        Args: { p_contract: string }
+        Returns: string
+      }
+      contract_commercial_internal_approved: {
+        Args: { c: Database["public"]["Tables"]["contracts"]["Row"] }
+        Returns: boolean
+      }
+      contract_commercial_issue_link: {
+        Args: { p_contract: string }
+        Returns: Json
+      }
+      contract_commercial_public_accept: {
+        Args: {
+          p_client_email?: string
+          p_client_name: string
+          p_token: string
+        }
+        Returns: Json
+      }
+      contract_commercial_public_attachment: {
+        Args: { p_attachment: string; p_token: string }
+        Returns: Json
+      }
+      contract_commercial_public_get: {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      contract_commercial_record: {
+        Args: {
+          p_accepted_at: string
+          p_client_name: string
+          p_contract: string
+          p_evidence: string
+          p_expected_hash?: string
+          p_reason?: string
+        }
+        Returns: Json
+      }
+      contract_commercial_release_billing: {
+        Args: {
+          p_contract: string
+          p_due_date?: string
+          p_expected_hash?: string
+          p_reason?: string
+        }
+        Returns: Json
+      }
+      contract_commercial_revoke: {
+        Args: { p_contract: string; p_links_only?: boolean; p_reason: string }
+        Returns: Json
+      }
+      contract_commercial_state: { Args: { p_contract: string }; Returns: Json }
       contract_create_batch: {
         Args: { p_contract: Json; p_services?: Json; p_skip_existing?: boolean }
         Returns: Json
@@ -38599,6 +38938,14 @@ export type Database = {
       contract_release_draft_formalization: {
         Args: { p_contract: string }
         Returns: number
+      }
+      contract_service_billing_eligible: {
+        Args: { c: Database["public"]["Tables"]["contracts"]["Row"] }
+        Returns: boolean
+      }
+      contract_service_commercial_signature_hash: {
+        Args: { p_contract: string }
+        Returns: string
       }
       contract_set_legal_entity: {
         Args: { p_contract: string; p_legal_entity: string }
@@ -39417,6 +39764,10 @@ export type Database = {
         Returns: string
       }
       hiring_contract_fingerprint: {
+        Args: { p_contract: string }
+        Returns: string
+      }
+      hiring_contract_fingerprint_with_service_state_v1: {
         Args: { p_contract: string }
         Returns: string
       }
@@ -43502,6 +43853,11 @@ export type Database = {
         }
         Returns: undefined
       }
+      service_execution_complete: {
+        Args: { p_completed_on: string; p_reason: string; p_service: string }
+        Returns: Json
+      }
+      service_execution_state: { Args: { p_service: string }; Returns: Json }
       service_release_signature_billing: {
         Args: { p_contract: string }
         Returns: number
