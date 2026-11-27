@@ -21,6 +21,7 @@ import {
   deleteProjectUpdate,
   type ProjectUpdateRow,
 } from "@/lib/projects/delivery.functions";
+import { formatProgressPct } from "@/lib/projects/delivery-progress";
 import {
   HEALTH_VARIANT,
   formatDeliveryDate,
@@ -107,7 +108,7 @@ function ProjectDeliveryPage() {
   const latest = project.updates.find((u) => u.health) ?? project.updates[0] ?? null;
   const expected =
     project.updates.find((u) => u.expected_delivery_date)?.expected_delivery_date ?? project.due_at;
-  const progress = latest?.progress_pct ?? project.progress ?? 0;
+  const progress = latest?.progress_value ?? project.progress ?? 0;
 
   return (
     <div className="space-y-5">
@@ -168,7 +169,7 @@ function ProjectDeliveryPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Evolução</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p className="text-lg font-semibold tabular-nums">{progress}%</p>
+            <p className="text-lg font-semibold tabular-nums">{formatProgressPct(progress)}%</p>
             <Progress value={progress} aria-label="Evolução do projeto" />
           </CardContent>
         </Card>

@@ -12031,9 +12031,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: generated types add only the contract_purchase_payables_generate RPC signature; no table/grant change. 23/11/2026: regenerated for contract_purchase_sales table and contract_purchase_sale_set RPC (no new grants). | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass). | 26/11/2026: reviewed the additive generated declarations already present on main c031bf155 after imports 0479–0482. Compile-time types only; no runtime permission or grant change.",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion. | 23/11/2026 CONTAS-A-PAGAR-COMPRA: generated types add only the contract_purchase_payables_generate RPC signature; no table/grant change. 23/11/2026: regenerated for contract_purchase_sales table and contract_purchase_sale_set RPC (no new grants). | 24/11/2026 EMPRESA-PRESTADORA: contract_draft_merge_source returns legal_entity_id/legal_entity with draft->supplier->proposal->quote->workspace-default fallback; contract_draft_open inherits proposal/quote legal_entity_id; editable drafts/contracts/quotes allow changing active workspace legal entity via authorized RPCs (contract_draft_set_legal_entity requires listed active approver; contract_set_legal_entity requires work_area_authorize update + unsigned + no accepted_contract_draft) with audit events; accepted quotes, locked proposals, decided drafts, and signed/accepted-draft contracts remain immutable; UI uses LegalEntityField backed by finance_reference_list (no direct legal_entities RLS bypass). | 26/11/2026: reviewed the additive generated declarations already present on main c031bf155 after imports 0479–0482. Compile-time types only; no runtime permission or grant change. | 27/11/2026: regenerated after additive project_updates.progress_value column (0483_project_updates_decimal_progress); compile-time types only, no runtime permission or grant change.",
       "files": {
-        "src/integrations/supabase/types.ts": "355358b02c744f66b078cab60e2d86c41beed08ab2d6b4aebe2c7a1fea710fd2",
+        "src/integrations/supabase/types.ts": "7bc72699fb1c46ca3c0b93ee38c5d90feed28c6534133e539d2681044a90ca2f",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -29157,6 +29157,123 @@
           "file": "src/lib/contracts/approval-substitution-postgres.test.ts",
           "name": "approval substitution SQL rejects inactive membership"
         }
+      }
+    },
+    {
+      "id": "project-updates-decimal-progress",
+      "kind": "business",
+      "resources": [
+        "techprojects.project_updates",
+        "techprojects.projects",
+        "techsales.deal_delivery"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techprojects.project_updates.view.workspace",
+        "techprojects.project_updates.create.own",
+        "techprojects.project_updates.update.own",
+        "techprojects.project_updates.update.workspace",
+        "techprojects.project_updates.delete.workspace",
+        "techprojects.projects.view.own",
+        "techprojects.projects.view.team",
+        "techprojects.projects.view.workspace",
+        "techsales.deal_delivery.view.own",
+        "techsales.deal_delivery.view.team",
+        "techsales.deal_delivery.view.workspace"
+      ],
+      "rationale": "Adds additive numeric(5,2) column progress_value on public.project_updates with backfill from progress_pct, 0..100 CHECK constraint, and deprecation comment on progress_pct; updates project_updates_log_auto_event trigger function to populate progress_value alongside progress_pct. Preserves all existing RLS policies (work_structure_* and view_as_ro_*), table grants, requireSupabaseAuth/requireWorkPermission middlewares, assertAnyPermission checks, and UI capability gates without granting new permissions or altering workspace/role boundaries.",
+      "files": {
+        "drizzle/migrations/0483_project_updates_decimal_progress.sql": "145a925f08f287787e22d84e4534bf21aded00ed6b2f01448c904ef07e48755f",
+        "src/lib/projects/delivery.server.ts": "719eda6438a6e017f13e6f1b5ede745d903054eb86a7a1068ebe3b4a96985865",
+        "src/lib/projects/delivery.functions.ts": "4a0453be6f891061e581f1cad2295d6eb784dcdd18860a1a2aa8b89d76cbb824",
+        "src/components/projects/project-update-dialog.tsx": "ec4032b25eb533f3fed3861ab4d5f24f53d7cd2ea58ba97efb6449bd733bf29d",
+        "src/components/projects/delivery-timeline.tsx": "405b52571530d5115c454f5373783f025addce20de759db2b38d2268b29ee7fc",
+        "src/components/deals/deal-delivery-panel.tsx": "f4029718587f4e52b20f3712fc3b205d258d46ea4c6e18aa512089d21a4b7235",
+        "src/routes/_authenticated/projects_.$id.entrega.tsx": "7b7f734f48397660c96c87bf4131d239cb22554aaff299bc5bd43c117ac9e406"
+      },
+      "controls": [
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/projects/delivery.server.ts",
+          "symbol": "runGetDealDelivery"
+        },
+        {
+          "file": "src/lib/projects/delivery.server.ts",
+          "symbol": "runGetProjectDelivery"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/work-action.tsx",
+          "symbol": "WorkAction"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkRecordAccess"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0483_project_updates_decimal_progress.sql",
+          "symbol": "public.project_updates_log_auto_event"
+        },
+        {
+          "file": "drizzle/migrations/0219_order3_completion_activate.sql",
+          "symbol": "work_structure_select"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/projects/delivery.server.test.ts",
+          "name": "allows authorized active member to publish and read decimal progress_value"
+        },
+        "missing_permission": {
+          "file": "src/lib/projects/delivery.server.test.ts",
+          "name": "denies publishing project update when create permission is missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/projects/delivery.server.test.ts",
+          "name": "respects explicit deny before inserting or updating project update"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/projects/delivery.server.test.ts",
+          "name": "isolates projects and updates from another workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/projects/delivery.server.test.ts",
+          "name": "rejects inactive workspace member before mutating project updates"
+        }
+      }
+    },
+    {
+      "id": "project-updates-progress-format",
+      "kind": "presentation",
+      "rationale": "Pure validation schema, decimal parser, and pt-BR percentage formatting helpers for project delivery updates; no I/O, routes, or authorization decisions.",
+      "files": {
+        "src/lib/projects/delivery-progress.ts": "9bcc4b17cd0b248e23d670188884f5a3130f0f252689b779470552dbb2e44fa0"
       }
     }
   ],

@@ -3382,6 +3382,13 @@
       "when": 1795719600482,
       "tag": "0482_project_import_evidence_pages",
       "breakpoints": true
+    },
+    {
+      "idx": 483,
+      "version": "7",
+      "when": 1795785458653,
+      "tag": "0483_project_updates_decimal_progress",
+      "breakpoints": true
     }
   ]
 }

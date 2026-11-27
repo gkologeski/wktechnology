@@ -26724,6 +26724,7 @@ export type Database = {
           kind: string
           owner_id: string | null
           progress_pct: number | null
+          progress_value: number | null
           project_id: string
           published_at: string
           summary: string | null
@@ -26742,6 +26743,7 @@ export type Database = {
           kind?: string
           owner_id?: string | null
           progress_pct?: number | null
+          progress_value?: number | null
           project_id: string
           published_at?: string
           summary?: string | null
@@ -26760,6 +26762,7 @@ export type Database = {
           kind?: string
           owner_id?: string | null
           progress_pct?: number | null
+          progress_value?: number | null
           project_id?: string
           published_at?: string
           summary?: string | null

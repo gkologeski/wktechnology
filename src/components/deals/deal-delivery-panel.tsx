@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DeliveryTimeline } from "@/components/projects/delivery-timeline";
 import { ProjectUpdateDialog } from "@/components/projects/project-update-dialog";
 import { getDealDelivery, deleteProjectUpdate } from "@/lib/projects/delivery.functions";
+import { formatProgressPct } from "@/lib/projects/delivery-progress";
 import {
   HEALTH_VARIANT,
   formatDeliveryDate,
@@ -83,7 +84,7 @@ export function DealDeliveryPanel({ dealId }: { dealId: string }) {
           const latest = p.updates.find((u) => u.health) ?? p.updates[0] ?? null;
           const expected =
             p.updates.find((u) => u.expected_delivery_date)?.expected_delivery_date ?? p.due_at;
-          const progress = latest?.progress_pct ?? p.progress ?? 0;
+          const progress = latest?.progress_value ?? p.progress ?? 0;
           return (
             <div key={p.id} className="space-y-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -120,7 +121,7 @@ export function DealDeliveryPanel({ dealId }: { dealId: string }) {
               <div className="space-y-1">
                 <Progress value={progress} aria-label={`Evolução do projeto ${p.name}`} />
                 <p className="text-xs text-muted-foreground tabular-nums">
-                  {progress}% de evolução
+                  {formatProgressPct(progress)}% de evolução
                 </p>
               </div>
               <DeliveryTimeline

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, CircleDot } from "lucide-react";
 import type { ProjectUpdateRow } from "@/lib/projects/delivery.functions";
+import { formatProgressPct } from "@/lib/projects/delivery-progress";
 import {
   HEALTH_VARIANT,
   KIND_LABELS,
@@ -103,7 +104,9 @@ export function DeliveryTimeline({
               </p>
             )}
             <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground tabular-nums">
-              {typeof u.progress_pct === "number" && <span>Evolução: {u.progress_pct}%</span>}
+              {typeof u.progress_value === "number" && (
+                <span>Evolução: {formatProgressPct(u.progress_value)}%</span>
+              )}
               <span>Previsão: {formatDeliveryDate(u.expected_delivery_date)}</span>
             </div>
           </li>

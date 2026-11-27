@@ -28,7 +28,9 @@ import {
   updateProjectUpdate,
   type ProjectUpdateRow,
 } from "@/lib/projects/delivery.functions";
+import { formatProgressInputValue, parseProgressInput } from "@/lib/projects/delivery-progress";
 import { HEALTH_LABELS, VISIBILITY_LABELS } from "@/lib/projects/delivery-labels";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
 export function ProjectUpdateDialog({
@@ -47,6 +49,10 @@ export function ProjectUpdateDialog({
   const qc = useQueryClient();
   const create = useServerFn(createProjectUpdate);
   const patch = useServerFn(updateProjectUpdate);
+  const { canAny } = usePermissions();
+  const canSubmit = update
+    ? canAny(["own", "team", "workspace"].map((s) => `techprojects.project_updates.update.${s}`))
+    : canAny(["own", "team", "workspace"].map((s) => `techprojects.project_updates.create.${s}`));
 
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = open ?? internalOpen;
@@ -64,18 +70,23 @@ export function ProjectUpdateDialog({
     setTitle(update?.title ?? "");
     setSummary(update?.summary ?? "");
     setHealth(update?.health ?? "green");
-    setProgress(update?.progress_pct != null ? String(update.progress_pct) : "");
+    setProgress(formatProgressInputValue(update?.progress_value));
     setExpected(update?.expected_delivery_date ?? "");
     setVisibility(update?.visibility ?? "commercial");
   }, [isOpen, update]);
 
+  const parsedProgress = parseProgressInput(progress);
+  const progressError = parsedProgress.ok ? null : parsedProgress.error;
+
   const save = useMutation({
     mutationFn: async () => {
+      const parsed = parseProgressInput(progress);
+      if (!parsed.ok) throw new Error(parsed.error);
       const payload = {
         title: title.trim(),
         summary: summary.trim() ? summary.trim() : null,
         health: health as "green" | "yellow" | "red",
-        progressPct: progress.trim() === "" ? null : Number(progress),
+        progressPct: parsed.value,
         expectedDeliveryDate: expected || null,
         visibility: visibility as "internal" | "commercial",
       };
@@ -91,9 +102,7 @@ export function ProjectUpdateDialog({
     onError: (e: Error) => toast.error(e.message || "Não foi possível salvar o acompanhamento."),
   });
 
-  const invalid =
-    title.trim().length === 0 ||
-    (progress !== "" && (Number(progress) < 0 || Number(progress) > 100));
+  const invalid = !canSubmit || title.trim().length === 0 || !parsedProgress.ok;
 
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
@@ -142,13 +151,18 @@ export function ProjectUpdateDialog({
               <Label htmlFor="pu-progress">Evolução (%)</Label>
               <Input
                 id="pu-progress"
-                type="number"
-                min={0}
-                max={100}
+                inputMode="decimal"
                 value={progress}
                 onChange={(e) => setProgress(e.target.value)}
-                placeholder="0 a 100"
+                placeholder="0 a 100 (ex.: 34,3)"
+                aria-invalid={Boolean(progressError)}
+                aria-describedby={progressError ? "pu-progress-error" : undefined}
               />
+              {progressError && (
+                <p id="pu-progress-error" role="alert" className="text-xs text-destructive">
+                  {progressError}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pu-expected">Previsão de entrega</Label>

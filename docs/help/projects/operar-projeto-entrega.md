@@ -8,7 +8,7 @@ route_pattern: /projects/$id/entrega
 min_permission: techprojects.projects.view.own
 audience: internal
 sort_order: 200
-version: 2
+version: 3
 is_published: true
 ---
 # Publicar acompanhamento de entrega
@@ -31,7 +31,7 @@ is_published: true
 O acompanhamento macro é registrado na linha do tempo do projeto.
 
 ## Regras e limites
-Farol: Verde, Atenção ou Crítico. Visibilidade: Interno ou Visível ao comercial. Acompanhamento não cria tarefa, marco nem apontamento e não comprova aprovação financeira.
+Farol: Verde, Atenção ou Crítico. Evolução (%): aceita valores de 0 a 100 com até 2 casas decimais (por exemplo, 34,3 ou 34,25). Visibilidade: Interno ou Visível ao comercial. Acompanhamento não cria tarefa, marco nem apontamento e não comprova aprovação financeira.
 
 ## Erros comuns
 - Registro indisponível ou sem permissão: confira o workspace, o escopo e a capacidade específica; não tente contornar por URL.
