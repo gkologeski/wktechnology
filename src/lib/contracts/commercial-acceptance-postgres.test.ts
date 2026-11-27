@@ -688,6 +688,11 @@ it("an accepted and completed service bills once on the agreed date without faki
     let entries =
       await tx`select amount,due_date::text,direction from financial_entries where contract_id=${C}`;
     expect(entries).toEqual([{ amount: "4500", due_date: "2026-11-30", direction: "receivable" }]);
+    const [entryNote] = await tx`select notes from financial_entries where contract_id=${C}`;
+    expect(entryNote.notes).toBe(
+      "Liberado por aceite comercial; vencimento conforme acordo registrado.",
+    );
+    expect(entryNote.notes).not.toMatch(/assinatura/i);
     const [before] = await tx`select signed_at,status from contracts where id=${C}`;
     expect(before).toEqual({ signed_at: null, status: "awaiting_signature" });
     await privileged(tx);
@@ -697,6 +702,44 @@ it("an accepted and completed service bills once on the agreed date without faki
     expect(entries).toHaveLength(1);
     const [service] = await tx`select status,billing_hold from services where id=${S}`;
     expect(service).toEqual({ status: "completed", billing_hold: null });
+  });
+});
+
+it("activation after an authorized commercial release describes acceptance and preserves the real service start", async () => {
+  await subject(async (tx) => {
+    const state = await record(tx);
+    if (typeof state.currentHash !== "string") throw Error("Current commercial hash is required");
+    // Trusted fixture setup: exercise the activation branch with an existing
+    // authorized release, a still-pending service, and no generated installment.
+    await privileged(tx);
+    await tx`insert into contract_acceptance_billing_releases(workspace_id,contract_id,acceptance_id,content_hash,due_date,reason,created_by)
+      select ${W},${C},id,${state.currentHash},'2026-11-30','Liberação financeira previamente autorizada no teste.',${U}
+      from contract_commercial_acceptances where contract_id=${C} and revoked_at is null`;
+    await tx`update services set status='pending',billing_hold=null,billing_hold_schedule=null where id=${S}`;
+    await tx.unsafe("SET LOCAL ROLE authenticated");
+    const [activated] =
+      await tx`select service_activate_with_terms(${S}::uuid,'2026-10-22','[{"label":"Entrada","amount":4500,"dueDate":null,"dueEvent":"signature"}]'::jsonb) as r`;
+    expect(activated.r.generated).toBe(1);
+    expect(activated.r.service.status).toBe("active");
+    expect(activated.r.service.starts_at).toBe("2026-10-22");
+    const [entry] =
+      await tx`select notes,due_date::text from financial_entries where contract_id=${C}`;
+    expect(entry.due_date).toBe("2026-11-30");
+    expect(entry.notes).toBe(
+      "Liberado por aceite comercial; vencimento conforme acordo registrado.",
+    );
+    expect(entry.notes).not.toMatch(/assinatura/i);
+    const [contract] = await tx`select signed_at from contracts where id=${C}`;
+    expect(contract.signed_at).toBeNull();
+  });
+});
+
+it("signature-released billing retains its signature-dependent note", async () => {
+  await subject(async (tx) => {
+    await privileged(tx);
+    await tx`update contracts set signed_at=now() where id=${C}`;
+    const [entry] = await tx`select notes from financial_entries where contract_id=${C}`;
+    expect(entry.notes).toBe("Vence na assinatura do contrato.");
   });
 });
 

@@ -28804,7 +28804,7 @@
       ],
       "rationale": "Commercial acceptance is distinct from signature and execution. Authenticated actions use the caller RLS client and SQL current active workspace, membership, record scope, readonly and per-action deny checks. New keys grant no roles automatically. Explicit Finance release preserves internal approvals, creates provider receivables only using the held schedule and agreed due date, never sets signature fields, and is idempotent. Public read/assent is limited to a revocable 256-bit hashed capability for the current immutable commercial revision, requiring a currently active authorized issuer; no finance or signature is possible via the public boundary. Completion stores dated proof with no financial mutation. Canonical old activation grants remain enforced.",
       "files": {
-        "drizzle/migrations/0483_contract_commercial_acceptance.sql": "6c48b520541b95ea5d2d19374a2daec093ab2f7ad5be3dfe03d3c71b069ebcd6",
+        "drizzle/migrations/0483_contract_commercial_acceptance.sql": "f6e523b110f97c685f5080cbc20431bc6ad331090b2f02288fffcf44b17ab0fd",
         "src/lib/contracts/acceptance.functions.ts": "7930fc4fa5b0e9bc594121279c15262204900d9ecf82fe5ecc14fca1a006182d",
         "src/components/contracts/contract-acceptance-card.tsx": "8c983c9111b4c87d640f039df0e0b61c2d35cd3e1b9ce77476934863a68e5160",
         "src/routes/contract-acceptance.$token.tsx": "6c9bd5a0dc0d2e8458ccdb6652335f3cc5ef291a51901abc7510fca1a327a4de",

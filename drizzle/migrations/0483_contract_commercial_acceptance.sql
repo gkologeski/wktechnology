@@ -310,7 +310,7 @@ BEGIN
      left(coalesce(c.title,'Contrato')||' — '||coalesce(item->>'label','Parcela'),300),(item->>'amount')::numeric,coalesce(c.currency,s.currency,'BRL'),
      coalesce((SELECT min(due_date) FROM contract_acceptance_billing_releases WHERE contract_id=c.id AND content_hash=contract_commercial_content_hash(c.id)),(item->>'dueDate')::date,start_date),coalesce((SELECT min(due_date) FROM contract_acceptance_billing_releases WHERE contract_id=c.id AND content_hash=contract_commercial_content_hash(c.id)),(item->>'dueDate')::date,start_date),'open',
      'payment-terms:'||c.id::text||':'||n::text,n,jsonb_array_length(p_schedule),
-     CASE item->>'dueEvent' WHEN 'milestone' THEN 'Vence na entrega do marco: ajuste a data quando o marco for entregue.' WHEN 'signature' THEN 'Vence na assinatura do contrato.' END,
+     CASE WHEN NOT contract_is_signed_for_billing(c) THEN 'Liberado por aceite comercial; vencimento conforme acordo registrado.' ELSE CASE item->>'dueEvent' WHEN 'milestone' THEN 'Vence na entrega do marco: ajuste a data quando o marco for entregue.' WHEN 'signature' THEN 'Vence na assinatura do contrato.' END END,
      jsonb_build_object('payment_terms',true,'due_event',item->>'dueEvent'))
    ON CONFLICT DO NOTHING RETURNING id INTO inserted;
   END LOOP;
@@ -394,7 +394,7 @@ BEGIN
      VALUES(c.workspace_id,s.owner_id,CASE WHEN c.role='client' THEN 'payable'::financial_direction ELSE 'receivable'::financial_direction END,'contract',c.id,c.id,s.id,c.counterparty_company_id,
        left(coalesce(c.title,'Contrato')||' — '||coalesce(item->>'label','Parcela'),300),(item->>'amount')::numeric,coalesce(c.currency,s.currency,'BRL'),d,d,'open',
        'payment-terms:'||c.id::text||':'||n::text,n,jsonb_array_length(s.billing_hold_schedule),
-       CASE item->>'dueEvent' WHEN 'milestone' THEN 'Vence na entrega do marco: ajuste a data quando o marco for entregue.' WHEN 'signature' THEN 'Vence na assinatura do contrato.' END,
+       CASE WHEN NOT contract_is_signed_for_billing(c) THEN 'Liberado por aceite comercial; vencimento conforme acordo registrado.' ELSE CASE item->>'dueEvent' WHEN 'milestone' THEN 'Vence na entrega do marco: ajuste a data quando o marco for entregue.' WHEN 'signature' THEN 'Vence na assinatura do contrato.' END END,
        jsonb_build_object('payment_terms',true,'due_event',item->>'dueEvent','released_on_signature',contract_is_signed_for_billing(c),'released_on_acceptance',NOT contract_is_signed_for_billing(c)))
      ON CONFLICT DO NOTHING;
      total:=total+1;
