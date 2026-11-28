@@ -117,8 +117,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-bun-1.3.14-
       - run: bun install --frozen-lockfile
-      - name: Permission contracts and denial evidence
-        run: bun run permissions:check
       - name: Download all current-run shard proofs
         uses: actions/download-artifact@v4
         with:

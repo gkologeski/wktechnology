@@ -107,7 +107,6 @@ describe("CI acceleration keeps the release gate", () => {
     const steps = jobs.unit.steps;
     for (const command of [
       "bun install --frozen-lockfile",
-      "bun run permissions:check",
       "bun run verify",
       "bun run build",
       "bun run perf:check",
@@ -117,6 +116,9 @@ describe("CI acceleration keeps the release gate", () => {
       expect(step.if).toBe(command === "bun run verify" ? "${{ always() }}" : undefined);
       expect(step["continue-on-error"]).toBeUndefined();
     }
+    // verify performs its own fresh permission scan before aggregation. A
+    // duplicate outer scan adds latency without strengthening that boundary.
+    expect(steps.some((s: { run?: string }) => s.run === "bun run permissions:check")).toBe(false);
     const aggregate = steps.find((s: { run?: string }) => s.run === "bun run verify");
     expect(jobs.unit.if).toBe("${{ always() }}");
     expect(aggregate.env).toEqual({

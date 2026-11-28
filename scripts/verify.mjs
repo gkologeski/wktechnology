@@ -87,6 +87,9 @@ function run(step) {
     // mode. Vitest receives its shard through argv, not inherited control flags.
     delete childEnv.VERIFY_SHARD;
     delete childEnv.VERIFY_AGGREGATE;
+    // Reduce compiler contention with real database suites on four-core CI runners.
+    // Only the compiler child is bounded; test/service runtimes keep their env.
+    if (shard && step.name === "typecheck") childEnv.GOMAXPROCS = "1";
     const child = spawn(step.cmd, step.args, {
       env: childEnv,
       stdio: ["ignore", "pipe", "pipe"],

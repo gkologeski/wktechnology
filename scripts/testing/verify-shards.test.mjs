@@ -288,7 +288,7 @@ test("checkout must match the independent GitHub event SHA", () => {
 
 // Disposable subprocesses verify orchestration only; these substitutes do not
 // claim to test permission decisions, database policies or the product cases.
-async function runVerify(mode) {
+async function runVerify(mode, execution = "shard", aggregateExit = 0) {
   const root = mkdtempSync(join(tmpdir(), "verify-shards-orchestration-"));
   const put = (path, text) => {
     mkdirSync(join(root, path, ".."), { recursive: true });
@@ -308,7 +308,7 @@ async function runVerify(mode) {
     }
     put(
       "scripts/testing/verify-shards.test.mjs",
-      `import fs from 'node:fs';fs.appendFileSync('events',JSON.stringify({name:'orchestration',shard:process.env.VERIFY_SHARD,aggregate:process.env.VERIFY_AGGREGATE})+'\\n');`,
+      `import fs from 'node:fs';fs.appendFileSync('events',JSON.stringify({name:'orchestration',shard:process.env.VERIFY_SHARD,aggregate:process.env.VERIFY_AGGREGATE,go:process.env.GOMAXPROCS})+'\\n');`,
     );
     put("node_modules/@typescript/native-preview/package.json", '{"type":"module"}');
     put(
@@ -322,16 +322,25 @@ async function runVerify(mode) {
     for (const name of ["bun", "typecheck", "eslint", "vitest"])
       put(
         `node_modules/.bin/${name}`,
-        `#!${process.execPath}\nconst fs=require('node:fs');const name=${JSON.stringify(name)};fs.appendFileSync('events',JSON.stringify({name,args:process.argv.slice(2),shard:process.env.VERIFY_SHARD,aggregate:process.env.VERIFY_AGGREGATE})+'\\n');process.exit(process.env.MODE==='permission-failure'&&name==='bun'?7:0);`,
+        `#!${process.execPath}\nconst fs=require('node:fs');const name=${JSON.stringify(name)};fs.appendFileSync('events',JSON.stringify({name,args:process.argv.slice(2),shard:process.env.VERIFY_SHARD,aggregate:process.env.VERIFY_AGGREGATE,go:process.env.GOMAXPROCS})+'\\n');process.exit(process.env.MODE==='permission-failure'&&name==='bun'?7:0);`,
+      );
+    if (execution === "aggregate")
+      put(
+        "scripts/verify-shards.mjs",
+        // This subprocess tests wrapper ordering, never certifies real shard evidence.
+        `import fs from 'node:fs';fs.appendFileSync('events',JSON.stringify({name:'aggregate',go:process.env.GOMAXPROCS})+'\\n');fs.writeFileSync('.verification/verify.json',JSON.stringify({complete:false,fixture_aggregate:true}));process.exit(${aggregateExit});`,
       );
     const child = spawn(process.execPath, ["scripts/verify.mjs"], {
       cwd: root,
       env: {
         ...process.env,
+        // Emulate CI's ordinary wrapper process, not this outer node --test worker.
+        NODE_TEST_CONTEXT: undefined,
         PATH: `${join(root, "node_modules/.bin")}:${process.env.PATH}`,
         MODE: mode,
-        VERIFY_SHARD: "1/4",
-        VERIFY_AGGREGATE: undefined,
+        VERIFY_SHARD: execution === "shard" ? "1/4" : undefined,
+        VERIFY_AGGREGATE: execution === "aggregate" ? "1" : undefined,
+        GOMAXPROCS: "2",
         GITHUB_SHA: "a".repeat(40),
         GITHUB_RUN_ID: "123456",
         GITHUB_RUN_ATTEMPT: "1",
@@ -378,4 +387,57 @@ test("shard permission failure starts no downstream validators and leaves comple
     result.events.map((event) => event.name),
     ["bun"],
   );
+});
+test("aggregate wrapper runs exactly one fresh permission command before aggregation", async () => {
+  const result = await runVerify("allowed", "aggregate");
+  assert.equal(result.code, 0);
+  assert.deepEqual(
+    result.events.map((event) => event.name),
+    ["bun", "aggregate"],
+  );
+  assert.deepEqual(result.events[0].args, ["scripts/check-permissions.ts"]);
+  assert.equal(result.report.fixture_aggregate, true);
+  assert.equal(
+    result.report.complete,
+    false,
+    "An orchestration substitute cannot certify product evidence",
+  );
+});
+test("aggregate permission failure prevents aggregation and leaves the proof incomplete", async () => {
+  const result = await runVerify("permission-failure", "aggregate");
+  assert.equal(result.code, 7);
+  assert.deepEqual(
+    result.events.map((event) => event.name),
+    ["bun"],
+  );
+  assert.equal(result.report.complete, false);
+});
+test("aggregate failure propagates without converting partial evidence into a complete proof", async () => {
+  const result = await runVerify("allowed", "aggregate", 9);
+  assert.equal(result.code, 9);
+  assert.deepEqual(
+    result.events.map((event) => event.name),
+    ["bun", "aggregate"],
+  );
+  assert.equal(result.report.complete, false);
+});
+test("only the sharded native type checker receives the narrower Go CPU budget", async () => {
+  const result = await runVerify("allowed");
+  assert.equal(result.code, 0);
+  assert.equal(result.events.find((event) => event.name === "typecheck").go, "1");
+  for (const name of ["bun", "orchestration", "eslint", "vitest"]) {
+    const child = result.events.find((event) => event.name === name);
+    assert.ok(child, JSON.stringify(result.events));
+    assert.equal(child.go, "2");
+  }
+});
+test("unsharded verification preserves the caller's Go budget and complete validator set", async () => {
+  const result = await runVerify("allowed", "full");
+  assert.equal(result.code, 0);
+  assert.equal(result.report.complete, true);
+  assert.deepEqual(
+    result.report.steps.map((step) => step.name),
+    ["permissions", "typecheck", "lint", "test"],
+  );
+  assert.equal(result.events.find((event) => event.name === "typecheck").go, "2");
 });

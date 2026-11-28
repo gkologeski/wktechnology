@@ -418,7 +418,9 @@ describe("mandatory permission impact gate", () => {
     // Reviewed four-shard exception keeps the required final job unconditional
     // and fails closed; it must not legalize arbitrary skipped/optional gates.
     const sharded = readFileSync(".github/workflows/ci.yml", "utf8");
+    const actualVerify = readFileSync("scripts/verify.mjs", "utf8");
     f.write(".github/workflows/ci.yml", sharded);
+    f.write("scripts/verify.mjs", actualVerify);
     expect(assertCiWiring(f.root)).toEqual([]);
     const mutations = [
       (source: string) =>
@@ -457,6 +459,11 @@ describe("mandatory permission impact gate", () => {
           "run: bun run permissions:check\n      - name: Official help coverage",
         ),
       (source: string) =>
+        source.replace(
+          "      - name: Download all current-run shard proofs",
+          "      - run: bun run permissions:check\n      - name: Download all current-run shard proofs",
+        ),
+      (source: string) =>
         source.replace("run: bun run perf:check", "run: echo optional performance"),
       (source: string) =>
         source.replace("run: bun run perf:check", "run: bun run perf:check\n        if: false"),
@@ -471,6 +478,42 @@ describe("mandatory permission impact gate", () => {
       expect(invalid).not.toBe(sharded);
       f.write(".github/workflows/ci.yml", invalid);
       expect(assertCiWiring(f.root).length, `sharded CI mutation ${index}`).toBeGreaterThan(0);
+    }
+    f.write(".github/workflows/ci.yml", sharded);
+    const fresh = "const results = [await runLogged(STEPS[0])];";
+    const guard = "if (aggregateInput && results[0].ok && !interrupted)";
+    const aggregateBlock = actualVerify.slice(
+      actualVerify.indexOf(guard),
+      actualVerify.indexOf("// Authorization evidence must succeed"),
+    );
+    const verifyMutations = [
+      actualVerify.replace(fresh, "const results = [{ok:true}];"),
+      actualVerify.replace(fresh, "const results = [runLogged(STEPS[0])];"),
+      actualVerify.replace(
+        fresh,
+        "const results = [await runLogged(STEPS[0])], overwritten = (results[0] = {ok:true});",
+      ),
+      actualVerify.replace(fresh, "let results = [await runLogged(STEPS[0])];"),
+      actualVerify.replace(
+        fresh,
+        "const results = aggregateInput ? [{ok:true}] : [await runLogged(STEPS[0])];",
+      ),
+      actualVerify.replace(guard, "if (aggregateInput)"),
+      actualVerify.replace(guard, "results[0] = {ok:true};\n" + guard),
+      actualVerify.replace(aggregateBlock, guard + " {}\n"),
+      actualVerify.replace(fresh, "") + "\n" + fresh,
+      actualVerify.replace('"scripts/verify-shards.mjs"', '"scripts/unreviewed-aggregate.mjs"'),
+      actualVerify + "\nawait runLogged(STEPS[0]);",
+      actualVerify +
+        '\nawait runLogged({name:"aggregate",cmd:process.execPath,args:["scripts/verify-shards.mjs",".verification-parts"]});',
+    ];
+    for (const [index, invalid] of verifyMutations.entries()) {
+      expect(invalid).not.toBe(actualVerify);
+      f.write("scripts/verify.mjs", invalid);
+      expect(
+        assertCiWiring(f.root).some((finding) => finding.message.includes("fresh permission gate")),
+        `aggregate permission mutation ${index}`,
+      ).toBe(true);
     }
   });
   it("rejects an invalid exception review date instead of treating NaN as future", () => {

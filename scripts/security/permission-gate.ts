@@ -667,6 +667,125 @@ export function checkCoverage(
     },
   };
 }
+/** The sharded final job delegates its one fresh scan to the canonical wrapper. */
+function aggregatePermissionFirst(sf: ts.SourceFile): boolean {
+  const identifier = (node: ts.Node | undefined, name: string) =>
+    !!node && ts.isIdentifier(node) && node.text === name;
+  const indexZero = (node: ts.Node | undefined, name: string) =>
+    !!node &&
+    ts.isElementAccessExpression(node) &&
+    identifier(node.expression, name) &&
+    !!node.argumentExpression &&
+    ts.isNumericLiteral(node.argumentExpression) &&
+    node.argumentExpression.text === "0";
+  const freshCall = (node: ts.Node): node is ts.CallExpression =>
+    ts.isCallExpression(node) &&
+    identifier(node.expression, "runLogged") &&
+    node.arguments.length === 1 &&
+    indexZero(node.arguments[0], "STEPS");
+  const declaration = (statement: ts.Statement | undefined, name: string) => {
+    if (
+      !statement ||
+      !ts.isVariableStatement(statement) ||
+      (statement.declarationList.flags & ts.NodeFlags.BlockScoped) !== ts.NodeFlags.Const ||
+      statement.declarationList.declarations.length !== 1
+    )
+      return undefined;
+    const result = statement.declarationList.declarations[0];
+    return identifier(result.name, name) ? result : undefined;
+  };
+  const permissionIndex = sf.statements.findIndex((statement) => {
+    const result = declaration(statement, "results")?.initializer;
+    return (
+      result &&
+      ts.isArrayLiteralExpression(result) &&
+      result.elements.length === 1 &&
+      ts.isAwaitExpression(result.elements[0]) &&
+      freshCall(result.elements[0].expression)
+    );
+  });
+  if (permissionIndex < 0 || nodes(sf).filter(freshCall).length !== 1) return false;
+  const clauses = (expression: ts.Expression): ts.Expression[] =>
+    ts.isBinaryExpression(expression) &&
+    expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+      ? [...clauses(expression.left), ...clauses(expression.right)]
+      : [expression];
+  const guardIndex = sf.statements.findIndex((statement) => {
+    if (!ts.isIfStatement(statement)) return false;
+    const guards = clauses(statement.expression);
+    return (
+      guards.length === 3 &&
+      identifier(guards[0], "aggregateInput") &&
+      ts.isPropertyAccessExpression(guards[1]) &&
+      guards[1].name.text === "ok" &&
+      indexZero(guards[1].expression, "results") &&
+      ts.isPrefixUnaryExpression(guards[2]) &&
+      guards[2].operator === ts.SyntaxKind.ExclamationToken &&
+      identifier(guards[2].operand, "interrupted")
+    );
+  });
+  // No intervening statement may overwrite the freshly awaited gate result.
+  if (guardIndex !== permissionIndex + 1) return false;
+  const guard = sf.statements[guardIndex];
+  if (!ts.isIfStatement(guard) || !ts.isBlock(guard.thenStatement)) return false;
+  const combined = declaration(guard.thenStatement.statements[0], "combined")?.initializer;
+  if (!combined || !ts.isAwaitExpression(combined) || !ts.isCallExpression(combined.expression))
+    return false;
+  const call = combined.expression;
+  if (!identifier(call.expression, "runLogged") || call.arguments.length !== 1) return false;
+  const argument = call.arguments[0];
+  if (
+    !ts.isObjectLiteralExpression(argument) ||
+    argument.properties.some((p) => !ts.isPropertyAssignment(p))
+  )
+    return false;
+  const fields = new Map(
+    argument.properties
+      .filter(ts.isPropertyAssignment)
+      .map((p) => [p.name.getText(sf), p.initializer]),
+  );
+  const name = fields.get("name"),
+    cmd = fields.get("cmd"),
+    args = fields.get("args");
+  if (
+    fields.size !== 3 ||
+    !name ||
+    !ts.isStringLiteralLike(name) ||
+    name.text !== "aggregate" ||
+    !cmd ||
+    !ts.isPropertyAccessExpression(cmd) ||
+    !identifier(cmd.expression, "process") ||
+    cmd.name.text !== "execPath" ||
+    !args ||
+    !ts.isArrayLiteralExpression(args) ||
+    args.elements.length !== 2 ||
+    !ts.isStringLiteralLike(args.elements[0]) ||
+    args.elements[0].text !== "scripts/verify-shards.mjs" ||
+    !ts.isStringLiteralLike(args.elements[1]) ||
+    args.elements[1].text !== ".verification-parts"
+  )
+    return false;
+  // A second, unguarded aggregate cannot hide behind the recognized safe branch.
+  return (
+    nodes(sf).filter(
+      (node) =>
+        ts.isCallExpression(node) &&
+        identifier(node.expression, "runLogged") &&
+        node.arguments.some(
+          (arg) =>
+            ts.isObjectLiteralExpression(arg) &&
+            arg.properties.some(
+              (p) =>
+                ts.isPropertyAssignment(p) &&
+                p.name.getText(sf) === "name" &&
+                ts.isStringLiteralLike(p.initializer) &&
+                p.initializer.text === "aggregate",
+            ),
+        ),
+    ).length === 1
+  );
+}
+
 export function assertCiWiring(root: string): Finding[] {
   const findings: Finding[] = [];
   const add = (message: string) => findings.push({ code: "ci_wiring", message });
@@ -785,8 +904,8 @@ export function assertCiWiring(root: string): Finding[] {
     !("pull_request" in ci.on) ||
     !("push" in ci.on) ||
     (!sharded && unit?.if !== undefined) ||
-    gate < 0 ||
-    verifyStep <= gate ||
+    (!sharded && (gate < 0 || verifyStep <= gate)) ||
+    (sharded && gate >= 0) ||
     build <= verifyStep ||
     !checkout ||
     (checkout.with as Record<string, unknown> | undefined)?.["fetch-depth"] !== 0
@@ -805,6 +924,10 @@ export function assertCiWiring(root: string): Finding[] {
   )
     add("Gate, verification and build cannot be optional or ignore failures");
   const sf = tree("verify.mjs", readSource(root, "scripts/verify.mjs"));
+  if (sharded && !aggregatePermissionFirst(sf))
+    add(
+      "Sharded aggregation must await exactly one fresh permission gate before its protected aggregate",
+    );
   const declaration = nodes(sf).find(
     (n) => ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === "STEPS",
   ) as ts.VariableDeclaration | undefined;
