@@ -82,22 +82,73 @@ export function snapshot(root: string, commit: string): Snapshot {
     ),
   };
 }
-function tree(file: string, source: string) {
-  return ts.createSourceFile(
-    file,
-    source,
-    ts.ScriptTarget.Latest,
-    true,
-    file.endsWith("x") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
-  );
+// Syntax only: every caller still performs its fresh source/path checks before
+// this memo. Never retain findings, permission verdicts, test evidence or metadata.
+const AST_MEMO_MAX_FILES = 64;
+const AST_MEMO_MAX_SOURCE_UNITS = 2_000_000;
+const AST_MEMO_MAX_NODES = 250_000;
+const AST_MEMO_MAX_SINGLE_SOURCE_UNITS = 500_000;
+const AST_MEMO_MAX_SINGLE_NODES = 100_000;
+type AstMemoEntry = {
+  source: string;
+  kind: ts.ScriptKind;
+  sf: ts.SourceFile;
+  nodeCount: number;
+};
+const parsedSources = new Map<string, AstMemoEntry>();
+const fullNodeLists = new WeakMap<ts.SourceFile, readonly ts.Node[]>();
+let retainedSourceUnits = 0;
+let retainedNodes = 0;
+function forgetParsedSource(file: string, entry: AstMemoEntry) {
+  parsedSources.delete(file);
+  retainedSourceUnits -= entry.source.length;
+  retainedNodes -= entry.nodeCount;
 }
-function nodes(root: ts.Node): ts.Node[] {
+function tree(file: string, source: string) {
+  const kind = file.endsWith("x") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const previous = parsedSources.get(file);
+  if (previous && previous.kind === kind && previous.source === source) {
+    // Refresh only LRU order. The exact text, parser options and parent links match.
+    parsedSources.delete(file);
+    parsedSources.set(file, previous);
+    return previous.sf;
+  }
+  if (previous) forgetParsedSource(file, previous);
+  const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, kind);
+  // Only full-file traversals are memoized. Overlapping subtree arrays stay fresh.
+  const flat = nodes(sf);
+  if (source.length > AST_MEMO_MAX_SINGLE_SOURCE_UNITS || flat.length > AST_MEMO_MAX_SINGLE_NODES)
+    return sf;
+  while (
+    parsedSources.size >= AST_MEMO_MAX_FILES ||
+    retainedSourceUnits + source.length > AST_MEMO_MAX_SOURCE_UNITS ||
+    retainedNodes + flat.length > AST_MEMO_MAX_NODES
+  ) {
+    const oldest = parsedSources.entries().next().value;
+    if (!oldest) break;
+    forgetParsedSource(oldest[0], oldest[1]);
+  }
+  parsedSources.set(file, { source, kind, sf, nodeCount: flat.length });
+  retainedSourceUnits += source.length;
+  retainedNodes += flat.length;
+  return sf;
+}
+function nodes(root: ts.Node): readonly ts.Node[] {
+  if (ts.isSourceFile(root)) {
+    const previous = fullNodeLists.get(root);
+    if (previous) return previous;
+  }
   const result: ts.Node[] = [];
   const walk = (n: ts.Node) => {
     result.push(n);
     ts.forEachChild(n, walk);
   };
   walk(root);
+  if (ts.isSourceFile(root)) {
+    const readonly = Object.freeze(result);
+    fullNodeLists.set(root, readonly);
+    return readonly;
+  }
   return result;
 }
 function callName(node: ts.Expression): string | undefined {

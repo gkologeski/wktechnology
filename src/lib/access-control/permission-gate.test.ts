@@ -1,5 +1,16 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+  statSync,
+  utimesSync,
+  unlinkSync,
+  renameSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import {
@@ -13,6 +24,21 @@ import {
   sqlDeclarations,
   type Contract,
 } from "../../../scripts/security/permission-gate";
+const parserCalls = vi.hoisted(() => ({ count: 0 }));
+vi.mock("typescript", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("typescript")>();
+  const compiler = (actual as unknown as { default?: typeof actual }).default ?? actual;
+  return {
+    ...actual,
+    default: {
+      ...compiler,
+      createSourceFile: (...args: Parameters<typeof compiler.createSourceFile>) => {
+        parserCalls.count++;
+        return compiler.createSourceFile(...args);
+      },
+    },
+  };
+});
 const roots: string[] = [];
 afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
@@ -515,5 +541,217 @@ describe("mandatory permission impact gate", () => {
     f.write(f.file, s);
     f.c.files[f.file] = hash(s);
     expect(f.run().findings).toEqual([]);
+  });
+});
+
+describe("process-local syntax memo remains fresh and fail-closed", () => {
+  it("re-evaluates same-path same-size source after warming even with an updated review hash", () => {
+    const f = fixture();
+    expect(f.run().findings).toEqual([]);
+    const path = join(f.root, f.file),
+      originalStat = statSync(path);
+    const changed = f.source.replace('check("demo.records")', 'other("demo.records")');
+    expect(changed.length).toBe(f.source.length);
+    f.write(f.file, changed);
+    utimesSync(path, originalStat.atime, originalStat.mtime);
+    f.c.files[f.file] = hash(changed);
+    const findings = f.run().findings;
+    expect(findings.some((x) => x.code === "stale_contract")).toBe(false);
+    expect(findings.some((x) => x.code === "control_binding")).toBe(true);
+    f.write(f.file, f.source);
+    f.c.files[f.file] = hash(f.source);
+    expect(f.run().findings).toEqual([]);
+  });
+  it("does not reuse a warmed definition after its symbol changes", () => {
+    const f = fixture();
+    expect(f.run().findings).toEqual([]);
+    f.write(
+      "src/guard.ts",
+      "export function anotherBoundary(resource: string) { return resource; }",
+    );
+    expect(f.run().findings.some((x) => x.code === "control_definition")).toBe(true);
+  });
+  it("re-reads named evidence files even though they are outside production snapshots", () => {
+    const f = fixture();
+    expect(f.run().findings).toEqual([]);
+    const original = readFileSync(join(f.root, f.test), "utf8");
+    f.write(f.test, original.replace('it("inactive",', 'it.skip("inactive",'));
+    expect(f.run().findings.some((x) => x.code === "denial_evidence")).toBe(true);
+    f.write(f.test, original);
+    expect(f.run().findings).toEqual([]);
+  });
+  it("does not return a warmed parse before checking a newly introduced source symlink", () => {
+    const f = fixture(),
+      path = join(f.root, f.file);
+    expect(invokes(f.root, f.file, "requireBoundary")).toBe(true);
+    unlinkSync(path);
+    symlinkSync(join(f.root, "src/guard.ts"), path);
+    expect(() => invokes(f.root, f.file, "requireBoundary")).toThrow("symlink");
+    expect(() => f.run()).toThrow("symlink");
+  });
+  it("still checks every parent path component after warming", () => {
+    const f = fixture();
+    expect(invokes(f.root, f.file, "requireBoundary")).toBe(true);
+    const directory = dirname(join(f.root, f.file)),
+      moved = directory + "-original";
+    renameSync(directory, moved);
+    symlinkSync(moved, directory);
+    expect(() => invokes(f.root, f.file, "requireBoundary")).toThrow("symlink");
+  });
+  it("does not turn deletion of warmed source or test evidence into a cached pass", () => {
+    const f = fixture();
+    expect(f.run().findings).toEqual([]);
+    unlinkSync(join(f.root, f.test));
+    expect(f.run().findings.some((x) => x.code === "denial_evidence")).toBe(true);
+    unlinkSync(join(f.root, f.file));
+    expect(() => invokes(f.root, f.file, "requireBoundary")).toThrow();
+  });
+  it("does not share a binding decision across roots with identical relative filenames", () => {
+    const allowed = fixture(),
+      denied = fixture();
+    expect(allowed.run().findings).toEqual([]);
+    const changed = denied.source.replace('check("demo.records")', 'other("demo.records")');
+    denied.write(denied.file, changed);
+    denied.c.files[denied.file] = hash(changed);
+    expect(denied.run().findings.some((x) => x.code === "control_binding")).toBe(true);
+    expect(allowed.run().findings).toEqual([]);
+  });
+  it("preserves the filename-based TS and TSX parser distinction", () => {
+    const jsx = "export const View=()=> <button onClick={()=>1}>x</button>;";
+    expect(features("kind.tsx", jsx).events).toBe(true);
+    expect(features("kind.ts", jsx).events).toBe(false);
+    expect(features("kind.tsx", jsx).events).toBe(true);
+  });
+  it("returns fresh public feature arrays rather than memoized findings", () => {
+    const text = 'createFileRoute("/original")({});';
+    const first = features("feature.ts", text);
+    first.routes.push("/caller-injected");
+    expect(features("feature.ts", text).routes).toEqual(["/original"]);
+  });
+  it("re-evaluates contract metadata, catalog and exception time with unchanged source", () => {
+    const f = fixture();
+    expect(f.run().findings).toEqual([]);
+    f.catalog.clear();
+    expect(f.run().findings.some((x) => x.code === "unknown_key")).toBe(true);
+    f.catalog.add("demo.records.view.workspace");
+    f.c.actions = ["delete"];
+    expect(f.run().findings.some((x) => x.code === "matrix")).toBe(true);
+    f.c.actions = ["view"];
+    f.c.kind = "public";
+    f.c.permission_keys = [];
+    f.c.exception = {
+      mechanism: "signed record token",
+      boundary: "one contract record",
+      revocation: "revoke the record token",
+      review_by: "2027-01-01",
+    };
+    expect(f.run().findings).toEqual([]);
+    expect(
+      checkCoverage(
+        f.root,
+        f.base,
+        [f.c],
+        f.catalog,
+        new Date("2027-01-02T00:00:00Z"),
+      ).findings.some((x) => x.code === "exception"),
+    ).toBe(true);
+  });
+  it("keeps syntax behavior after eviction pressure and oversized uncached inputs", () => {
+    const guarded = 'createFileRoute("/kept")({});';
+    expect(features("first.ts", guarded).risky).toBe(true);
+    for (let i = 0; i < 256; i++)
+      expect(features(`pressure-${i}.ts`, `const x${i}=${i};`).risky).toBe(false);
+    expect(features("first.ts", guarded).routes).toEqual(["/kept"]);
+    expect(features("first.ts", 'const text="createFileRoute";').risky).toBe(false);
+    const prefix = "/*" + "x".repeat(600_000) + "*/\n";
+    expect(
+      features("oversized.tsx", prefix + "const View=()=> <button onClick={()=>1}/>;").events,
+    ).toBe(true);
+    expect(features("oversized.tsx", prefix + "const View=()=> <button/>;").events).toBe(false);
+  });
+  it("cannot keep CI wiring green after a warmed verify or test-discovery AST changes", () => {
+    const f = fixture();
+    f.write(
+      "package.json",
+      JSON.stringify({
+        scripts: { "permissions:check": "bun scripts/check-permissions.ts" },
+      }),
+    );
+    f.write(
+      ".github/workflows/ci.yml",
+      "on:\n  push:\n  pull_request:\njobs:\n  unit:\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - run: bun run permissions:check\n      - run: bun run verify\n      - run: bun run build\n",
+    );
+    const verify =
+      'const STEPS=[{name:"permissions",cmd:"bun",args:["scripts/check-permissions.ts"]}];';
+    f.write("scripts/verify.mjs", verify);
+    f.write("vitest.config.ts", 'const config={test:{include:["src/**/*.test.ts"]}};');
+    expect(assertCiWiring(f.root)).toEqual([]);
+    f.write("scripts/verify.mjs", "const STEPS=[]; // permissions scripts/check-permissions.ts");
+    expect(assertCiWiring(f.root).some((x) => x.message.includes("real permission gate"))).toBe(
+      true,
+    );
+    f.write("scripts/verify.mjs", verify);
+    f.write("vitest.config.ts", 'const config={test:{include:["src/**/*.spec.ts"]}};');
+    expect(assertCiWiring(f.root).some((x) => x.message.includes("discovery changed"))).toBe(true);
+  });
+});
+
+describe("syntax memo reuse and retention limits", () => {
+  it("reuses an exact parser input and reparses every new source generation", () => {
+    parserCalls.count = 0;
+    const file = "memo-count-reuse.ts",
+      first = 'createFileRoute("/one")({});',
+      changed = 'createFileRoute("/two")({});';
+    expect(features(file, first).routes).toEqual(["/one"]);
+    expect(features(file, first).routes).toEqual(["/one"]);
+    expect(parserCalls.count).toBe(1);
+    expect(features(file, changed).routes).toEqual(["/two"]);
+    expect(parserCalls.count).toBe(2);
+    expect(features(file, first).routes).toEqual(["/one"]);
+    expect(parserCalls.count).toBe(3);
+  });
+  it("evicts an old filename after the bounded file count is exceeded", () => {
+    const first = "memo-limit-files-first.ts",
+      text = "const first=1;";
+    features(first, text);
+    for (let i = 0; i < 64; i++) features(`memo-limit-files-${i}.ts`, `const value${i}=${i};`);
+    const before = parserCalls.count;
+    features(first, text);
+    expect(parserCalls.count).toBe(before + 1);
+  });
+  it("bounds retained source units even below the file and node count limits", () => {
+    const text = "/*" + "x".repeat(150_000) + "*/ const value=1;";
+    const first = "memo-limit-source-first.ts";
+    features(first, text);
+    // Seventeen tiny-node files fit the filename limit, but exceed two million UTF-16 units.
+    for (let i = 0; i < 16; i++) features(`memo-limit-source-${i}.ts`, text);
+    const before = parserCalls.count;
+    features(first, text);
+    expect(parserCalls.count).toBe(before + 1);
+  });
+  it("bounds retained full traversal nodes even below the source and file limits", () => {
+    const text = "let value;\n".repeat(8_000),
+      first = "memo-limit-nodes-first.ts";
+    features(first, text);
+    // Each input has >32k nodes but <100k; eleven files use <1m source units.
+    for (let i = 0; i < 10; i++) features(`memo-limit-nodes-${i}.ts`, text);
+    const before = parserCalls.count;
+    features(first, text);
+    expect(parserCalls.count).toBe(before + 1);
+  });
+  it("does not retain an individual source beyond the source-unit cap", () => {
+    const text = "/*" + "x".repeat(600_000) + "*/ const value=1;";
+    parserCalls.count = 0;
+    features("memo-single-source-limit.ts", text);
+    features("memo-single-source-limit.ts", text);
+    expect(parserCalls.count).toBe(2);
+  });
+  it("does not retain an individual AST beyond the node cap", () => {
+    const text = "let value;\n".repeat(30_000);
+    expect(text.length).toBeLessThan(500_000);
+    parserCalls.count = 0;
+    features("memo-single-node-limit.ts", text);
+    features("memo-single-node-limit.ts", text);
+    expect(parserCalls.count).toBe(2);
   });
 });
