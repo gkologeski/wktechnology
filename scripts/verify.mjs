@@ -18,18 +18,24 @@ const STEPS = [
   },
   { name: "test", cmd: "vitest", args: ["run"] },
 ];
-// Shards validate all standard steps; only the final aggregator may certify complete.
+// Independent type and test parts stay incomplete until the final aggregator
+// verifies every current-run proof. Ordinary local verification still runs all checks.
 const shardInput = process.env.VERIFY_SHARD;
 const aggregateInput = process.env.VERIFY_AGGREGATE;
+const typesInput = process.env.VERIFY_TYPES;
 if (shardInput !== undefined && !/^[1-4]\/4$/.test(shardInput))
   throw new Error("VERIFY_SHARD must be 1/4, 2/4, 3/4 or 4/4");
 if (aggregateInput !== undefined && aggregateInput !== "1")
   throw new Error("VERIFY_AGGREGATE must be 1");
-if (shardInput && aggregateInput) throw new Error("Shard and aggregate modes are exclusive");
+if (typesInput !== undefined && typesInput !== "1") throw new Error("VERIFY_TYPES must be 1");
+if ([shardInput, aggregateInput, typesInput].filter(Boolean).length > 1)
+  throw new Error("Shard, types and aggregate modes are exclusive");
 const shard = shardInput ? { index: Number(shardInput[0]), count: 4 } : null;
-const identity = shard
+const isPart = Boolean(shard || typesInput);
+const identity = isPart
   ? {
-      shard,
+      ...(shard ? { shard } : {}),
+      part_kind: shard ? "tests" : "types",
       root: process.cwd(),
       commit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
       run_id: process.env.GITHUB_RUN_ID,
@@ -37,22 +43,23 @@ const identity = shard
     }
   : {};
 if (
-  shard &&
+  isPart &&
   process.env.GITHUB_ACTIONS === "true" &&
   (!/^[a-f0-9]{40}$/.test(process.env.GITHUB_SHA ?? "") ||
     identity.commit !== process.env.GITHUB_SHA)
 )
-  throw new Error("Shard checkout must match the GitHub event SHA");
+  throw new Error("Verification part checkout must match the GitHub event SHA");
 if (shard) {
   const { shardTestArgs } = await import("./verify-shards.mjs");
   STEPS[3].args = shardTestArgs(shard.index);
 }
 if (shard)
-  STEPS.splice(1, 0, {
+  STEPS.splice(1, 1, {
     name: "orchestration",
     cmd: process.execPath,
     args: ["--test", "scripts/testing/verify-shards.test.mjs"],
   });
+if (typesInput) STEPS.splice(2);
 
 const MAX_OUTPUT = 200_000; // caracteres guardados por etapa (fim da saída)
 
@@ -87,9 +94,7 @@ function run(step) {
     // mode. Vitest receives its shard through argv, not inherited control flags.
     delete childEnv.VERIFY_SHARD;
     delete childEnv.VERIFY_AGGREGATE;
-    // Reduce compiler contention with real database suites on four-core CI runners.
-    // Only the compiler child is bounded; test/service runtimes keep their env.
-    if (shard && step.name === "typecheck") childEnv.GOMAXPROCS = "1";
+    delete childEnv.VERIFY_TYPES;
     const child = spawn(step.cmd, step.args, {
       env: childEnv,
       stdio: ["ignore", "pipe", "pipe"],
@@ -170,8 +175,8 @@ writeFileSync(
       interrupted,
       source_hash: sourceHash,
       source_changed: sourceChanged,
-      complete: complete && !shard,
-      part_complete: shard ? complete : undefined,
+      complete: complete && !isPart,
+      part_complete: isPart ? complete : undefined,
       ...identity,
       steps: results,
     },
@@ -180,7 +185,7 @@ writeFileSync(
   ),
 );
 console.log(
-  `\n[verify] complete=${complete && !shard} part_complete=${shard ? complete : "n/a"} total ${((finishedAt - startedAt) / 1000).toFixed(1)}s`,
+  `\n[verify] complete=${complete && !isPart} part_complete=${isPart ? complete : "n/a"} total ${((finishedAt - startedAt) / 1000).toFixed(1)}s`,
 );
 const firstFail = results.find((r) => !r.ok);
 process.exit(complete ? 0 : interrupted ? 130 : firstFail?.exit_code || 1);

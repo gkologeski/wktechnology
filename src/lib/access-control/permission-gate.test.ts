@@ -419,6 +419,12 @@ describe("mandatory permission impact gate", () => {
     // and fails closed; it must not legalize arbitrary skipped/optional gates.
     const sharded = readFileSync(".github/workflows/ci.yml", "utf8");
     const actualVerify = readFileSync("scripts/verify.mjs", "utf8");
+    const typesBlock = sharded.slice(
+      sharded.indexOf("  verification_types:\n"),
+      sharded.indexOf("  unit:\n"),
+    );
+    const changeTypes = (source: string, from: string, to: string) =>
+      source.replace(typesBlock, typesBlock.replace(from, to));
     f.write(".github/workflows/ci.yml", sharded);
     f.write("scripts/verify.mjs", actualVerify);
     expect(assertCiWiring(f.root)).toEqual([]);
@@ -443,6 +449,50 @@ describe("mandatory permission impact gate", () => {
         source.replace(
           "SHARD_JOB_RESULT: ${{ needs.verification_shards.result }}",
           "SHARD_JOB_RESULT: success",
+        ),
+      (source: string) => source.replace("verification_types:\n", "removed_types:\n"),
+      (source: string) =>
+        source.replace(
+          "needs: [verification_shards, verification_types]",
+          "needs: verification_shards",
+        ),
+      (source: string) => source.replace('VERIFY_TYPES: "1"', 'VERIFY_TYPES: "0"'),
+      (source: string) =>
+        source.replace(
+          "TYPES_JOB_RESULT: ${{ needs.verification_types.result }}",
+          "TYPES_JOB_RESULT: success",
+        ),
+      (source: string) =>
+        source.replace("          TYPES_JOB_RESULT: ${{ needs.verification_types.result }}\n", ""),
+      (source: string) =>
+        changeTypes(source, "    steps:\n", "    if: ${{ success() }}\n    steps:\n"),
+      (source: string) =>
+        changeTypes(source, "    steps:\n", "    continue-on-error: true\n    steps:\n"),
+      (source: string) =>
+        changeTypes(source, "run: bun run verify\n", "run: bun run verify\n        if: false\n"),
+      (source: string) =>
+        changeTypes(source, "run: bun install --frozen-lockfile", "run: bun install"),
+      (source: string) => changeTypes(source, 'node-version: "24.22.2"', 'node-version: "22"'),
+      (source: string) => changeTypes(source, "bun-version: 1.3.14", "bun-version: 1.0.0"),
+      (source: string) =>
+        changeTypes(source, "fetch-depth: 0", "fetch-depth: 0\n          ref: refs/heads/stale"),
+      (source: string) =>
+        changeTypes(
+          source,
+          "name: verification-types-${{ github.run_id }}-${{ github.run_attempt }}",
+          "name: verification-types-old",
+        ),
+      (source: string) =>
+        source.replace(
+          "name: Download the current-run full type proof",
+          "if: false\n        name: Download the current-run full type proof",
+        ),
+      (source: string) =>
+        source.replace("path: .verification-types\n", "path: .verification-stale-types\n"),
+      (source: string) =>
+        source.replace(
+          "name: verification-types-${{ github.run_id }}-${{ github.run_attempt }}\n          path: .verification-types",
+          "name: verification-types-${{ github.run_id }}-1\n          path: .verification-types",
         ),
       (source: string) =>
         source.replace("VERIFY_SHARD: ${{ matrix.shard }}/4", "VERIFY_SHARD: 1/4"),
@@ -513,6 +563,32 @@ describe("mandatory permission impact gate", () => {
       expect(
         assertCiWiring(f.root).some((finding) => finding.message.includes("fresh permission gate")),
         `aggregate permission mutation ${index}`,
+      ).toBe(true);
+    }
+    const typeMutations = [
+      actualVerify.replace(
+        'args: ["--noEmit", "--incremental", "false"]',
+        'args: ["--noEmit", "--project", "tsconfig.subset.json"]',
+      ),
+      actualVerify.replace("cmd: getTsgoExe()", 'cmd: "tsc"'),
+      actualVerify.replace("if (typesInput) STEPS.splice(2);", "if (typesInput) STEPS.splice(1);"),
+      actualVerify.replace("STEPS.splice(1, 1,", "STEPS.splice(1, 0,"),
+      actualVerify.replace(
+        'typesInput !== undefined && typesInput !== "1"',
+        'typesInput !== undefined && typesInput !== "0"',
+      ),
+      actualVerify.replace(
+        "[shardInput, aggregateInput, typesInput].filter(Boolean).length > 1",
+        "[shardInput, aggregateInput].filter(Boolean).length > 1",
+      ),
+      actualVerify + "\nSTEPS.splice(1,1);",
+    ];
+    for (const [index, invalid] of typeMutations.entries()) {
+      expect(invalid).not.toBe(actualVerify);
+      f.write("scripts/verify.mjs", invalid);
+      expect(
+        assertCiWiring(f.root).some((finding) => finding.message.includes("Isolated types")),
+        `isolated full types mutation ${index}`,
       ).toBe(true);
     }
   });

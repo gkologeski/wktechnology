@@ -96,7 +96,7 @@ describe("CI acceleration keeps the release gate", () => {
     });
     expect(steps.indexOf(verify)).toBeLessThan(steps.indexOf(save));
     expect(steps.indexOf(save)).toBeLessThan(steps.indexOf(upload));
-    expect(jobs.unit.needs).toBe("verification_shards");
+    expect(jobs.unit.needs).toEqual(["verification_shards", "verification_types"]);
     const finalSteps = jobs.unit.steps;
     expect(finalSteps.findIndex((s: { run?: string }) => s.run === "bun run verify")).toBeLessThan(
       finalSteps.findIndex((s: { run?: string }) => s.run === "bun run build"),
@@ -125,6 +125,7 @@ describe("CI acceleration keeps the release gate", () => {
       VERIFY_AGGREGATE: "1",
       VERIFY_PREVIOUS_STEPS_OK: "${{ job.status == 'success' }}",
       SHARD_JOB_RESULT: "${{ needs.verification_shards.result }}",
+      TYPES_JOB_RESULT: "${{ needs.verification_types.result }}",
     });
     for (const command of ["bun install --frozen-lockfile", "bun run verify"]) {
       const step = jobs.verification_shards.steps.find((s: { run?: string }) => s.run === command);
@@ -135,6 +136,52 @@ describe("CI acceleration keeps the release gate", () => {
     expect(workflow().permissions).toEqual({ contents: "read" });
     expect(steps[0].with["persist-credentials"]).toBe(false);
     expect(jobs.verification_shards.steps[0].with["persist-credentials"]).toBe(false);
+  });
+  it("requires an independent full native type part from the same checkout and current run", () => {
+    const jobs = workflow().jobs;
+    const types = jobs.verification_types;
+    const finalSteps = jobs.unit.steps;
+    const verify = types.steps.find((s: { run?: string }) => s.run === "bun run verify");
+    expect(types.if).toBeUndefined();
+    expect(types.needs).toBeUndefined();
+    expect(types.strategy).toBeUndefined();
+    expect(types["continue-on-error"]).toBeUndefined();
+    expect(verify.env).toEqual({ GOMAXPROCS: "2", VERIFY_TYPES: "1" });
+    expect(verify.if).toBeUndefined();
+    expect(verify["continue-on-error"]).toBeUndefined();
+    expect(types.steps[0]).toEqual(jobs.verification_shards.steps[0]);
+    for (const action of ["actions/setup-node@v7", "oven-sh/setup-bun@v2"]) {
+      const find = (steps: Array<{ uses?: string }>) => steps.find((s) => s.uses === action);
+      expect(find(types.steps)).toEqual(find(jobs.verification_shards.steps));
+      expect(find(types.steps)).toEqual(find(finalSteps));
+    }
+    const install = types.steps.find(
+      (s: { run?: string }) => s.run === "bun install --frozen-lockfile",
+    );
+    expect(types.steps.indexOf(install)).toBeGreaterThan(0);
+    expect(types.steps.indexOf(install)).toBeLessThan(types.steps.indexOf(verify));
+    const upload = types.steps.find(
+      (s: { uses?: string }) => s.uses === "actions/upload-artifact@v4",
+    );
+    expect(upload.if).toBe("always()");
+    expect(upload.with).toMatchObject({
+      "include-hidden-files": true,
+      name: "verification-types-${{ github.run_id }}-${{ github.run_attempt }}",
+      path: ".verification/",
+    });
+    const download = finalSteps.find(
+      (s: { uses?: string; with?: { path?: string } }) =>
+        s.uses === "actions/download-artifact@v4" && s.with?.path === ".verification-types",
+    );
+    expect(download.with).toEqual({
+      name: "verification-types-${{ github.run_id }}-${{ github.run_attempt }}",
+      path: ".verification-types",
+    });
+    expect(download.if).toBeUndefined();
+    expect(download["continue-on-error"]).toBeUndefined();
+    expect(finalSteps.indexOf(download)).toBeLessThan(
+      finalSteps.findIndex((s: { run?: string }) => s.run === "bun run verify"),
+    );
   });
 });
 

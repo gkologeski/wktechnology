@@ -786,6 +786,127 @@ function aggregatePermissionFirst(sf: ts.SourceFile): boolean {
   );
 }
 
+/** Types run once in an independent part; no file/project filter replaces the full check. */
+function isolatedTypesWiring(sf: ts.SourceFile): boolean {
+  const identifier = (node: ts.Node | undefined, name: string) =>
+    !!node && ts.isIdentifier(node) && node.text === name;
+  const literal = (node: ts.Node | undefined, value: string) =>
+    !!node && ts.isStringLiteralLike(node) && node.text === value;
+  const numeric = (node: ts.Node | undefined, value: string) =>
+    !!node && ts.isNumericLiteral(node) && node.text === value;
+  const all = nodes(sf);
+  const rejects = (condition: string) =>
+    sf.statements.some(
+      (statement) =>
+        ts.isIfStatement(statement) &&
+        statement.expression.getText(sf).replace(/\s+/g, "") === condition &&
+        ts.isThrowStatement(statement.thenStatement) &&
+        !statement.elseStatement,
+    );
+  if (
+    !rejects('typesInput!==undefined&&typesInput!=="1"') ||
+    !rejects("[shardInput,aggregateInput,typesInput].filter(Boolean).length>1")
+  )
+    return false;
+  const declaration = all.find(
+    (node) => ts.isVariableDeclaration(node) && identifier(node.name, "STEPS"),
+  ) as ts.VariableDeclaration | undefined;
+  const definitions = declaration?.initializer;
+  if (
+    !definitions ||
+    !ts.isArrayLiteralExpression(definitions) ||
+    definitions.elements.length !== 4
+  )
+    return false;
+  const type = definitions.elements[1];
+  if (!ts.isObjectLiteralExpression(type) || type.properties.length !== 3) return false;
+  const fields = new Map(
+    type.properties.filter(ts.isPropertyAssignment).map((p) => [p.name.getText(sf), p.initializer]),
+  );
+  const cmd = fields.get("cmd"),
+    args = fields.get("args");
+  if (
+    !literal(fields.get("name"), "typecheck") ||
+    !cmd ||
+    !ts.isCallExpression(cmd) ||
+    !identifier(cmd.expression, "getTsgoExe") ||
+    cmd.arguments.length !== 0 ||
+    !args ||
+    !ts.isArrayLiteralExpression(args) ||
+    args.elements.length !== 3 ||
+    !["--noEmit", "--incremental", "false"].every((value, i) => literal(args.elements[i], value)) ||
+    !sf.statements.some(
+      (statement) =>
+        ts.isImportDeclaration(statement) &&
+        identifier(statement.importClause?.name, "getTsgoExe") &&
+        literal(
+          statement.moduleSpecifier,
+          "../node_modules/@typescript/native-preview/lib/getExePath.js",
+        ),
+    )
+  )
+    return false;
+  const spliceCalls = all.filter(
+    (node): node is ts.CallExpression =>
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      identifier(node.expression.expression, "STEPS") &&
+      node.expression.name.text === "splice",
+  );
+  if (spliceCalls.length !== 2) return false;
+  const modeCall = (mode: string) => {
+    const statement = sf.statements.find(
+      (node) =>
+        ts.isIfStatement(node) &&
+        identifier(node.expression, mode) &&
+        ts.isExpressionStatement(node.thenStatement),
+    );
+    return statement &&
+      ts.isIfStatement(statement) &&
+      !statement.elseStatement &&
+      ts.isExpressionStatement(statement.thenStatement) &&
+      ts.isCallExpression(statement.thenStatement.expression)
+      ? statement.thenStatement.expression
+      : undefined;
+  };
+  const types = modeCall("typesInput"),
+    shard = modeCall("shard");
+  if (
+    !types ||
+    !spliceCalls.includes(types) ||
+    types.arguments.length !== 1 ||
+    !numeric(types.arguments[0], "2") ||
+    !shard ||
+    !spliceCalls.includes(shard) ||
+    shard.arguments.length !== 3 ||
+    !numeric(shard.arguments[0], "1") ||
+    !numeric(shard.arguments[1], "1")
+  )
+    return false;
+  const orchestration = shard.arguments[2];
+  if (!ts.isObjectLiteralExpression(orchestration) || orchestration.properties.length !== 3)
+    return false;
+  const step = new Map(
+    orchestration.properties
+      .filter(ts.isPropertyAssignment)
+      .map((p) => [p.name.getText(sf), p.initializer]),
+  );
+  const command = step.get("cmd"),
+    argv = step.get("args");
+  return (
+    literal(step.get("name"), "orchestration") &&
+    !!command &&
+    ts.isPropertyAccessExpression(command) &&
+    identifier(command.expression, "process") &&
+    command.name.text === "execPath" &&
+    !!argv &&
+    ts.isArrayLiteralExpression(argv) &&
+    argv.elements.length === 2 &&
+    literal(argv.elements[0], "--test") &&
+    literal(argv.elements[1], "scripts/testing/verify-shards.test.mjs")
+  );
+}
+
 export function assertCiWiring(root: string): Finding[] {
   const findings: Finding[] = [];
   const add = (message: string) => findings.push({ code: "ci_wiring", message });
@@ -815,36 +936,88 @@ export function assertCiWiring(root: string): Finding[] {
       | { "fail-fast"?: unknown; matrix?: Record<string, unknown> }
       | undefined;
     const shardSteps = shardJob.steps ?? [];
+    const typesJob = ci.jobs?.verification_types;
+    const typesSteps = typesJob?.steps ?? [];
+    const typesVerify = typesSteps.findIndex((step) => step.run === "bun run verify");
+    const typesEnv = typesSteps[typesVerify]?.env as Record<string, unknown> | undefined;
+    const typesCheckout = typesSteps.find((step) => step.uses === "actions/checkout@v4");
+    const typesCheckoutWith = typesCheckout?.with as Record<string, unknown> | undefined;
+    const typesUpload = typesSteps.find((step) => step.uses === "actions/upload-artifact@v4");
+    const typesUploadWith = typesUpload?.with as Record<string, unknown> | undefined;
     const shardVerify = shardSteps.findIndex((step) => step.run === "bun run verify");
     const shardEnv = shardSteps[shardVerify]?.env as Record<string, unknown> | undefined;
     const shardCheckout = shardSteps.find((step) => step.uses === "actions/checkout@v4");
     const shardUpload = shardSteps.find((step) => step.uses === "actions/upload-artifact@v4");
-    const download = steps.find((step) => step.uses === "actions/download-artifact@v4");
+    const downloads = steps.filter((step) => step.uses === "actions/download-artifact@v4");
+    const download = downloads.find(
+      (step) => (step.with as Record<string, unknown> | undefined)?.path === ".verification-parts",
+    );
+    const typesDownload = downloads.find(
+      (step) => (step.with as Record<string, unknown> | undefined)?.path === ".verification-types",
+    );
+    const typesDownloadWith = typesDownload?.with as Record<string, unknown> | undefined;
     const shardUploadWith = shardUpload?.with as Record<string, unknown> | undefined;
     const downloadWith = download?.with as Record<string, unknown> | undefined;
     const shardCheckoutWith = shardCheckout?.with as Record<string, unknown> | undefined;
     const checkoutWith = checkout?.with as Record<string, unknown> | undefined;
+    const producerUnsafe = (producerSteps: Array<Record<string, unknown>>, verify: number) =>
+      producerSteps
+        .slice(0, verify + 1)
+        .some(
+          (step) =>
+            step.if !== undefined ||
+            step["continue-on-error"] ||
+            (typeof step.run === "string" && /\|\|\s*true|set\s+\+e/.test(step.run)),
+        ) ||
+      producerSteps
+        .slice(0, verify)
+        .some(
+          (step) =>
+            typeof step.run === "string" && /permissions:check|check-permissions/.test(step.run),
+        );
+    const runtime = (jobSteps: Array<Record<string, unknown>>, action: string, key: string) =>
+      (
+        jobSteps.find((step) => step.uses === action)?.with as Record<string, unknown> | undefined
+      )?.[key];
+    const nodeVersion = runtime(steps, "actions/setup-node@v7", "node-version");
+    const bunVersion = runtime(steps, "oven-sh/setup-bun@v2", "bun-version");
     if (
       unit?.name !== "Full verification and performance" ||
       Object.entries(ci.jobs ?? {}).some(
         ([id, job]) => id !== "unit" && job.name === "Full verification and performance",
       ) ||
-      unit?.needs !== "verification_shards" ||
+      JSON.stringify(unit?.needs) !==
+        JSON.stringify(["verification_shards", "verification_types"]) ||
       unit.if !== "${{ always() }}" ||
       unit["continue-on-error"] ||
       shardJob.if !== undefined ||
       shardJob["continue-on-error"] ||
+      !typesJob ||
+      typesJob.if !== undefined ||
+      typesJob["continue-on-error"] ||
+      typesJob.strategy !== undefined ||
+      typesJob.needs !== undefined ||
+      typesVerify < 0 ||
+      typesSteps.filter((step) => step.run === "bun run verify").length !== 1 ||
+      typesEnv?.VERIFY_TYPES !== "1" ||
+      typesEnv.VERIFY_SHARD !== undefined ||
+      typesEnv.VERIFY_AGGREGATE !== undefined ||
+      typesEnv.GOMAXPROCS !== "2" ||
+      !typesCheckout ||
+      typesCheckoutWith?.["fetch-depth"] !== 0 ||
+      producerUnsafe(typesSteps, typesVerify) ||
       strategy?.["fail-fast"] !== false ||
       JSON.stringify(strategy.matrix) !== JSON.stringify({ shard: [1, 2, 3, 4] }) ||
       shardVerify < 0 ||
       shardSteps.filter((step) => step.run === "bun run verify").length !== 1 ||
       shardEnv?.VERIFY_SHARD !== "${{ matrix.shard }}/4" ||
       shardEnv.VERIFY_AGGREGATE !== undefined ||
+      shardEnv.VERIFY_TYPES !== undefined ||
       shardEnv.GOMAXPROCS !== "2" ||
       shardEnv.VITEST_MAX_WORKERS !== "2" ||
       !shardCheckout ||
       shardCheckoutWith?.["fetch-depth"] !== 0 ||
-      [shardCheckoutWith, checkoutWith].some(
+      [shardCheckoutWith, typesCheckoutWith, checkoutWith].some(
         (options) =>
           !options ||
           options.ref !== undefined ||
@@ -857,35 +1030,48 @@ export function assertCiWiring(root: string): Finding[] {
           (step) =>
             step.run === "bunx vitest list --filesOnly --json .verification/test-inventory.json",
         ) ||
-      shardSteps
-        .slice(0, shardVerify + 1)
-        .some(
-          (step) =>
-            step.if !== undefined ||
-            step["continue-on-error"] ||
-            (typeof step.run === "string" && /\|\|\s*true|set\s+\+e/.test(step.run)),
-        ) ||
-      // The first real permission check belongs to verify's timed STEPS[0].
-      shardSteps
-        .slice(0, shardVerify)
-        .some(
-          (step) =>
-            typeof step.run === "string" && /permissions:check|check-permissions/.test(step.run),
-        ) ||
+      producerUnsafe(shardSteps, shardVerify) ||
+      !nodeVersion ||
+      !bunVersion ||
+      [shardSteps, typesSteps].some(
+        (producerSteps) =>
+          runtime(producerSteps, "actions/setup-node@v7", "node-version") !== nodeVersion ||
+          runtime(producerSteps, "oven-sh/setup-bun@v2", "bun-version") !== bunVersion ||
+          producerSteps.filter((step) => step.run === "bun install --frozen-lockfile").length !==
+            1 ||
+          producerSteps.findIndex((step) => step.run === "bun install --frozen-lockfile") >=
+            producerSteps.findIndex((step) => step.run === "bun run verify"),
+      ) ||
       shardUpload?.if !== "always()" ||
+      shardUpload["continue-on-error"] ||
       shardUploadWith?.["include-hidden-files"] !== true ||
       shardUploadWith.name !==
         "verification-shard-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}" ||
       shardUploadWith.path !== ".verification/" ||
+      typesUpload?.if !== "always()" ||
+      typesUpload["continue-on-error"] ||
+      typesUploadWith?.["include-hidden-files"] !== true ||
+      typesUploadWith.name !==
+        "verification-types-${{ github.run_id }}-${{ github.run_attempt }}" ||
+      typesUploadWith.path !== ".verification/" ||
+      downloads.length !== 2 ||
       downloadWith?.pattern !==
         "verification-shard-${{ github.run_id }}-${{ github.run_attempt }}-*" ||
       downloadWith.path !== ".verification-parts" ||
       downloadWith["merge-multiple"] !== false ||
+      steps.indexOf(download!) >= verifyStep ||
+      typesDownloadWith?.name !==
+        "verification-types-${{ github.run_id }}-${{ github.run_attempt }}" ||
+      typesDownloadWith.pattern !== undefined ||
+      typesDownloadWith["merge-multiple"] !== undefined ||
+      steps.indexOf(typesDownload!) >= verifyStep ||
       steps[verifyStep]?.if !== "${{ always() }}" ||
       aggregateEnv?.VERIFY_AGGREGATE !== "1" ||
       aggregateEnv.VERIFY_SHARD !== undefined ||
+      aggregateEnv.VERIFY_TYPES !== undefined ||
       aggregateEnv.VERIFY_PREVIOUS_STEPS_OK !== "${{ job.status == 'success' }}" ||
       aggregateEnv.SHARD_JOB_RESULT !== "${{ needs.verification_shards.result }}" ||
+      aggregateEnv.TYPES_JOB_RESULT !== "${{ needs.verification_types.result }}" ||
       steps.filter((step) => step.run === "bun run verify").length !== 1 ||
       performance <= build ||
       !steps
@@ -896,7 +1082,7 @@ export function assertCiWiring(root: string): Finding[] {
         )
     )
       add(
-        "Two-shard verification must preserve all gates, current-run evidence and an unconditional fail-closed aggregate",
+        "Four test shards and isolated full types must preserve all gates, current-run evidence and an unconditional fail-closed aggregate",
       );
   }
   if (
@@ -927,6 +1113,10 @@ export function assertCiWiring(root: string): Finding[] {
   if (sharded && !aggregatePermissionFirst(sf))
     add(
       "Sharded aggregation must await exactly one fresh permission gate before its protected aggregate",
+    );
+  if (sharded && !isolatedTypesWiring(sf))
+    add(
+      "Isolated types must preserve the full native command and exact permission-first test/type modes",
     );
   const declaration = nodes(sf).find(
     (n) => ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === "STEPS",

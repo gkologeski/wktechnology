@@ -3,6 +3,7 @@ import test from "node:test";
 import { spawn } from "node:child_process";
 import {
   copyFileSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -12,7 +13,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import { aggregate, currentCiCommit, discoverTestFiles, shardTestArgs } from "../verify-shards.mjs";
 import { sourceFingerprint } from "../perf/source-fingerprint.mjs";
 
@@ -31,12 +32,13 @@ function fixture(root = "/ci/workspace") {
     runId: "123456",
     runAttempt: "1",
     shardJobResult: "success",
+    typesJobResult: "success",
     priorStepsOk: "true",
     now,
   };
   const iso = (ms) => new Date(ms).toISOString();
   const steps = (index) =>
-    ["permissions", "orchestration", "typecheck", "lint", "test"].map((name) => {
+    ["permissions", "orchestration", "lint", "test"].map((name) => {
       const start = now - (name === "permissions" ? 200000 : 190000);
       const end = now - (name === "permissions" ? 195000 : 2000);
       return {
@@ -52,7 +54,9 @@ function fixture(root = "/ci/workspace") {
             ? ["vitest", ...shardTestArgs(index)].join(" ")
             : name === "orchestration"
               ? "node --test scripts/testing/verify-shards.test.mjs"
-              : name,
+              : name === "permissions"
+                ? "bun scripts/check-permissions.ts"
+                : name,
       };
     });
   const files = inventory.map((entry, index) => ({
@@ -73,6 +77,7 @@ function fixture(root = "/ci/workspace") {
       verify: {
         complete: false,
         part_complete: true,
+        part_kind: "tests",
         source_changed: false,
         interrupted: null,
         commit: expected.commit,
@@ -99,17 +104,35 @@ function fixture(root = "/ci/workspace") {
       },
     };
   });
-  return { parts, expected };
+  const typesPart = {
+    verify: {
+      ...parts[0].verify,
+      part_kind: "types",
+      steps: [
+        { ...parts[0].verify.steps[0] },
+        {
+          ...parts[0].verify.steps[1],
+          name: "typecheck",
+          command: `${root}/node_modules/@typescript/native-preview-linux-x64/lib/tsgo --noEmit --incremental false`,
+        },
+      ],
+    },
+  };
+  delete typesPart.verify.shard;
+  return { parts, expected, typesPart };
 }
-test("four complete parts certify all 608 unique files and 6691 passed assertions within global wall time", () => {
-  const { parts, expected } = fixture();
-  const result = aggregate(parts, expected);
+test("four test parts and a separate full typecheck certify all files and assertions within global wall time", () => {
+  const { parts, expected, typesPart } = fixture();
+  const result = aggregate(parts, expected, typesPart);
   assert.equal(result.complete, true);
   assert.equal(result.test_files, 608);
   assert.equal(result.passed_assertions, 6691);
   assert.equal(result.duration_ms, 200000);
+  assert.equal(result.typecheck_parts, 1);
+  assert.deepEqual(result.typecheck_proof, typesPart.verify);
+  assert.equal(result.steps.filter((step) => step.part_kind === "types").length, 2);
 });
-test("aggregate CLI loads all four artifact directories and rejects a missing directory", async () => {
+test("aggregate CLI requires all four test directories and the separate types artifact", async () => {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "verify-aggregate-cli-")));
   const put = (path, text) => {
     mkdirSync(join(root, path, ".."), { recursive: true });
@@ -123,11 +146,13 @@ test("aggregate CLI loads all four artifact directories and rejects a missing di
       "src/lib/performance/budgets.ts",
     ])
       put(path, readFileSync(path, "utf8"));
-    const { parts, expected } = fixture(root);
+    const { parts, expected, typesPart } = fixture(root);
     for (const item of expected.inventory) writeFileSync(item.file, "// synthetic test inventory");
     put("bin/git", `#!${process.execPath}\nprocess.stdout.write('${expected.commit}')`);
     const hash = sourceFingerprint(root);
     put(".verification/test-inventory.json", JSON.stringify(expected.inventory));
+    typesPart.verify.source_hash = hash;
+    put(".verification-types/verify.json", JSON.stringify(typesPart.verify));
     for (const part of parts) {
       part.verify.source_hash = hash;
       const directory = `.verification-parts/shard-${part.verify.shard.index}`;
@@ -146,6 +171,7 @@ test("aggregate CLI loads all four artifact directories and rejects a missing di
             GITHUB_RUN_ID: expected.runId,
             GITHUB_RUN_ATTEMPT: expected.runAttempt,
             SHARD_JOB_RESULT: "success",
+            TYPES_JOB_RESULT: "success",
             VERIFY_PREVIOUS_STEPS_OK: "true",
           },
           stdio: "ignore",
@@ -157,6 +183,12 @@ test("aggregate CLI loads all four artifact directories and rejects a missing di
     const report = () => JSON.parse(readFileSync(join(root, ".verification/verify.json"), "utf8"));
     assert.equal(report().complete, true);
     assert.equal(report().shard_count, 4);
+    assert.equal(report().typecheck_parts, 1);
+    rmSync(join(root, ".verification-types/verify.json"));
+    assert.equal(await run(), 1);
+    assert.equal(report().complete, false);
+    put(".verification-types/verify.json", JSON.stringify(typesPart.verify));
+    assert.equal(await run(), 0);
     assert.equal(report().test_files, 608);
     rmSync(join(root, ".verification-parts/shard-4"), { recursive: true });
     assert.equal(await run(), 1);
@@ -166,7 +198,7 @@ test("aggregate CLI loads all four artifact directories and rejects a missing di
   }
 });
 test("legitimate new files/cases are accepted without a manual count baseline", () => {
-  const { parts, expected } = fixture();
+  const { parts, expected, typesPart } = fixture();
   const file = `${expected.root}/src/new-legitimate.test.ts`;
   expected.inventory.push({ file, projectName: "isolated" });
   expected.physicalFiles.push(file);
@@ -178,15 +210,15 @@ test("legitimate new files/cases are accepted without a manual count baseline", 
   });
   parts[1].tests.numTotalTests++;
   parts[1].tests.numPassedTests++;
-  const result = aggregate(parts, expected);
+  const result = aggregate(parts, expected, typesPart);
   assert.equal(result.test_files, 609);
   assert.equal(result.passed_assertions, 6692);
 });
 test("narrowed configured inventory cannot omit a physical mandatory test", () => {
-  const { parts, expected } = fixture();
+  const { parts, expected, typesPart } = fixture();
   expected.inventory.pop();
   parts[1].tests.testResults.pop();
-  assert.throws(() => aggregate(parts, expected), /physical test file/);
+  assert.throws(() => aggregate(parts, expected, typesPart), /physical test file/);
 });
 test("physical discovery includes nested mandatory tests and refuses symlinks", () => {
   const root = mkdtempSync(join(tmpdir(), "verify-shards-inventory-"));
@@ -210,15 +242,19 @@ for (const extra of [
   " --passWithNoTests",
 ])
   test(`filtered/modified Vitest command is refused: ${extra}`, () => {
-    const { parts, expected } = fixture();
-    parts[0].verify.steps[4].command += extra;
-    assert.throws(() => aggregate(parts, expected), /exact unfiltered/);
+    const { parts, expected, typesPart } = fixture();
+    parts[0].verify.steps[3].command += extra;
+    assert.throws(() => aggregate(parts, expected, typesPart), /exact unfiltered/);
   });
 const negatives = {
   "missing shard": (p) => p.pop(),
   "legacy two-part evidence": (p) => p.splice(2),
   "extra shard": (p) => p.push(structuredClone(p[0])),
   "legacy shard denominator": (p) => (p[0].verify.shard.count = 2),
+  "legacy missing part kind": (p) => delete p[0].verify.part_kind,
+  "type proof substituted for test shard": (p) => (p[0].verify.part_kind = "types"),
+  "legacy mixed test/type steps": (p) =>
+    p[0].verify.steps.splice(2, 0, { ...p[0].verify.steps[2], name: "typecheck" }),
   "out-of-range shard": (p) => (p[3].verify.shard.index = 5),
   "duplicate shard": (p) => (p[1].verify.shard.index = 1),
   "duplicate executed file": (p) =>
@@ -231,6 +267,7 @@ const negatives = {
   "failed suite": (p) => (p[0].tests.numFailedTestSuites = 1),
   "different SHA": (p) => (p[1].verify.commit = "c".repeat(40)),
   "different source hash": (p) => (p[1].verify.source_hash = "c".repeat(64)),
+  "different checkout root": (p) => (p[1].verify.root = "/other/checkout"),
   "old run": (p) => (p[0].verify.run_id = "123455"),
   "old attempt": (p) => (p[0].verify.run_attempt = "2"),
   "partial marked complete": (p) => (p[0].verify.complete = true),
@@ -238,10 +275,10 @@ const negatives = {
   "source changed": (p) => (p[0].verify.source_changed = true),
   interrupted: (p) => (p[0].verify.interrupted = "SIGTERM"),
   "permission step failed": (p) => (p[0].verify.steps[0].ok = false),
+  "permission command replaced": (p) => (p[0].verify.steps[0].command = "echo permissions"),
   "orchestration evidence missing": (p) => p[0].verify.steps.splice(1, 1),
-  "typecheck failed": (p) => (p[1].verify.steps[2].exit_code = 1),
-  "lint failed": (p) => (p[0].verify.steps[3].ok = false),
-  "wrong shard command": (p) => (p[1].verify.steps[4].command = "vitest run --shard=1/2"),
+  "lint failed": (p) => (p[0].verify.steps[2].ok = false),
+  "wrong shard command": (p) => (p[1].verify.steps[3].command = "vitest run --shard=1/2"),
   "missing assertion": (p) => {
     p[0].tests.testResults[0].assertionResults.pop();
   },
@@ -251,8 +288,8 @@ const negatives = {
   "incorrect report duration": (p) => p[1].verify.duration_ms--,
   "incorrect step duration": (p) => p[1].verify.steps[3].duration_ms--,
   "tests before permissions": (p, e) => {
-    p[0].verify.steps[4].started_at = new Date(e.now - 200000).toISOString();
-    p[0].verify.steps[4].duration_ms = 198000;
+    p[0].verify.steps[3].started_at = new Date(e.now - 200000).toISOString();
+    p[0].verify.steps[3].duration_ms = 198000;
   },
   "duplicate inventory physical file": (p) =>
     (p[0].inventory[0] = { ...p[0].inventory[1], projectName: "other" }),
@@ -261,23 +298,103 @@ const negatives = {
 };
 for (const [name, mutate] of Object.entries(negatives))
   test(`aggregate rejects ${name}`, () => {
-    const { parts, expected } = fixture();
+    const { parts, expected, typesPart } = fixture();
     mutate(parts, expected);
-    assert.throws(() => aggregate(parts, expected));
+    assert.throws(() => aggregate(parts, expected, typesPart));
   });
 for (const result of ["failure", "cancelled", "skipped", undefined])
   test(`aggregate rejects matrix result ${result}`, () => {
-    const { parts, expected } = fixture();
-    assert.throws(() => aggregate(parts, { ...expected, shardJobResult: result }));
+    const { parts, expected, typesPart } = fixture();
+    assert.throws(() => aggregate(parts, { ...expected, shardJobResult: result }, typesPart));
   });
 test("aggregate rejects previous final-job failure and missing run identity", () => {
-  const { parts, expected } = fixture();
-  assert.throws(() => aggregate(parts, { ...expected, priorStepsOk: "false" }));
-  assert.throws(() => aggregate(parts, { ...expected, runId: undefined }));
+  const { parts, expected, typesPart } = fixture();
+  assert.throws(() => aggregate(parts, { ...expected, priorStepsOk: "false" }, typesPart));
+  assert.throws(() => aggregate(parts, { ...expected, runId: undefined }, typesPart));
 });
 test("global budget includes shard skew, artifact transport and aggregate-job startup", () => {
+  const { parts, expected, typesPart } = fixture();
+  assert.throws(() => aggregate(parts, { ...expected, now: expected.now + 50000 }, typesPart));
+});
+test("a separate full typecheck proof is mandatory even when every test passed", () => {
   const { parts, expected } = fixture();
-  assert.throws(() => aggregate(parts, { ...expected, now: expected.now + 50000 }));
+  for (const proof of [undefined, null, {}, [], { verify: undefined }])
+    assert.throws(() => aggregate(parts, expected, proof));
+});
+const typeNegatives = {
+  "different SHA": (t) => (t.verify.commit = "c".repeat(40)),
+  "different source hash": (t) => (t.verify.source_hash = "c".repeat(64)),
+  "old run": (t) => (t.verify.run_id = "123455"),
+  "old attempt": (t) => (t.verify.run_attempt = "2"),
+  "missing absolute root": (t) => (t.verify.root = undefined),
+  "different checkout root": (t) => (t.verify.root = "/other/checkout"),
+  "partial marked complete": (t) => (t.verify.complete = true),
+  "part incomplete": (t) => (t.verify.part_complete = false),
+  "source changed": (t) => (t.verify.source_changed = true),
+  interrupted: (t) => (t.verify.interrupted = "SIGTERM"),
+  "wrong kind": (t) => (t.verify.part_kind = "tests"),
+  "legacy missing kind": (t) => delete t.verify.part_kind,
+  "test shard identity": (t) => (t.verify.shard = { index: 1, count: 4 }),
+  "fabricated inventory": (t) => (t.inventory = []),
+  "fabricated test results": (t) => (t.tests = { success: true }),
+  "fabricated nested inventory": (t) => (t.verify.inventory = []),
+  "fabricated nested test results": (t) => (t.verify.testResults = []),
+  "fabricated test counts": (t) => (t.verify.test_files = 608),
+  "fabricated assertion counts": (t) => (t.verify.passed_assertions = 6691),
+  "missing full type step": (t) => t.verify.steps.pop(),
+  "reordered steps": (t) => t.verify.steps.reverse(),
+  "extra test step": (t) => t.verify.steps.push({ ...t.verify.steps[1], name: "test" }),
+  "permission failed": (t) => (t.verify.steps[0].ok = false),
+  "permission command replaced": (t) => (t.verify.steps[0].command = "echo permissions"),
+  "typecheck failed": (t) => (t.verify.steps[1].exit_code = 1),
+  "typecheck false result": (t) => (t.verify.steps[1].ok = false),
+  "typecheck signalled": (t) => (t.verify.steps[1].signal = "SIGKILL"),
+  "incomplete compiler command": (t) => (t.verify.steps[1].command = "tsgo --noEmit"),
+  "wrong compiler": (t) => (t.verify.steps[1].command = "tsc --noEmit --incremental false"),
+  "compiler outside checkout": (t) =>
+    (t.verify.steps[1].command =
+      "/tmp/forged/node_modules/@typescript/native-preview-linux-x64/lib/tsgo --noEmit --incremental false"),
+  "incremental cache": (t) =>
+    (t.verify.steps[1].command = t.verify.steps[1].command.replace(
+      "--incremental false",
+      "--incremental true",
+    )),
+  "filtered source": (t) => (t.verify.steps[1].command += " src/only.ts"),
+  "project filter": (t) => (t.verify.steps[1].command += " --project tsconfig.partial.json"),
+  "future completion": (t, e) => (t.verify.finished_at = new Date(e.now + 1).toISOString()),
+  "incorrect report duration": (t) => t.verify.duration_ms--,
+  "incorrect type duration": (t) => t.verify.steps[1].duration_ms--,
+  "types before permission": (t, e) => {
+    t.verify.steps[1].started_at = new Date(e.now - 200000).toISOString();
+    t.verify.steps[1].duration_ms = 198000;
+  },
+};
+for (const [name, mutate] of Object.entries(typeNegatives))
+  test(`aggregate rejects separate type proof: ${name}`, () => {
+    const { parts, expected, typesPart } = fixture();
+    mutate(typesPart, expected);
+    assert.throws(() => aggregate(parts, expected, typesPart));
+  });
+for (const result of ["failure", "cancelled", "skipped", undefined])
+  test(`aggregate rejects type job result ${result}`, () => {
+    const { parts, expected, typesPart } = fixture();
+    assert.throws(() => aggregate(parts, { ...expected, typesJobResult: result }, typesPart));
+  });
+function shiftReport(report, delta) {
+  for (const key of ["started_at", "finished_at"])
+    report[key] = new Date(Date.parse(report[key]) + delta).toISOString();
+  for (const step of report.steps)
+    for (const key of ["started_at", "finished_at"])
+      step[key] = new Date(Date.parse(step[key]) + delta).toISOString();
+}
+test("global verification starts at the earliest permission scan across all five parts", () => {
+  const { parts, expected, typesPart } = fixture();
+  shiftReport(typesPart.verify, -20000);
+  const report = aggregate(parts, expected, typesPart);
+  assert.equal(report.started_at, typesPart.verify.steps[0].started_at);
+  assert.equal(report.duration_ms, 220000);
+  shiftReport(typesPart.verify, -30000);
+  assert.throws(() => aggregate(parts, expected, typesPart), /exceeded 240 seconds/);
 });
 test("checkout must match the independent GitHub event SHA", () => {
   assert.equal(currentCiCommit("a".repeat(40), "a".repeat(40)), "a".repeat(40));
@@ -288,7 +405,7 @@ test("checkout must match the independent GitHub event SHA", () => {
 
 // Disposable subprocesses verify orchestration only; these substitutes do not
 // claim to test permission decisions, database policies or the product cases.
-async function runVerify(mode, execution = "shard", aggregateExit = 0) {
+async function runVerify(mode, execution = "shard", aggregateExit = 0, extraEnv = {}) {
   const root = mkdtempSync(join(tmpdir(), "verify-shards-orchestration-"));
   const put = (path, text) => {
     mkdirSync(join(root, path, ".."), { recursive: true });
@@ -308,7 +425,7 @@ async function runVerify(mode, execution = "shard", aggregateExit = 0) {
     }
     put(
       "scripts/testing/verify-shards.test.mjs",
-      `import fs from 'node:fs';fs.appendFileSync('events',JSON.stringify({name:'orchestration',shard:process.env.VERIFY_SHARD,aggregate:process.env.VERIFY_AGGREGATE,go:process.env.GOMAXPROCS})+'\\n');`,
+      `import fs from 'node:fs';fs.appendFileSync('events',JSON.stringify({name:'orchestration',shard:process.env.VERIFY_SHARD,aggregate:process.env.VERIFY_AGGREGATE,types:process.env.VERIFY_TYPES,go:process.env.GOMAXPROCS})+'\\n');`,
     );
     put("node_modules/@typescript/native-preview/package.json", '{"type":"module"}');
     put(
@@ -322,7 +439,7 @@ async function runVerify(mode, execution = "shard", aggregateExit = 0) {
     for (const name of ["bun", "typecheck", "eslint", "vitest"])
       put(
         `node_modules/.bin/${name}`,
-        `#!${process.execPath}\nconst fs=require('node:fs');const name=${JSON.stringify(name)};fs.appendFileSync('events',JSON.stringify({name,args:process.argv.slice(2),shard:process.env.VERIFY_SHARD,aggregate:process.env.VERIFY_AGGREGATE,go:process.env.GOMAXPROCS})+'\\n');process.exit(process.env.MODE==='permission-failure'&&name==='bun'?7:0);`,
+        `#!${process.execPath}\nconst fs=require('node:fs');const name=${JSON.stringify(name)};fs.appendFileSync('events',JSON.stringify({name,args:process.argv.slice(2),shard:process.env.VERIFY_SHARD,aggregate:process.env.VERIFY_AGGREGATE,types:process.env.VERIFY_TYPES,go:process.env.GOMAXPROCS})+'\\n');process.exit(process.env.MODE==='permission-failure'&&name==='bun'?7:process.env.MODE==='typecheck-failure'&&name==='typecheck'?8:0);`,
       );
     if (execution === "aggregate")
       put(
@@ -340,10 +457,12 @@ async function runVerify(mode, execution = "shard", aggregateExit = 0) {
         MODE: mode,
         VERIFY_SHARD: execution === "shard" ? "1/4" : undefined,
         VERIFY_AGGREGATE: execution === "aggregate" ? "1" : undefined,
+        VERIFY_TYPES: execution === "types" ? "1" : undefined,
         GOMAXPROCS: "2",
         GITHUB_SHA: "a".repeat(40),
         GITHUB_RUN_ID: "123456",
         GITHUB_RUN_ATTEMPT: "1",
+        ...extraEnv,
       },
       stdio: "ignore",
     });
@@ -353,11 +472,15 @@ async function runVerify(mode, execution = "shard", aggregateExit = 0) {
     });
     return {
       code,
-      report: JSON.parse(readFileSync(join(root, ".verification/verify.json"), "utf8")),
-      events: readFileSync(join(root, "events"), "utf8")
-        .trim()
-        .split("\n")
-        .map((line) => JSON.parse(line)),
+      report: existsSync(join(root, ".verification/verify.json"))
+        ? JSON.parse(readFileSync(join(root, ".verification/verify.json"), "utf8"))
+        : null,
+      events: existsSync(join(root, "events"))
+        ? readFileSync(join(root, "events"), "utf8")
+            .trim()
+            .split("\n")
+            .map((line) => JSON.parse(line))
+        : [],
     };
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -368,13 +491,21 @@ test("shard subprocess emits only partial proof, runs every step after permissio
   assert.equal(result.code, 0);
   assert.equal(result.report.complete, false);
   assert.equal(result.report.part_complete, true);
+  assert.equal(result.report.part_kind, "tests");
+  assert.equal(
+    result.events.some((event) => event.name === "typecheck"),
+    false,
+  );
   assert.deepEqual(
     result.report.steps.map((step) => step.name),
-    ["permissions", "orchestration", "typecheck", "lint", "test"],
+    ["permissions", "orchestration", "lint", "test"],
   );
   assert.equal(result.events[0].name, "bun");
   assert(
-    result.events.every((event) => event.shard === undefined && event.aggregate === undefined),
+    result.events.every(
+      (event) =>
+        event.shard === undefined && event.aggregate === undefined && event.types === undefined,
+    ),
   );
   assert(result.events.find((event) => event.name === "vitest").args.includes("--shard=1/4"));
 });
@@ -421,16 +552,86 @@ test("aggregate failure propagates without converting partial evidence into a co
   );
   assert.equal(result.report.complete, false);
 });
-test("only the sharded native type checker receives the narrower Go CPU budget", async () => {
+test("test shards do not execute a compiler and preserve the caller Go budget", async () => {
   const result = await runVerify("allowed");
   assert.equal(result.code, 0);
-  assert.equal(result.events.find((event) => event.name === "typecheck").go, "1");
+  assert.equal(
+    result.events.some((event) => event.name === "typecheck"),
+    false,
+  );
   for (const name of ["bun", "orchestration", "eslint", "vitest"]) {
     const child = result.events.find((event) => event.name === name);
     assert.ok(child, JSON.stringify(result.events));
     assert.equal(child.go, "2");
   }
 });
+test("types subprocess emits only its full native check after a fresh permission scan", async () => {
+  const result = await runVerify("allowed", "types");
+  assert.equal(result.code, 0);
+  assert.equal(result.report.complete, false);
+  assert.equal(result.report.part_complete, true);
+  assert.equal(result.report.part_kind, "types");
+  assert.equal(result.report.shard, undefined);
+  assert(isAbsolute(result.report.root));
+  assert(result.report.root.includes("verify-shards-orchestration-"));
+  assert.equal(result.report.commit, "a".repeat(40));
+  assert.equal(result.report.run_id, "123456");
+  assert.equal(result.report.run_attempt, "1");
+  assert.match(result.report.source_hash, /^[a-f0-9]{64}$/);
+  assert.deepEqual(
+    result.report.steps.map((step) => step.name),
+    ["permissions", "typecheck"],
+  );
+  assert.deepEqual(
+    result.events.map((event) => event.name),
+    ["bun", "typecheck"],
+  );
+  assert.deepEqual(result.events[0].args, ["scripts/check-permissions.ts"]);
+  assert.deepEqual(result.events[1].args, ["--noEmit", "--incremental", "false"]);
+  assert.equal(result.events[1].go, "2");
+  assert(
+    result.events.every(
+      (event) =>
+        event.shard === undefined && event.aggregate === undefined && event.types === undefined,
+    ),
+  );
+  for (const key of ["inventory", "tests", "test_files", "passed_assertions"])
+    assert.equal(result.report[key], undefined);
+});
+test("types permission failure prevents the compiler and never certifies completeness", async () => {
+  const result = await runVerify("permission-failure", "types");
+  assert.equal(result.code, 7);
+  assert.equal(result.report.complete, false);
+  assert.equal(result.report.part_complete, false);
+  assert.deepEqual(
+    result.events.map((event) => event.name),
+    ["bun"],
+  );
+});
+test("failed full typecheck remains a failed partial proof and propagates its exit code", async () => {
+  const result = await runVerify("typecheck-failure", "types");
+  assert.equal(result.code, 8);
+  assert.equal(result.report.complete, false);
+  assert.equal(result.report.part_complete, false);
+  assert.equal(result.report.steps[1].exit_code, 8);
+  assert.deepEqual(
+    result.events.map((event) => event.name),
+    ["bun", "typecheck"],
+  );
+});
+for (const flags of [
+  { VERIFY_TYPES: "0" },
+  { VERIFY_TYPES: "" },
+  { VERIFY_TYPES: "1", VERIFY_SHARD: "1/4" },
+  { VERIFY_TYPES: "1", VERIFY_AGGREGATE: "1" },
+  { VERIFY_AGGREGATE: "1", VERIFY_SHARD: "1/4" },
+])
+  test(`invalid or mixed verification modes fail before producing evidence: ${JSON.stringify(flags)}`, async () => {
+    const result = await runVerify("allowed", "full", 0, flags);
+    assert.equal(result.code, 1);
+    assert.equal(result.report, null);
+    assert.deepEqual(result.events, []);
+  });
 test("unsharded verification preserves the caller's Go budget and complete validator set", async () => {
   const result = await runVerify("allowed", "full");
   assert.equal(result.code, 0);
