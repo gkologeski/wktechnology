@@ -29477,7 +29477,7 @@
       "rationale": "Pure finite DTO/schema validation, empty generic model terms, native visual layout, escaping and pagination, controlled form fields. Receives already authorized own purchase data via permission-gated wizard; no database/storage client, no capability creation, no direct server action. Parent/server/SQL own economic read/write authorization.",
       "files": {
         "src/lib/contracts/purchase-proposal.types.ts": "5670b2d67a41c2c860721b372c66cc5bdf23c22230c85b3a38054c912d450b61",
-        "src/lib/contracts/purchase-proposal-render.ts": "2240018c9e8f3004407cbf0d97ae338497f074be3077e6564db1138104aad808",
+        "src/lib/contracts/purchase-proposal-render.ts": "bf386e9c04b470682844882cba503e69d67a59644a93c6d51b15128a9e43e91e",
         "src/lib/contracts/purchase-proposal-amounts.ts": "91c2a7766a7f11b97ae6b84c2040528873f52b6a6e1920ea8d84220be8e77322"
       }
     }

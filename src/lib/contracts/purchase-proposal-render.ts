@@ -262,5 +262,45 @@ export function renderPurchaseProposalHtml(
   workspaceLogoUrl?: string | null,
 ): string {
   // All economic and party content was frozen in this purchase document. No sale context is loaded.
-  return renderVisualDesignPrintDocument(parseVisualDesign(design), { workspaceLogoUrl });
+  // Reapply asset boundaries to persisted designs too: direct authenticated RPCs may
+  // save a design without passing through the browser's native template compiler.
+  const native = parseVisualDesign(design);
+  const font = (value: string, fallback: string) => {
+    const first = value
+      .split(",")[0]
+      .trim()
+      .replace(/^['"]|['"]$/g, "");
+    return /^[\p{L}\p{N} _-]+$/u.test(first) ? first : fallback;
+  };
+  const safeElements = (elements: VisualElement[]): VisualElement[] =>
+    elements
+      .filter((el) => el.type !== "image" || el.props.bindLogo === "contracting")
+      .map(
+        (el) =>
+          ({
+            ...el,
+            style: {
+              ...el.style,
+              ...(el.style.fontFamily ? { fontFamily: font(el.style.fontFamily, "Inter") } : {}),
+            },
+            ...(el.type === "image" ? { props: { ...el.props, src: "", storagePath: null } } : {}),
+          }) as VisualElement,
+      );
+  const safe = {
+    ...native,
+    brandKit: {
+      ...native.brandKit,
+      logoUrl: null,
+      logoStoragePath: null,
+      headingFont: font(native.brandKit.headingFont, "Inter"),
+      bodyFont: font(native.brandKit.bodyFont, "Inter"),
+    },
+    master: {
+      ...native.master,
+      headerElements: safeElements(native.master.headerElements),
+      footerElements: safeElements(native.master.footerElements),
+    },
+    pages: native.pages.map((page) => ({ ...page, elements: safeElements(page.elements) })),
+  };
+  return renderVisualDesignPrintDocument(safe, { workspaceLogoUrl });
 }

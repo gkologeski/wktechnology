@@ -128,4 +128,38 @@ describe("native factory purchase proposal", () => {
     for (const page of design.pages.slice(1))
       for (const el of page.elements) expect(el.y + el.h).toBeLessThanOrEqual(275);
   });
+  it("rechecks images and font CSS on designs saved through direct authenticated RPC", () => {
+    const design = compilePurchaseProposalDesign(
+      createPurchaseFactoryTemplate(),
+      input(),
+      parties,
+      meta,
+    );
+    design.brandKit.logoUrl = "https://foreign.invalid/hidden-logo";
+    design.brandKit.bodyFont = "Inter';background:url(https://foreign.invalid/css)";
+    design.pages[0].elements.push({
+      id: "foreign-image",
+      name: "Foreign image",
+      type: "image",
+      x: 0,
+      y: 0,
+      w: 10,
+      h: 10,
+      rotation: 0,
+      z: 1,
+      style: {},
+      props: {
+        src: "https://foreign.invalid/raw",
+        storagePath: "foreign/asset",
+        alt: "Foreign",
+        fit: "contain",
+        bindLogo: "none",
+      },
+    });
+    const html = renderPurchaseProposalHtml(design, "https://workspace.invalid/own-logo");
+    expect(html).not.toContain("foreign.invalid");
+    expect(html).not.toContain("foreign/asset");
+    expect(html).toContain("https://workspace.invalid/own-logo");
+    expect(html).toContain("4.400,00");
+  });
 });
