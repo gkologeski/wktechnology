@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { randomUUID } from "node:crypto";
 import { assembleSignaturePackage, sha256, type PackagePart } from "./signature-package-pdf.server";
+import { assertContractDocumentAudience } from "./document-audience.server";
 
 type Context = {
   workspace_id: string;
@@ -33,6 +34,7 @@ export async function prepareSignaturePackage(
   contractId: string,
   hash: string,
 ): Promise<SignaturePackage | null> {
+  await assertContractDocumentAudience(sb, contractId, hash);
   const context = await workRpc<Context>(sb, "contract_attachment_signing_context", {
     p_contract: contractId,
     p_hash: hash,
@@ -47,7 +49,14 @@ export async function prepareSignaturePackage(
     .eq("contract_hash", hash)
     .maybeSingle();
   if (existingError) throw new Error("Não foi possível consultar o pacote de assinatura.");
-  if (existing) return existing as SignaturePackage;
+  if (existing) {
+    await assertContractDocumentAudience(sb, contractId, hash);
+    await workRpc(sb, "contract_attachment_signing_context", {
+      p_contract: contractId,
+      p_hash: hash,
+    });
+    return existing as SignaturePackage;
+  }
   const parts: PackagePart[] = [];
   const token = process.env.BROWSERLESS_TOKEN;
   for (const attachment of context.attachments) {
@@ -90,6 +99,7 @@ export async function prepareSignaturePackage(
     parts.push({ ...attachment, bytes, mime });
   }
   const pack = await assembleSignaturePackage(context.body, parts, token);
+  await assertContractDocumentAudience(sb, contractId, hash);
   await workRpc(sb, "contract_attachment_signing_context", {
     p_contract: contractId,
     p_hash: hash,

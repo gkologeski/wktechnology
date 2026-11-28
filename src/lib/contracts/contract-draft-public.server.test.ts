@@ -50,6 +50,7 @@ describe("loadPublicContractDraft (linked commercial proposal)", () => {
             client_decided_at: null,
             client_name: null,
             proposal_public_token: PROPOSAL_TOKEN,
+            document_audience: "client",
           },
           error: null,
         };
@@ -81,6 +82,7 @@ describe("loadPublicContractDraft (linked commercial proposal)", () => {
             client_decided_at: null,
             client_name: null,
             proposal_public_token: PROPOSAL_TOKEN,
+            document_audience: "client",
           },
           error: null,
         };
@@ -148,6 +150,7 @@ describe("loadPublicContractDraft (linked commercial proposal)", () => {
           client_decided_at: null,
           client_name: null,
           proposal_public_token: PROPOSAL_TOKEN,
+          document_audience: "client",
         },
         error: null,
       })),
@@ -159,5 +162,74 @@ describe("loadPublicContractDraft (linked commercial proposal)", () => {
 
     const doc = await loadPublicContractDraftProposalDoc(VALID_TOKEN, deps);
     expect(doc?.proposal.title).toBe("CT/Brooks/Sergio/Suporte 18 horas");
+  });
+
+  it("never loads or exposes a customer proposal from a supplier draft or an unclassified capability", async () => {
+    for (const audience of ["supplier", undefined]) {
+      const deps: PublicContractDraftDeps = {
+        rpc: vi.fn(async (fn) => ({
+          data:
+            fn === "hiring_draft_public"
+              ? null
+              : {
+                  title: "Minuta da prestadora",
+                  body_html: "<p>Condições da compra</p>",
+                  status: "sent",
+                  workspace_name: "WK Technology",
+                  client_decided_at: null,
+                  client_name: null,
+                  document_audience: audience,
+                  proposal_public_token: PROPOSAL_TOKEN,
+                  proposal_id: "customer-proposal-id",
+                  deal_id: "customer-deal-id",
+                  customer: { secret_price: 99999 },
+                },
+          error: null,
+        })),
+        loadProposal: vi.fn(async () => sampleProposal),
+      };
+      const res = await loadPublicContractDraft(VALID_TOKEN, deps);
+      expect(res?.linked_proposal).toBeNull();
+      expect(res?.has_proposal_pdf).toBe(false);
+      expect(await loadPublicContractDraftProposalDoc(VALID_TOKEN, deps)).toBeNull();
+      expect(deps.loadProposal).not.toHaveBeenCalled();
+      for (const forbidden of [PROPOSAL_TOKEN, "customer-proposal-id", "customer-deal-id", "99999"])
+        expect(JSON.stringify(res)).not.toContain(forbidden);
+    }
+  });
+
+  it("keeps the hiring draft projection finite without forwarding private origin fields", async () => {
+    const deps: PublicContractDraftDeps = {
+      rpc: vi.fn(async () => ({
+        data: {
+          title: "Minuta da contratação",
+          body_html: "<p>Contratação</p>",
+          status: "sent",
+          workspace_name: "WK Technology",
+          client_decided_at: null,
+          client_name: null,
+          requires_code: true,
+          expires_at: "2026-12-01T00:00:00Z",
+          proposal_public_token: PROPOSAL_TOKEN,
+          customer_id: "private-customer",
+          attachments: [
+            {
+              id: "annex-capability-id",
+              name: "Condições.pdf",
+              sha256: "a".repeat(64),
+              source_id: "private-source",
+            },
+          ],
+        },
+        error: null,
+      })),
+      loadProposal: vi.fn(),
+    };
+    const result = await loadPublicContractDraft(VALID_TOKEN, deps);
+    expect(result?.requires_code).toBe(true);
+    expect(result?.attachments).toHaveLength(1);
+    expect(deps.loadProposal).not.toHaveBeenCalled();
+    for (const hidden of [PROPOSAL_TOKEN, "private-customer", "private-source"])
+      expect(JSON.stringify(result)).not.toContain(hidden);
   });
 });
