@@ -12250,7 +12250,7 @@
       },
       "files": {
         "drizzle/migrations/0478_contract_draft_public_linked_proposal.sql": "7752d6c98600fee2f8b303991f7bcdedeab790acbf95cc28a4b2b1604fa9ea0e",
-        "src/lib/contracts/contract-draft-public.server.ts": "fd82157d7359cef80a29af22ca3374e4c3b3f149784e1bb3d290bf94603c2c0e",
+        "src/lib/contracts/contract-draft-public.server.ts": "413e74e5ca81050213d0128d5a57e0256a56a420af0a500ca467c6daacc34d6b",
         "src/lib/contracts/contract-draft-public.functions.ts": "e4ae25cd5a5dccb4cb2e520552428ff0c59d82e84dea90a740318476afbba9e2",
         "src/routes/minuta.$token.tsx": "97ae1aa38a0ce631972d578bab2bf9c5e87d2546275068b093181f2dd714a33f",
         "src/routes/api/public/contract-drafts/$token.proposal-pdf.ts": "b7ff5ea747871f2c952cf5c6079a997b4cfee21324f5984e0de9256f12bfd570"
@@ -12693,7 +12693,7 @@
         "src/components/contracts/contract-parent-link.tsx": "761bc707792aab5eec1ccae6aac4bf36ab5c6bba440630a4b61306bebf12dadf",
         "src/components/contracts/purchase-from-sale-dialog.tsx": "ede44c2ea768183cfb098f83a6d5e0784cfbb3a185bd219255eac53c821dfc5c",
         "src/lib/contracts/purchase-from-sale.functions.ts": "03b795c590946a6915db8c0a14e389c752c055ce1992cdd04900f2aba2787f64",
-        "src/lib/contracts/purchase-from-sale.server.ts": "72cf8885fd7f3718d269e3f6a5d370a39128371ffd8d2c2af192ed650770fad6",
+        "src/lib/contracts/purchase-from-sale.server.ts": "1871546a82ed41951904f49675c15bdd34df7ed00a759741fae6ea56d922b5a3",
         "src/components/contracts/purchase-template-fill.tsx": "18393841c20a3011f962e702cda8a0a2eb7c16a6c9994ca695f7c1ac3b22ed15",
         "drizzle/migrations/0462_contracts_counterparty_columns_select.sql": "d8ec6e27b68cbeb9ba2bfa442683698b3f501a8650190f36fb4a8c9e7c7da61c",
         "src/routes/_authenticated/contracts.index.tsx": "5a84b74dc475090c09d0f61c48d36aa7516c0d71ba31e3b85b0a6df9dfc1d992"
@@ -15781,15 +15781,15 @@
         }
       },
       "files": {
-        "src/lib/contracts/attachments.functions.ts": "3ecaa0e4b4692f5da5cee3a1b03c9487e666068a21082dcf45726b2b30f3cbd1",
-        "src/components/contracts/contract-attachments-card.tsx": "b7123f9c19eca738cd53afca98b27b0e240c83f18573073dcc2b40439848b605",
+        "src/lib/contracts/attachments.functions.ts": "f37db8b3405f5e58fbaed985471516a50620b9cd68e008dee4a021353691f6e8",
+        "src/components/contracts/contract-attachments-card.tsx": "cfdaf93da857d0a026ece732615bc94daf67b0c5534da5f1242510bf643afedb",
         "drizzle/migrations/0366_contract_attachments.sql": "572bbe652ee2afe4a50a84d785ba6c633b44d522cfa34f4947a2844944d9ddd7",
-        "src/lib/contracts/signature-package.server.ts": "0ce2a44e6d6a9fdc358cd00901608235a93e399df9914bd471833dcc880f9938",
+        "src/lib/contracts/signature-package.server.ts": "e61a9f7dea35f8a7a7f9ee6eb39780fa0aa7d53576a32c0ab6d82988e41bc737",
         "src/lib/contracts/signature-package-pdf.server.ts": "3fdc7bc18c0a461c9c4ed10c7780f9b9152c4af11324b3d9b1bedf6c120f17e7",
         "src/lib/contracts/quote-pdf.server.ts": "985afce0f405957c40f6aa34fd4f3bb2118041025b31873399cec7f619c74a61",
         "src/lib/contracts/proposal-pdf.server.ts": "ea3850ccbcab518c80728ebb25dc5894c06d6422bd85cf82f5882921617a6033",
         "drizzle/migrations/0367_contract_signature_packages.sql": "2479a6a3f1af4f49c966969646e32b901b75922cd15649e2b798794d8fd91acf",
-        "src/components/contracts/signature-attachments-summary.tsx": "2a0e06fa6cba5466c4d92f2e1830e01593effa3377a6c4790f5dc2f62c5efd03",
+        "src/components/contracts/signature-attachments-summary.tsx": "b5a3ec5329002197db9e34a6f094ec743700156fc739f7422f498787b4602757",
         "drizzle/migrations/0468_contract_attachments_all_served_sales.sql": "6c4658dd5b2cbc0de67a5acbb96e9c9a728796f1ff75c091fa9fe7070e0ef474"
       }
     },
@@ -29452,6 +29452,128 @@
       "rationale": "Pure validation schema, decimal parser, and pt-BR percentage formatting helpers for project delivery updates; no I/O, routes, or authorization decisions.",
       "files": {
         "src/lib/projects/delivery-progress.ts": "9bcc4b17cd0b248e23d670188884f5a3130f0f252689b779470552dbb2e44fa0"
+      }
+    },
+    {
+      "id": "purchase-technical-proposal-isolation",
+      "kind": "business",
+      "rationale": "Packages2–4: purchase-only native visual catalogue, immutable own economic revisions, canonical authenticated RPC and user storage. Current active workspace/record visibility, separate explicit economic view/manage/template keys, deny and readonly enforced in PostgreSQL; no automatic grants. Own WK/supplier snapshot and finite purchase quantities/prices/dates; no sales proposal/deal context is rendered. Attachment audience, explicit sharing review and live economic gates precede privileged cached PDF reuse and public preparation; legacy bytes preserved, opposite audiences never silently exposed. Real PostgreSQL tests exercise production RBAC functions, not UI mocks.",
+      "files": {
+        "drizzle/migrations/0487_purchase_technical_proposals.sql": "a9299dbbf330b1bee6fa5a752b07658337b2dcf3023b7f4d320a9ed6ef3a7f10",
+        "drizzle/migrations/0488_purchase_document_audience.sql": "37189073ecca8ef45b458f35d40755ff56e161b529244eaa33553f586060b11a",
+        "src/lib/contracts/document-audience.server.ts": "6c6c5e0df90f841c59b96a68a705ca4648de2cef0948481c6d7b7e501b140dd6",
+        "src/lib/contracts/purchase-proposal.functions.ts": "765d86ea7b077062290c8f5cad16e55fc6a24e729aa9370edcaf0b68c17e706f",
+        "src/lib/contracts/purchase-proposal.server.ts": "b9f4fa156f85c210b0b5685b7846846a8c52f46657382084580daa79801ae0d9",
+        "src/components/contracts/purchase-proposal-wizard.tsx": "0fa351958ead579bfbd637219e342ccd83dd9d50bd97301491ed61a5f2f55c9b",
+        "src/components/contracts/purchase-proposal-fields.tsx": "2781689a46ac8a8cba5b9158462257e148a86840bbd4d06bec4af2993982602f"
+      },
+      "resources": [
+        "techcontracts.purchase_proposals",
+        "techcontracts.purchase_proposal_templates",
+        "techcontracts.contracts",
+        "techcontracts.esign_share"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "update"
+      ],
+      "scopes": [
+        "workspace",
+        "own",
+        "team"
+      ],
+      "permission_keys": [
+        "techcontracts.purchase_proposals.view.workspace",
+        "techcontracts.purchase_proposals.manage.workspace",
+        "techcontracts.purchase_proposal_templates.manage.workspace",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.update.workspace",
+        "techcontracts.esign_share.manage.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/contracts/purchase-proposal.server.ts",
+          "symbol": "purchaseProposalContext"
+        },
+        {
+          "file": "src/lib/contracts/purchase-proposal.functions.ts",
+          "symbol": "savePurchaseProposalDraft"
+        },
+        {
+          "file": "src/lib/contracts/document-audience.server.ts",
+          "symbol": "assertContractDocumentAudience"
+        },
+        {
+          "file": "src/lib/contracts/document-audience.server.ts",
+          "symbol": "assertAttachmentDocumentAccess"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/lib/contracts/purchase-proposal.server.ts",
+          "symbol": "savePurchaseProposal"
+        },
+        {
+          "file": "src/lib/contracts/purchase-proposal.server.ts",
+          "symbol": "generatePurchaseProposalDocument"
+        },
+        {
+          "file": "src/lib/contracts/purchase-proposal.server.ts",
+          "symbol": "previewPurchaseProposalDocument"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0487_purchase_technical_proposals.sql",
+          "symbol": "purchase_proposal_access"
+        },
+        {
+          "file": "drizzle/migrations/0488_purchase_document_audience.sql",
+          "symbol": "contract_attachment_audience_check"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/purchase-proposal-postgres.test.ts",
+          "name": "allowed: installs local model and immutable own purchase revision without sales fields"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/purchase-proposal-postgres.test.ts",
+          "name": "missing key: parent visibility never reveals purchase values, model or documents"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/purchase-proposal-postgres.test.ts",
+          "name": "deny wins: explicitly denied economic permission blocks direct save RPC"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/purchase-proposal-postgres.test.ts",
+          "name": "other workspace: direct context and mutation reject foreign contract"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/purchase-proposal-postgres.test.ts",
+          "name": "inactive: even retained local role grants cannot read or write documents"
+        }
+      }
+    },
+    {
+      "id": "purchase-technical-proposal-presentation",
+      "kind": "presentation",
+      "rationale": "Pure finite DTO/schema validation, empty generic model terms, native visual layout, escaping and pagination, controlled form fields. Receives already authorized own purchase data via permission-gated wizard; no database/storage client, no capability creation, no direct server action. Parent/server/SQL own economic read/write authorization.",
+      "files": {
+        "src/lib/contracts/purchase-proposal.types.ts": "5670b2d67a41c2c860721b372c66cc5bdf23c22230c85b3a38054c912d450b61",
+        "src/lib/contracts/purchase-proposal-render.ts": "bf386e9c04b470682844882cba503e69d67a59644a93c6d51b15128a9e43e91e",
+        "src/lib/contracts/purchase-proposal-amounts.ts": "91c2a7766a7f11b97ae6b84c2040528873f52b6a6e1920ea8d84220be8e77322"
       }
     }
   ],

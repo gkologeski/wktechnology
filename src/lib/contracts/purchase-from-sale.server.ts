@@ -1,6 +1,6 @@
 // Contrato de compra (fornecedor PJ ou profissional PF) criado a partir de um
-// contrato de venda. Usa o cliente do usuário (RLS) e a proposta aceita da venda
-// como anexo técnico; os gatilhos do banco validam workspace, contato e origem.
+// contrato de venda. O vínculo de origem é interno: documentos e preços de venda
+// não são herdados pela compra nem apresentados à fornecedora.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
@@ -32,9 +32,8 @@ type Sale = {
   ends_at: string | null;
 };
 
-export function purchaseTitle(saleTitle: string | null, supplier: string): string {
-  const base = (saleTitle ?? "").replace(/^\[(VENDA|PRESTAÇÃO|PRESTACAO)\]\s*/i, "").trim();
-  return `[COMPRA] ${supplier}${base ? ` — ${base}` : ""}`.slice(0, 300);
+export function purchaseTitle(_saleTitle: string | null, supplier: string): string {
+  return `[COMPRA] ${supplier}`.slice(0, 300);
 }
 
 export async function purchaseFromSale(
@@ -160,9 +159,11 @@ export async function purchaseFromSale(
       counterparty_company_id: input.counterpartyKind === "company" ? input.companyId! : null,
       counterparty_contact_id: input.contactId ?? null,
       parent_contract_id: sale.id,
-      proposal_id: sale.proposal_id,
-      quote_id: sale.quote_id,
-      deal_id: sale.deal_id,
+      // The parent and contract_purchase_sales preserve internal traceability.
+      // A sale's quote/proposal/deal must never become a supplier's document.
+      proposal_id: null,
+      quote_id: null,
+      deal_id: null,
       contracting_legal_entity_id: sale.contracting_legal_entity_id ?? sale.legal_entity_id ?? null,
       currency: sale.currency ?? "BRL",
       total_value: 0,

@@ -8,7 +8,8 @@ import { pathToFileURL } from "node:url";
 import { budgets } from "../src/lib/performance/budgets.ts";
 
 const VERIFY_BUDGET_MS = budgets.verify_ms;
-const EXPECTED_STEPS = ["permissions", "orchestration", "typecheck", "lint", "test"];
+const TEST_STEPS = ["permissions", "orchestration", "lint", "test"];
+const TYPE_STEPS = ["permissions", "typecheck"];
 const normalize = (root, file) => {
   assert.equal(typeof file, "string");
   const path = relative(root, isAbsolute(file) ? file : join(root, file)).replaceAll("\\", "/");
@@ -59,8 +60,68 @@ export function discoverTestFiles(root) {
   return files.sort();
 }
 
-export function aggregate(parts, expected) {
+function validatePart(report, expected, kind, steps) {
+  assert(report && typeof report === "object", `Missing ${kind} verification proof`);
+  assert.equal(report.part_kind, kind, "Unexpected verification part kind");
+  assert.equal(report.complete, false, "Partial evidence must never be complete");
+  assert.equal(report.part_complete, true);
+  assert.equal(report.source_changed, false);
+  assert.equal(report.interrupted, null);
+  assert.equal(report.commit, expected.commit, "Stale/different SHA");
+  assert.equal(report.source_hash, expected.sourceHash, "Stale/different source hash");
+  assert.equal(report.run_id, expected.runId);
+  assert.equal(report.run_attempt, expected.runAttempt);
+  assert(typeof report.root === "string" && isAbsolute(report.root), "Missing absolute proof root");
+  assert.equal(report.root, expected.root, "Different checkout root");
+  assert(Array.isArray(report.steps), "Missing verification steps");
+  assert.deepEqual(
+    report.steps.map((step) => step.name),
+    steps,
+  );
+  const reportStarted = timestamp(report.started_at),
+    reportFinished = timestamp(report.finished_at);
+  assert(reportFinished >= reportStarted && reportFinished <= expected.now);
+  assert.equal(report.duration_ms, reportFinished - reportStarted);
+  const permissionFinished = timestamp(report.steps[0].finished_at);
+  assert.equal(
+    report.steps[0].command,
+    "bun scripts/check-permissions.ts",
+    "Missing real permission command",
+  );
+  for (const step of report.steps) {
+    assert.equal(step.ok, true);
+    assert.equal(step.exit_code, 0);
+    assert.equal(step.signal, null);
+    const started = timestamp(step.started_at),
+      finished = timestamp(step.finished_at);
+    assert(finished >= started && finished <= expected.now);
+    assert.equal(step.duration_ms, finished - started);
+    assert(reportStarted <= started && reportFinished >= finished);
+    if (step.name !== "permissions")
+      assert(started >= permissionFinished, "Dependent checks started before permissions passed");
+  }
+  return timestamp(report.steps[0].started_at);
+}
+
+function validateTypecheckCommand(command, root) {
+  assert.equal(typeof command, "string");
+  const match = command.match(
+    /^(.+[/\\]node_modules[/\\]@typescript[/\\](native-preview-(?:linux|darwin|win32)-(?:x64|arm64|arm))[/\\]lib[/\\](tsgo(?:\.exe)?)) --noEmit --incremental false$/,
+  );
+  assert(
+    match && isAbsolute(match[1]),
+    "Require the full native typecheck command without filters or cache",
+  );
+  assert.equal(
+    match[1],
+    join(root, "node_modules", "@typescript", match[2], "lib", match[3]),
+    "Native typecheck must execute from the reviewed checkout dependencies",
+  );
+}
+
+export function aggregate(parts, expected, typesPart) {
   assert.equal(expected.shardJobResult, "success", "Every matrix job must succeed");
+  assert.equal(expected.typesJobResult, "success", "The full typecheck job must succeed");
   assert.equal(expected.priorStepsOk, "true", "Every preceding final-job gate must succeed");
   assert.equal(parts.length, 4, "Need all four shard artifacts");
   assert(/^[a-f0-9]{40}$/.test(expected.commit));
@@ -78,46 +139,40 @@ export function aggregate(parts, expected) {
   const seenShards = new Set(),
     seenFiles = new Set();
   const allAssertions = [];
-  let firstPermission = Infinity;
+  assert(typesPart && typeof typesPart === "object", "Need the separate full typecheck artifact");
+  assert.equal(typesPart.tests, undefined, "Type proof cannot fabricate test results");
+  assert.equal(typesPart.inventory, undefined, "Type proof cannot fabricate a test inventory");
+  const typeReport = typesPart.verify;
+  let firstPermission = validatePart(typeReport, expected, "types", TYPE_STEPS);
+  for (const key of [
+    "shard",
+    "inventory",
+    "tests",
+    "test_files",
+    "passed_assertions",
+    "testResults",
+    "numTotalTests",
+    "numPassedTests",
+  ])
+    assert.equal(
+      typeReport[key],
+      undefined,
+      "Type proof cannot claim test identity, inventory or results",
+    );
+  validateTypecheckCommand(typeReport.steps[1].command, typeReport.root);
   for (const part of parts) {
     const report = part.verify;
-    assert.equal(report.complete, false, "Partial evidence must never be complete");
-    assert.equal(report.part_complete, true);
-    assert.equal(report.source_changed, false);
-    assert.equal(report.interrupted, null);
-    assert.equal(report.commit, expected.commit, "Stale/different SHA");
-    assert.equal(report.source_hash, expected.sourceHash, "Stale/different source hash");
-    assert.equal(report.run_id, expected.runId);
-    assert.equal(report.run_attempt, expected.runAttempt);
+    firstPermission = Math.min(
+      firstPermission,
+      validatePart(report, expected, "tests", TEST_STEPS),
+    );
     assert.equal(report.shard?.count, 4);
     assert([1, 2, 3, 4].includes(report.shard?.index));
     assert(!seenShards.has(report.shard.index), "Duplicate shard");
     seenShards.add(report.shard.index);
     assert.deepEqual(inventory(report.root, part.inventory), expectedInventory);
-    assert.deepEqual(
-      report.steps.map((step) => step.name),
-      EXPECTED_STEPS,
-    );
-    const reportStarted = timestamp(report.started_at),
-      reportFinished = timestamp(report.finished_at);
-    assert(reportFinished >= reportStarted && reportFinished <= expected.now);
-    assert.equal(report.duration_ms, reportFinished - reportStarted);
-    const permissionFinished = timestamp(report.steps[0].finished_at);
-    for (const step of report.steps) {
-      assert.equal(step.ok, true);
-      assert.equal(step.exit_code, 0);
-      assert.equal(step.signal, null);
-      const started = timestamp(step.started_at),
-        finished = timestamp(step.finished_at);
-      assert(finished >= started && finished <= expected.now);
-      assert.equal(step.duration_ms, finished - started);
-      assert(reportStarted <= started && reportFinished >= finished);
-      if (step.name !== "permissions")
-        assert(started >= permissionFinished, "Dependent checks started before permissions passed");
-    }
-    firstPermission = Math.min(firstPermission, timestamp(report.steps[0].started_at));
     assert.equal(
-      report.steps[4].command,
+      report.steps[3].command,
       ["vitest", ...shardTestArgs(report.shard.index)].join(" "),
       "Vitest must execute the exact unfiltered canonical shard command",
     );
@@ -178,11 +233,20 @@ export function aggregate(parts, expected) {
     run_id: expected.runId,
     run_attempt: expected.runAttempt,
     shard_count: 4,
+    typecheck_parts: 1,
+    typecheck_proof: typeReport,
     test_files: seenFiles.size,
     passed_assertions: allAssertions.length,
-    steps: parts.flatMap((part) =>
-      part.verify.steps.map((step) => ({ ...step, shard: part.verify.shard.index })),
-    ),
+    steps: [
+      ...parts.flatMap((part) =>
+        part.verify.steps.map((step) => ({
+          ...step,
+          part_kind: "tests",
+          shard: part.verify.shard.index,
+        })),
+      ),
+      ...typeReport.steps.map((step) => ({ ...step, part_kind: "types" })),
+    ],
   };
 }
 
@@ -202,21 +266,26 @@ async function main() {
       tests: read(join(root, dir, "test-results.json")),
     }));
     const currentHash = sourceFingerprint();
-    const result = aggregate(parts, {
-      commit: currentCiCommit(
-        execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
-        process.env.GITHUB_SHA,
-      ),
-      sourceHash: currentHash,
-      root: process.cwd(),
-      runId: process.env.GITHUB_RUN_ID,
-      runAttempt: process.env.GITHUB_RUN_ATTEMPT,
-      shardJobResult: process.env.SHARD_JOB_RESULT,
-      priorStepsOk: process.env.VERIFY_PREVIOUS_STEPS_OK,
-      inventory: read(".verification/test-inventory.json"),
-      physicalFiles: discoverTestFiles(process.cwd()),
-      now: Date.now(),
-    });
+    const result = aggregate(
+      parts,
+      {
+        commit: currentCiCommit(
+          execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+          process.env.GITHUB_SHA,
+        ),
+        sourceHash: currentHash,
+        root: process.cwd(),
+        runId: process.env.GITHUB_RUN_ID,
+        runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+        shardJobResult: process.env.SHARD_JOB_RESULT,
+        typesJobResult: process.env.TYPES_JOB_RESULT,
+        priorStepsOk: process.env.VERIFY_PREVIOUS_STEPS_OK,
+        inventory: read(".verification/test-inventory.json"),
+        physicalFiles: discoverTestFiles(process.cwd()),
+        now: Date.now(),
+      },
+      { verify: read(".verification-types/verify.json") },
+    );
     assert.equal(currentHash, sourceFingerprint(), "Sources changed during aggregation");
     result.finished_at = new Date().toISOString();
     result.duration_ms = Date.parse(result.finished_at) - Date.parse(result.started_at);

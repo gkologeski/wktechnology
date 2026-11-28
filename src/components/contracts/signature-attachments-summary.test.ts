@@ -35,8 +35,29 @@ vi.mock("sonner", () => ({ toast: { error: m.error } }));
 import { SignatureAttachmentsSummary } from "./signature-attachments-summary";
 let host: HTMLDivElement, root: Root, qc: QueryClient;
 const fixture = [
-  { id: "a", kind: "file", name: "Anexo técnico.pdf" },
-  { id: "b", kind: "proposal", name: "Proposta comercial", frozen: true },
+  {
+    id: "a",
+    kind: "file",
+    name: "Anexo técnico.pdf",
+    audience: "client",
+    reviewed_by: "reviewer",
+    reviewed_at: "2026-11-27",
+    commercial_sensitive: false,
+    signature_included: true,
+    sharing_blocked: false,
+  },
+  {
+    id: "b",
+    kind: "proposal",
+    name: "Proposta comercial",
+    frozen: true,
+    audience: "client",
+    reviewed_by: null,
+    reviewed_at: null,
+    commercial_sensitive: false,
+    signature_included: true,
+    sharing_blocked: false,
+  },
 ];
 beforeEach(() => {
   vi.clearAllMocks();
@@ -163,6 +184,100 @@ it("hiring preview explicit denial and read only cannot be overridden", async ()
   expect(host.querySelector("button")?.disabled).toBe(true);
   m.readonly = true;
   await render(true);
+  expect(host.querySelector("button")?.disabled).toBe(true);
+  expect(m.preview).not.toHaveBeenCalled();
+});
+it("preserves reviewed internal files on the record without counting them in the signature", async () => {
+  m.list.mockResolvedValue([
+    ...fixture,
+    {
+      ...fixture[0],
+      id: "internal",
+      name: "Notas internas.pdf",
+      audience: "internal",
+      signature_included: false,
+    },
+  ]);
+  await render();
+  expect(host.textContent).toContain("2 anexo(s) externo(s)");
+  expect(host.textContent).toContain("Somente interno · não acompanha a assinatura");
+  expect(
+    host.querySelector('[aria-label="Anexos que acompanham o contrato"]')?.textContent,
+  ).not.toContain("Notas internas.pdf");
+  expect(
+    host.querySelector('[aria-label="Arquivos internos preservados na ficha"]')?.textContent,
+  ).toContain("Notas internas.pdf");
+  await click("Baixar prévia do contrato e anexos");
+  expect(m.preview).toHaveBeenCalledOnce();
+});
+it("blocks preparation for an unclassified upload instead of silently omitting it", async () => {
+  m.list.mockResolvedValue([
+    {
+      ...fixture[0],
+      audience: "internal",
+      reviewed_by: null,
+      reviewed_at: null,
+      signature_included: false,
+      sharing_blocked: true,
+    },
+  ]);
+  await render();
+  expect(host.textContent).toContain("Revise o público dos anexos antes do envio");
+  expect(host.querySelector("button")?.disabled).toBe(true);
+  expect(m.preview).not.toHaveBeenCalled();
+});
+it("does not label a client sales proposal as included in a supplier purchase package", async () => {
+  m.list.mockResolvedValue(
+    fixture.map((row) => ({ ...row, signature_included: false, sharing_blocked: true })),
+  );
+  await render();
+  expect(host.textContent).toContain("público pendente ou incompatível");
+  expect(host.querySelector("button")?.disabled).toBe(true);
+  expect(m.preview).not.toHaveBeenCalled();
+});
+it("includes the reviewed own supplier proposal but rejects sensitive technical-shared content", async () => {
+  m.list.mockResolvedValue([{ ...fixture[0], audience: "supplier", commercial_sensitive: true }]);
+  await render();
+  expect(host.textContent).toContain("1 anexo(s) externo(s)");
+  expect(host.querySelector("button")?.disabled).toBe(false);
+  m.list.mockResolvedValue([
+    {
+      ...fixture[0],
+      audience: "technical_shared",
+      commercial_sensitive: true,
+      signature_included: false,
+      sharing_blocked: true,
+    },
+  ]);
+  await act(async () => {
+    await qc.invalidateQueries({ queryKey: ["contract-attachments"] });
+  });
+  await flush();
+  expect(host.textContent).toContain("Revise o público");
+  expect(host.querySelector("button")?.disabled).toBe(true);
+});
+it("does not let the governed hiring preview override bypass pending audience review", async () => {
+  m.list.mockResolvedValue([
+    {
+      ...fixture[0],
+      audience: "internal",
+      reviewed_at: null,
+      reviewed_by: null,
+      signature_included: false,
+      sharing_blocked: true,
+    },
+  ]);
+  await render(true);
+  expect(host.textContent).toContain("Revise o público");
+  expect(host.querySelector("button")?.disabled).toBe(true);
+  expect(m.preview).not.toHaveBeenCalled();
+});
+it("fails closed when audience classification metadata is absent", async () => {
+  m.list.mockResolvedValue([
+    { id: "unknown", kind: "file", name: "Arquivo sem classificação.pdf" },
+  ]);
+  await render();
+  expect(host.textContent).toContain("Revise o público");
   expect(host.querySelector("button")?.disabled).toBe(true);
   expect(m.preview).not.toHaveBeenCalled();
 });

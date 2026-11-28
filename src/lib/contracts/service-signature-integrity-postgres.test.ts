@@ -169,6 +169,19 @@ beforeAll(async () => {
   await db.unsafe(
     readFileSync("drizzle/migrations/0484_service_execution_signature_integrity.sql", "utf8"),
   );
+  // The lock-order scenario needs two live sessions. Establish both pool slots
+  // here so connection startup/type discovery cannot consume its assertion timer.
+  const connections: Array<Awaited<ReturnType<typeof db.reserve>>> = [];
+  try {
+    connections.push(await db.reserve());
+    connections.push(await db.reserve());
+    const sessions = await Promise.all(
+      connections.map((connection) => connection`select pg_backend_pid() as pid`),
+    );
+    expect(new Set(sessions.map(([row]) => row.pid)).size).toBe(2);
+  } finally {
+    for (const connection of connections) connection.release();
+  }
 }, 90000);
 afterAll(async () => {
   if (db) await db.end({ timeout: 2 });

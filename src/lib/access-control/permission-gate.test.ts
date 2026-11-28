@@ -1,5 +1,16 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+  statSync,
+  utimesSync,
+  unlinkSync,
+  renameSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import {
@@ -13,6 +24,21 @@ import {
   sqlDeclarations,
   type Contract,
 } from "../../../scripts/security/permission-gate";
+const parserCalls = vi.hoisted(() => ({ count: 0 }));
+vi.mock("typescript", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("typescript")>();
+  const compiler = (actual as unknown as { default?: typeof actual }).default ?? actual;
+  return {
+    ...actual,
+    default: {
+      ...compiler,
+      createSourceFile: (...args: Parameters<typeof compiler.createSourceFile>) => {
+        parserCalls.count++;
+        return compiler.createSourceFile(...args);
+      },
+    },
+  };
+});
 const roots: string[] = [];
 afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
@@ -392,7 +418,15 @@ describe("mandatory permission impact gate", () => {
     // Reviewed four-shard exception keeps the required final job unconditional
     // and fails closed; it must not legalize arbitrary skipped/optional gates.
     const sharded = readFileSync(".github/workflows/ci.yml", "utf8");
+    const actualVerify = readFileSync("scripts/verify.mjs", "utf8");
+    const typesBlock = sharded.slice(
+      sharded.indexOf("  verification_types:\n"),
+      sharded.indexOf("  unit:\n"),
+    );
+    const changeTypes = (source: string, from: string, to: string) =>
+      source.replace(typesBlock, typesBlock.replace(from, to));
     f.write(".github/workflows/ci.yml", sharded);
+    f.write("scripts/verify.mjs", actualVerify);
     expect(assertCiWiring(f.root)).toEqual([]);
     const mutations = [
       (source: string) =>
@@ -416,6 +450,50 @@ describe("mandatory permission impact gate", () => {
           "SHARD_JOB_RESULT: ${{ needs.verification_shards.result }}",
           "SHARD_JOB_RESULT: success",
         ),
+      (source: string) => source.replace("verification_types:\n", "removed_types:\n"),
+      (source: string) =>
+        source.replace(
+          "needs: [verification_shards, verification_types]",
+          "needs: verification_shards",
+        ),
+      (source: string) => source.replace('VERIFY_TYPES: "1"', 'VERIFY_TYPES: "0"'),
+      (source: string) =>
+        source.replace(
+          "TYPES_JOB_RESULT: ${{ needs.verification_types.result }}",
+          "TYPES_JOB_RESULT: success",
+        ),
+      (source: string) =>
+        source.replace("          TYPES_JOB_RESULT: ${{ needs.verification_types.result }}\n", ""),
+      (source: string) =>
+        changeTypes(source, "    steps:\n", "    if: ${{ success() }}\n    steps:\n"),
+      (source: string) =>
+        changeTypes(source, "    steps:\n", "    continue-on-error: true\n    steps:\n"),
+      (source: string) =>
+        changeTypes(source, "run: bun run verify\n", "run: bun run verify\n        if: false\n"),
+      (source: string) =>
+        changeTypes(source, "run: bun install --frozen-lockfile", "run: bun install"),
+      (source: string) => changeTypes(source, 'node-version: "24.22.2"', 'node-version: "22"'),
+      (source: string) => changeTypes(source, "bun-version: 1.3.14", "bun-version: 1.0.0"),
+      (source: string) =>
+        changeTypes(source, "fetch-depth: 0", "fetch-depth: 0\n          ref: refs/heads/stale"),
+      (source: string) =>
+        changeTypes(
+          source,
+          "name: verification-types-${{ github.run_id }}-${{ github.run_attempt }}",
+          "name: verification-types-old",
+        ),
+      (source: string) =>
+        source.replace(
+          "name: Download the current-run full type proof",
+          "if: false\n        name: Download the current-run full type proof",
+        ),
+      (source: string) =>
+        source.replace("path: .verification-types\n", "path: .verification-stale-types\n"),
+      (source: string) =>
+        source.replace(
+          "name: verification-types-${{ github.run_id }}-${{ github.run_attempt }}\n          path: .verification-types",
+          "name: verification-types-${{ github.run_id }}-1\n          path: .verification-types",
+        ),
       (source: string) =>
         source.replace("VERIFY_SHARD: ${{ matrix.shard }}/4", "VERIFY_SHARD: 1/4"),
       (source: string) =>
@@ -429,6 +507,11 @@ describe("mandatory permission impact gate", () => {
         source.replace(
           "name: Official help coverage",
           "run: bun run permissions:check\n      - name: Official help coverage",
+        ),
+      (source: string) =>
+        source.replace(
+          "      - name: Download all current-run shard proofs",
+          "      - run: bun run permissions:check\n      - name: Download all current-run shard proofs",
         ),
       (source: string) =>
         source.replace("run: bun run perf:check", "run: echo optional performance"),
@@ -445,6 +528,68 @@ describe("mandatory permission impact gate", () => {
       expect(invalid).not.toBe(sharded);
       f.write(".github/workflows/ci.yml", invalid);
       expect(assertCiWiring(f.root).length, `sharded CI mutation ${index}`).toBeGreaterThan(0);
+    }
+    f.write(".github/workflows/ci.yml", sharded);
+    const fresh = "const results = [await runLogged(STEPS[0])];";
+    const guard = "if (aggregateInput && results[0].ok && !interrupted)";
+    const aggregateBlock = actualVerify.slice(
+      actualVerify.indexOf(guard),
+      actualVerify.indexOf("// Authorization evidence must succeed"),
+    );
+    const verifyMutations = [
+      actualVerify.replace(fresh, "const results = [{ok:true}];"),
+      actualVerify.replace(fresh, "const results = [runLogged(STEPS[0])];"),
+      actualVerify.replace(
+        fresh,
+        "const results = [await runLogged(STEPS[0])], overwritten = (results[0] = {ok:true});",
+      ),
+      actualVerify.replace(fresh, "let results = [await runLogged(STEPS[0])];"),
+      actualVerify.replace(
+        fresh,
+        "const results = aggregateInput ? [{ok:true}] : [await runLogged(STEPS[0])];",
+      ),
+      actualVerify.replace(guard, "if (aggregateInput)"),
+      actualVerify.replace(guard, "results[0] = {ok:true};\n" + guard),
+      actualVerify.replace(aggregateBlock, guard + " {}\n"),
+      actualVerify.replace(fresh, "") + "\n" + fresh,
+      actualVerify.replace('"scripts/verify-shards.mjs"', '"scripts/unreviewed-aggregate.mjs"'),
+      actualVerify + "\nawait runLogged(STEPS[0]);",
+      actualVerify +
+        '\nawait runLogged({name:"aggregate",cmd:process.execPath,args:["scripts/verify-shards.mjs",".verification-parts"]});',
+    ];
+    for (const [index, invalid] of verifyMutations.entries()) {
+      expect(invalid).not.toBe(actualVerify);
+      f.write("scripts/verify.mjs", invalid);
+      expect(
+        assertCiWiring(f.root).some((finding) => finding.message.includes("fresh permission gate")),
+        `aggregate permission mutation ${index}`,
+      ).toBe(true);
+    }
+    const typeMutations = [
+      actualVerify.replace(
+        'args: ["--noEmit", "--incremental", "false"]',
+        'args: ["--noEmit", "--project", "tsconfig.subset.json"]',
+      ),
+      actualVerify.replace("cmd: getTsgoExe()", 'cmd: "tsc"'),
+      actualVerify.replace("if (typesInput) STEPS.splice(2);", "if (typesInput) STEPS.splice(1);"),
+      actualVerify.replace("STEPS.splice(1, 1,", "STEPS.splice(1, 0,"),
+      actualVerify.replace(
+        'typesInput !== undefined && typesInput !== "1"',
+        'typesInput !== undefined && typesInput !== "0"',
+      ),
+      actualVerify.replace(
+        "[shardInput, aggregateInput, typesInput].filter(Boolean).length > 1",
+        "[shardInput, aggregateInput].filter(Boolean).length > 1",
+      ),
+      actualVerify + "\nSTEPS.splice(1,1);",
+    ];
+    for (const [index, invalid] of typeMutations.entries()) {
+      expect(invalid).not.toBe(actualVerify);
+      f.write("scripts/verify.mjs", invalid);
+      expect(
+        assertCiWiring(f.root).some((finding) => finding.message.includes("Isolated types")),
+        `isolated full types mutation ${index}`,
+      ).toBe(true);
     }
   });
   it("rejects an invalid exception review date instead of treating NaN as future", () => {
@@ -515,5 +660,217 @@ describe("mandatory permission impact gate", () => {
     f.write(f.file, s);
     f.c.files[f.file] = hash(s);
     expect(f.run().findings).toEqual([]);
+  });
+});
+
+describe("process-local syntax memo remains fresh and fail-closed", () => {
+  it("re-evaluates same-path same-size source after warming even with an updated review hash", () => {
+    const f = fixture();
+    expect(f.run().findings).toEqual([]);
+    const path = join(f.root, f.file),
+      originalStat = statSync(path);
+    const changed = f.source.replace('check("demo.records")', 'other("demo.records")');
+    expect(changed.length).toBe(f.source.length);
+    f.write(f.file, changed);
+    utimesSync(path, originalStat.atime, originalStat.mtime);
+    f.c.files[f.file] = hash(changed);
+    const findings = f.run().findings;
+    expect(findings.some((x) => x.code === "stale_contract")).toBe(false);
+    expect(findings.some((x) => x.code === "control_binding")).toBe(true);
+    f.write(f.file, f.source);
+    f.c.files[f.file] = hash(f.source);
+    expect(f.run().findings).toEqual([]);
+  });
+  it("does not reuse a warmed definition after its symbol changes", () => {
+    const f = fixture();
+    expect(f.run().findings).toEqual([]);
+    f.write(
+      "src/guard.ts",
+      "export function anotherBoundary(resource: string) { return resource; }",
+    );
+    expect(f.run().findings.some((x) => x.code === "control_definition")).toBe(true);
+  });
+  it("re-reads named evidence files even though they are outside production snapshots", () => {
+    const f = fixture();
+    expect(f.run().findings).toEqual([]);
+    const original = readFileSync(join(f.root, f.test), "utf8");
+    f.write(f.test, original.replace('it("inactive",', 'it.skip("inactive",'));
+    expect(f.run().findings.some((x) => x.code === "denial_evidence")).toBe(true);
+    f.write(f.test, original);
+    expect(f.run().findings).toEqual([]);
+  });
+  it("does not return a warmed parse before checking a newly introduced source symlink", () => {
+    const f = fixture(),
+      path = join(f.root, f.file);
+    expect(invokes(f.root, f.file, "requireBoundary")).toBe(true);
+    unlinkSync(path);
+    symlinkSync(join(f.root, "src/guard.ts"), path);
+    expect(() => invokes(f.root, f.file, "requireBoundary")).toThrow("symlink");
+    expect(() => f.run()).toThrow("symlink");
+  });
+  it("still checks every parent path component after warming", () => {
+    const f = fixture();
+    expect(invokes(f.root, f.file, "requireBoundary")).toBe(true);
+    const directory = dirname(join(f.root, f.file)),
+      moved = directory + "-original";
+    renameSync(directory, moved);
+    symlinkSync(moved, directory);
+    expect(() => invokes(f.root, f.file, "requireBoundary")).toThrow("symlink");
+  });
+  it("does not turn deletion of warmed source or test evidence into a cached pass", () => {
+    const f = fixture();
+    expect(f.run().findings).toEqual([]);
+    unlinkSync(join(f.root, f.test));
+    expect(f.run().findings.some((x) => x.code === "denial_evidence")).toBe(true);
+    unlinkSync(join(f.root, f.file));
+    expect(() => invokes(f.root, f.file, "requireBoundary")).toThrow();
+  });
+  it("does not share a binding decision across roots with identical relative filenames", () => {
+    const allowed = fixture(),
+      denied = fixture();
+    expect(allowed.run().findings).toEqual([]);
+    const changed = denied.source.replace('check("demo.records")', 'other("demo.records")');
+    denied.write(denied.file, changed);
+    denied.c.files[denied.file] = hash(changed);
+    expect(denied.run().findings.some((x) => x.code === "control_binding")).toBe(true);
+    expect(allowed.run().findings).toEqual([]);
+  });
+  it("preserves the filename-based TS and TSX parser distinction", () => {
+    const jsx = "export const View=()=> <button onClick={()=>1}>x</button>;";
+    expect(features("kind.tsx", jsx).events).toBe(true);
+    expect(features("kind.ts", jsx).events).toBe(false);
+    expect(features("kind.tsx", jsx).events).toBe(true);
+  });
+  it("returns fresh public feature arrays rather than memoized findings", () => {
+    const text = 'createFileRoute("/original")({});';
+    const first = features("feature.ts", text);
+    first.routes.push("/caller-injected");
+    expect(features("feature.ts", text).routes).toEqual(["/original"]);
+  });
+  it("re-evaluates contract metadata, catalog and exception time with unchanged source", () => {
+    const f = fixture();
+    expect(f.run().findings).toEqual([]);
+    f.catalog.clear();
+    expect(f.run().findings.some((x) => x.code === "unknown_key")).toBe(true);
+    f.catalog.add("demo.records.view.workspace");
+    f.c.actions = ["delete"];
+    expect(f.run().findings.some((x) => x.code === "matrix")).toBe(true);
+    f.c.actions = ["view"];
+    f.c.kind = "public";
+    f.c.permission_keys = [];
+    f.c.exception = {
+      mechanism: "signed record token",
+      boundary: "one contract record",
+      revocation: "revoke the record token",
+      review_by: "2027-01-01",
+    };
+    expect(f.run().findings).toEqual([]);
+    expect(
+      checkCoverage(
+        f.root,
+        f.base,
+        [f.c],
+        f.catalog,
+        new Date("2027-01-02T00:00:00Z"),
+      ).findings.some((x) => x.code === "exception"),
+    ).toBe(true);
+  });
+  it("keeps syntax behavior after eviction pressure and oversized uncached inputs", () => {
+    const guarded = 'createFileRoute("/kept")({});';
+    expect(features("first.ts", guarded).risky).toBe(true);
+    for (let i = 0; i < 256; i++)
+      expect(features(`pressure-${i}.ts`, `const x${i}=${i};`).risky).toBe(false);
+    expect(features("first.ts", guarded).routes).toEqual(["/kept"]);
+    expect(features("first.ts", 'const text="createFileRoute";').risky).toBe(false);
+    const prefix = "/*" + "x".repeat(600_000) + "*/\n";
+    expect(
+      features("oversized.tsx", prefix + "const View=()=> <button onClick={()=>1}/>;").events,
+    ).toBe(true);
+    expect(features("oversized.tsx", prefix + "const View=()=> <button/>;").events).toBe(false);
+  });
+  it("cannot keep CI wiring green after a warmed verify or test-discovery AST changes", () => {
+    const f = fixture();
+    f.write(
+      "package.json",
+      JSON.stringify({
+        scripts: { "permissions:check": "bun scripts/check-permissions.ts" },
+      }),
+    );
+    f.write(
+      ".github/workflows/ci.yml",
+      "on:\n  push:\n  pull_request:\njobs:\n  unit:\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - run: bun run permissions:check\n      - run: bun run verify\n      - run: bun run build\n",
+    );
+    const verify =
+      'const STEPS=[{name:"permissions",cmd:"bun",args:["scripts/check-permissions.ts"]}];';
+    f.write("scripts/verify.mjs", verify);
+    f.write("vitest.config.ts", 'const config={test:{include:["src/**/*.test.ts"]}};');
+    expect(assertCiWiring(f.root)).toEqual([]);
+    f.write("scripts/verify.mjs", "const STEPS=[]; // permissions scripts/check-permissions.ts");
+    expect(assertCiWiring(f.root).some((x) => x.message.includes("real permission gate"))).toBe(
+      true,
+    );
+    f.write("scripts/verify.mjs", verify);
+    f.write("vitest.config.ts", 'const config={test:{include:["src/**/*.spec.ts"]}};');
+    expect(assertCiWiring(f.root).some((x) => x.message.includes("discovery changed"))).toBe(true);
+  });
+});
+
+describe("syntax memo reuse and retention limits", () => {
+  it("reuses an exact parser input and reparses every new source generation", () => {
+    parserCalls.count = 0;
+    const file = "memo-count-reuse.ts",
+      first = 'createFileRoute("/one")({});',
+      changed = 'createFileRoute("/two")({});';
+    expect(features(file, first).routes).toEqual(["/one"]);
+    expect(features(file, first).routes).toEqual(["/one"]);
+    expect(parserCalls.count).toBe(1);
+    expect(features(file, changed).routes).toEqual(["/two"]);
+    expect(parserCalls.count).toBe(2);
+    expect(features(file, first).routes).toEqual(["/one"]);
+    expect(parserCalls.count).toBe(3);
+  });
+  it("evicts an old filename after the bounded file count is exceeded", () => {
+    const first = "memo-limit-files-first.ts",
+      text = "const first=1;";
+    features(first, text);
+    for (let i = 0; i < 64; i++) features(`memo-limit-files-${i}.ts`, `const value${i}=${i};`);
+    const before = parserCalls.count;
+    features(first, text);
+    expect(parserCalls.count).toBe(before + 1);
+  });
+  it("bounds retained source units even below the file and node count limits", () => {
+    const text = "/*" + "x".repeat(150_000) + "*/ const value=1;";
+    const first = "memo-limit-source-first.ts";
+    features(first, text);
+    // Seventeen tiny-node files fit the filename limit, but exceed two million UTF-16 units.
+    for (let i = 0; i < 16; i++) features(`memo-limit-source-${i}.ts`, text);
+    const before = parserCalls.count;
+    features(first, text);
+    expect(parserCalls.count).toBe(before + 1);
+  });
+  it("bounds retained full traversal nodes even below the source and file limits", () => {
+    const text = "let value;\n".repeat(8_000),
+      first = "memo-limit-nodes-first.ts";
+    features(first, text);
+    // Each input has >32k nodes but <100k; eleven files use <1m source units.
+    for (let i = 0; i < 10; i++) features(`memo-limit-nodes-${i}.ts`, text);
+    const before = parserCalls.count;
+    features(first, text);
+    expect(parserCalls.count).toBe(before + 1);
+  });
+  it("does not retain an individual source beyond the source-unit cap", () => {
+    const text = "/*" + "x".repeat(600_000) + "*/ const value=1;";
+    parserCalls.count = 0;
+    features("memo-single-source-limit.ts", text);
+    features("memo-single-source-limit.ts", text);
+    expect(parserCalls.count).toBe(2);
+  });
+  it("does not retain an individual AST beyond the node cap", () => {
+    const text = "let value;\n".repeat(30_000);
+    expect(text.length).toBeLessThan(500_000);
+    parserCalls.count = 0;
+    features("memo-single-node-limit.ts", text);
+    features("memo-single-node-limit.ts", text);
+    expect(parserCalls.count).toBe(2);
   });
 });
