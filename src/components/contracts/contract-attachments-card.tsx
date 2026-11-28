@@ -1,6 +1,7 @@
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
+import { readViewAs } from "@/lib/view-as-client";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -18,6 +19,8 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { QuoteInternalPreview } from "@/components/deals/quote-internal-preview";
+import { PurchaseProposalWizard } from "./purchase-proposal-wizard";
+import { PURCHASE_PROPOSAL_KEYS } from "@/lib/contracts/purchase-proposal.types";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   getContractAttachmentPolicy,
@@ -29,6 +32,8 @@ import {
   removeContractAttachment,
   downloadContractAttachment,
   previewContractSignaturePackage,
+  reviewContractAttachment,
+  type ContractAttachment,
   CONTRACT_ATTACHMENT_MAX_BYTES,
   CONTRACT_ATTACHMENT_TYPES,
 } from "@/lib/contracts/attachments.functions";
@@ -43,11 +48,19 @@ export function ContractAttachmentsCard({
   const { user } = useAuth();
   const permissions = usePermissions();
   const access = useWorkCapabilities("techcontracts.contracts", [contractId]);
-  const canEdit = allowEdit && access.for(contractId).can_update;
+  const viewAs = readViewAs();
+  const canEdit =
+    allowEdit &&
+    access.for(contractId).can_update &&
+    !permissions.isLoading &&
+    !permissions.isError &&
+    !viewAs?.readOnly &&
+    viewAs?.mode !== "role";
   const policyFn = useServerFn(getContractAttachmentPolicy);
   const policy = useQuery({
     queryKey: [
       "contract-attachment-policy",
+      user?.id,
       permissions.workspaceId,
       contractId,
       [...permissions.permissions].sort(),
@@ -57,6 +70,15 @@ export function ContractAttachmentsCard({
     retry: false,
   });
   const hiringOrigin = policy.data?.hiring_origin === true;
+  const isPurchase = policy.data?.is_purchase === true;
+  const canUpload =
+    canEdit &&
+    policy.isSuccess &&
+    (!isPurchase || hiringOrigin || permissions.can(PURCHASE_PROPOSAL_KEYS.view));
+  const canReview =
+    canEdit &&
+    policy.data?.can_review === true &&
+    permissions.can("techcontracts.esign_share.manage.workspace");
   const list = useServerFn(listContractAttachments),
     sources = useServerFn(listContractAttachmentSources),
     link = useServerFn(linkContractAttachment),
@@ -64,12 +86,15 @@ export function ContractAttachmentsCard({
     finish = useServerFn(finishContractAttachment),
     remove = useServerFn(removeContractAttachment),
     download = useServerFn(downloadContractAttachment),
-    preview = useServerFn(previewContractSignaturePackage);
+    preview = useServerFn(previewContractSignaturePackage),
+    review = useServerFn(reviewContractAttachment);
   const qc = useQueryClient(),
     input = useRef<HTMLInputElement>(null);
   const [selected, setSelected] = useState(""),
     [busy, setBusy] = useState(false),
-    [quote, setQuote] = useState<string | null>(null);
+    [quote, setQuote] = useState<string | null>(null),
+    [purchaseProposalOpen, setPurchaseProposalOpen] = useState(false),
+    [audiences, setAudiences] = useState<Record<string, ContractAttachment["audience"]>>({});
   const key = [
     "contract-attachments",
     user?.id,
@@ -85,7 +110,7 @@ export function ContractAttachmentsCard({
   const available = useQuery({
     queryKey: [...key, "sources"],
     queryFn: () => sources({ data: { contractId } }),
-    enabled: canEdit && policy.isSuccess && !hiringOrigin,
+    enabled: canEdit && policy.isSuccess && !hiringOrigin && !isPurchase,
   });
   const refresh = async () => {
     await Promise.all([
@@ -126,7 +151,7 @@ export function ContractAttachmentsCard({
         throw new Error(error.message);
       }
       await finish({ data: { contractId, id: reservation.id } });
-      toast.success("Anexo incluído no contrato.");
+      toast.success("Arquivo incluído para uso interno. Confira o público antes da assinatura.");
     });
   }
   return (
@@ -139,13 +164,36 @@ export function ContractAttachmentsCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          {hiringOrigin
-            ? "Compra WK: envie proposta do fornecedor e condições WK como arquivo PDF. Cotações e propostas de venda não representam esta compra. Confira o documento e cada anexo antes da revisão jurídica."
-            : "Vincule a cotação ou a proposta do negócio, ou envie outro documento. Vínculos exibem a versão atual da origem. Todos os anexos serão incluídos no pacote de assinatura, com a versão congelada na preparação do envio."}
+          {!policy.isSuccess
+            ? "Confira os arquivos e a finalidade deste contrato antes de preparar documentos para assinatura."
+            : isPurchase && !hiringOrigin
+              ? "Prepare a proposta técnica própria desta compra ou envie documentos da prestadora. Confira o público de cada anexo e a prévia antes da assinatura."
+              : hiringOrigin
+                ? "Compra WK: envie proposta do fornecedor e condições WK como arquivo PDF. Cotações e propostas de venda não representam esta compra. Confira o documento e cada anexo antes da revisão jurídica."
+                : "Vincule a cotação ou a proposta do negócio, ou envie outro documento. Vínculos exibem a versão atual da origem. Todos os anexos serão incluídos no pacote de assinatura, com a versão congelada na preparação do envio."}
         </p>
+        {policy.error && (
+          <p role="alert" className="text-sm text-destructive">
+            Não foi possível conferir a finalidade e as regras dos anexos deste contrato.{" "}
+            <Button variant="link" onClick={() => void policy.refetch()}>
+              Tentar novamente
+            </Button>
+          </p>
+        )}
+        {policy.isSuccess &&
+          isPurchase &&
+          !hiringOrigin &&
+          !permissions.isLoading &&
+          !permissions.isError &&
+          permissions.can(PURCHASE_PROPOSAL_KEYS.view) && (
+            <Button variant="outline" disabled={busy} onClick={() => setPurchaseProposalOpen(true)}>
+              <Paperclip className="mr-2 h-4 w-4" aria-hidden />
+              Proposta técnica de compra
+            </Button>
+          )}
         {canEdit && (
           <div className="flex flex-wrap items-center gap-2">
-            {policy.isSuccess && !hiringOrigin && (
+            {policy.isSuccess && !hiringOrigin && !isPurchase && (
               <>
                 <Select
                   value={selected}
@@ -189,25 +237,29 @@ export function ContractAttachmentsCard({
                 </Button>
               </>
             )}
-            <Button variant="outline" disabled={busy} onClick={() => input.current?.click()}>
-              <Upload className="mr-2 h-4 w-4" />
-              {busy ? "Aguarde…" : "Enviar arquivo"}
-            </Button>
-            <input
-              ref={input}
-              type="file"
-              className="hidden"
-              aria-label="Arquivo para anexar ao contrato"
-              accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png,.txt"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                e.target.value = "";
-                if (file) void upload(file);
-              }}
-            />
+            {canUpload && (
+              <>
+                <Button variant="outline" disabled={busy} onClick={() => input.current?.click()}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  {busy ? "Aguarde…" : "Enviar arquivo"}
+                </Button>
+                <input
+                  ref={input}
+                  type="file"
+                  className="hidden"
+                  aria-label="Arquivo para anexar ao contrato"
+                  accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png,.txt"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file) void upload(file);
+                  }}
+                />
+              </>
+            )}
           </div>
         )}
-        {available.error && canEdit && !hiringOrigin && (
+        {available.error && canEdit && !hiringOrigin && !isPurchase && (
           <p role="alert" className="text-sm text-destructive">
             Não foi possível carregar os documentos comerciais.{" "}
             <Button variant="link" onClick={() => void available.refetch()}>
@@ -215,12 +267,16 @@ export function ContractAttachmentsCard({
             </Button>
           </p>
         )}
-        {canEdit && !hiringOrigin && available.isSuccess && available.data.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            Nenhuma cotação ou proposta vinculada a este contrato/negócio está disponível no seu
-            acesso. Você pode enviar um arquivo.
-          </p>
-        )}
+        {canEdit &&
+          !hiringOrigin &&
+          !isPurchase &&
+          available.isSuccess &&
+          available.data.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma cotação ou proposta vinculada a este contrato/negócio está disponível no seu
+              acesso. Você pode enviar um arquivo.
+            </p>
+          )}
         {attachments.isPending ? (
           <p role="status">Carregando anexos…</p>
         ) : attachments.error ? (
@@ -235,13 +291,23 @@ export function ContractAttachmentsCard({
         ) : (
           <ul className="divide-y">
             {attachments.data?.map((a) => (
-              <li key={a.id} className="flex items-center justify-between gap-3 py-3">
+              <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <span className="min-w-0 break-words text-sm">
                   {a.kind === "quote" ? "Cotação: " : a.kind === "proposal" ? "Proposta: " : ""}
                   {a.name}
                   {a.frozen && (
                     <span className="ml-2 text-xs text-muted-foreground">Cópia congelada</span>
                   )}
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {a.audience === "supplier"
+                      ? "Destinado à prestadora"
+                      : a.audience === "client"
+                        ? "Destinado ao cliente"
+                        : a.audience === "technical_shared"
+                          ? "Documento técnico compartilhável"
+                          : "Somente interno"}
+                    {a.reviewed_at ? " · público conferido" : " · público ainda não conferido"}
+                  </span>
                 </span>
                 <div className="flex shrink-0 items-center gap-1">
                   {a.kind === "proposal" && a.source_id && !a.frozen ? (
@@ -297,36 +363,103 @@ export function ContractAttachmentsCard({
                     </Button>
                   )}
                 </div>
+                {canReview && a.can_review === true && !a.frozen && (
+                  <div className="flex w-full flex-wrap items-center gap-2">
+                    <Select
+                      value={audiences[a.id] ?? a.audience ?? "internal"}
+                      disabled={busy}
+                      onValueChange={(next: ContractAttachment["audience"]) =>
+                        setAudiences((current) => ({ ...current, [a.id]: next }))
+                      }
+                    >
+                      <SelectTrigger
+                        className="w-full sm:w-80"
+                        aria-label={`Público do anexo ${a.name}`}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="internal">Somente interno</SelectItem>
+                        {isPurchase ? (
+                          <SelectItem value="supplier">Compartilhar com a prestadora</SelectItem>
+                        ) : (
+                          <SelectItem value="client">Compartilhar com o cliente</SelectItem>
+                        )}
+                        <SelectItem value="technical_shared" disabled={a.commercial_sensitive}>
+                          Documento técnico compartilhável
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() =>
+                        void run(async () => {
+                          const audience = audiences[a.id] ?? a.audience ?? "internal";
+                          if (
+                            !(await confirmDialog({
+                              title: "Conferir público do anexo",
+                              description:
+                                audience === "internal"
+                                  ? "Este arquivo ficará disponível somente à equipe interna autorizada e não acompanhará o envio para assinatura."
+                                  : "Confirme que revisou o arquivo e que seu conteúdo pode ser compartilhado com esse público. Condições comerciais do cliente e da prestadora devem permanecer separadas.",
+                            }))
+                          )
+                            return;
+                          await review({ data: { contractId, id: a.id, audience } });
+                          toast.success("Público do anexo conferido.");
+                        })
+                      }
+                    >
+                      Conferir público
+                    </Button>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
         )}
-        {(hiringOrigin
-          ? policy.data?.can_preview
-          : canEdit && permissions.can("techcontracts.signature_evidence.manage.workspace")) && (
-          <Button
-            variant="outline"
-            disabled={
-              busy ||
-              attachments.isPending ||
-              !!attachments.error ||
-              (!hiringOrigin && !attachments.data?.length)
-            }
-            onClick={() =>
-              void run(async () => {
-                const result = await preview({ data: { contractId } });
-                window.location.assign(result.url);
-              })
-            }
-          >
-            Baixar prévia para assinatura
-          </Button>
-        )}
+        {policy.isSuccess &&
+          (hiringOrigin
+            ? policy.data?.can_preview
+            : canEdit && permissions.can("techcontracts.signature_evidence.manage.workspace")) && (
+            <Button
+              variant="outline"
+              disabled={
+                busy ||
+                attachments.isPending ||
+                !!attachments.error ||
+                (!hiringOrigin && !attachments.data?.length)
+              }
+              onClick={() =>
+                void run(async () => {
+                  const result = await preview({ data: { contractId } });
+                  window.location.assign(result.url);
+                })
+              }
+            >
+              Baixar prévia para assinatura
+            </Button>
+          )}
         <p className="text-xs text-muted-foreground">
           Até 20 MB por arquivo · PDF, DOCX, XLSX, JPG, PNG e TXT. Acesso privado conforme as
           permissões atuais do contrato e do documento comercial.
         </p>
+        <p className="text-xs text-muted-foreground">
+          Arquivos novos começam como internos. Um responsável autorizado deve conferir o público de
+          cada anexo. Somente documentos revisados para o destinatário integram a assinatura;
+          arquivos internos permanecem preservados na ficha.
+        </p>
         <QuoteInternalPreview id={quote} onClose={() => setQuote(null)} />
+        {purchaseProposalOpen && (
+          <PurchaseProposalWizard
+            contractId={contractId}
+            open={purchaseProposalOpen}
+            onOpenChange={setPurchaseProposalOpen}
+            onGenerated={refresh}
+          />
+        )}
       </CardContent>
     </Card>
   );

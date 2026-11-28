@@ -3396,6 +3396,20 @@
       "when": 1795802078171,
       "tag": "0484_purchase_contract_esign_header",
       "breakpoints": true
+    },
+    {
+      "idx": 485,
+      "version": "7",
+      "when": 1795802078173,
+      "tag": "0487_purchase_technical_proposals",
+      "breakpoints": true
+    },
+    {
+      "idx": 486,
+      "version": "7",
+      "when": 1795802078174,
+      "tag": "0488_purchase_document_audience",
+      "breakpoints": true
     }
   ]
 }

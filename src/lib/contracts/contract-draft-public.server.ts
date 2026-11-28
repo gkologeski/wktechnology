@@ -29,6 +29,10 @@ type RawPublicContractDraft = {
   client_decided_at: string | null;
   client_name: string | null;
   proposal_public_token?: string | null;
+  document_audience?: "client" | "supplier";
+  requires_code?: boolean;
+  expires_at?: string;
+  attachments?: Array<{ id: string; name: string; sha256: string }>;
 };
 
 export type PublicContractDraftDeps = {
@@ -59,7 +63,22 @@ export async function loadPublicContractDraft(
     );
 
   const hiring = await d.rpc("hiring_draft_public", { token });
-  if (hiring.data) return hiring.data as PublicContractDraftDto;
+  if (hiring.data) {
+    const doc = hiring.data as RawPublicContractDraft;
+    return {
+      title: doc.title,
+      body_html: doc.body_html,
+      status: doc.status,
+      workspace_name: doc.workspace_name,
+      client_decided_at: doc.client_decided_at,
+      client_name: doc.client_name,
+      requires_code: doc.requires_code,
+      expires_at: doc.expires_at,
+      attachments: doc.attachments?.map(({ id, name, sha256 }) => ({ id, name, sha256 })),
+      linked_proposal: null,
+      has_proposal_pdf: false,
+    };
+  }
 
   const { data: raw, error } = await d.rpc("contract_draft_public_get", { p_token: token });
   if (error) throw new Error("Não foi possível carregar a minuta.");
@@ -67,7 +86,9 @@ export async function loadPublicContractDraft(
 
   const doc = raw as RawPublicContractDraft;
   const proposalToken =
-    typeof doc.proposal_public_token === "string" && doc.proposal_public_token.length >= 16
+    doc.document_audience === "client" &&
+    typeof doc.proposal_public_token === "string" &&
+    doc.proposal_public_token.length >= 16
       ? doc.proposal_public_token
       : null;
 
@@ -111,7 +132,11 @@ export async function loadPublicContractDraftProposalDoc(
   if (error || !raw) return null;
 
   const doc = raw as RawPublicContractDraft;
-  if (typeof doc.proposal_public_token !== "string" || doc.proposal_public_token.length < 16) {
+  if (
+    doc.document_audience !== "client" ||
+    typeof doc.proposal_public_token !== "string" ||
+    doc.proposal_public_token.length < 16
+  ) {
     return null;
   }
   return d.loadProposal(doc.proposal_public_token);

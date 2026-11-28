@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertWorkRecord, workRpc } from "@/lib/access-control/work-core.server";
+import { assertAttachmentDocumentAccess } from "./document-audience.server";
 
 // Supporting attachments reuse contract view/update; commercial references also
 // require current source-record visibility in the database. No service-role reads.
@@ -21,6 +22,14 @@ export type ContractAttachment = {
   name: string;
   created_at: string;
   frozen?: boolean;
+  audience: "internal" | "client" | "supplier" | "technical_shared";
+  commercial_sensitive: boolean;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_required?: boolean;
+  can_review?: boolean;
+  signature_included?: boolean;
+  sharing_blocked?: boolean;
 };
 export type ContractAttachmentSource = { id: string; kind: "quote" | "proposal"; title: string };
 const contractInput = z.object({ contractId: z.string().uuid() });
@@ -119,11 +128,27 @@ export const removeContractAttachment = createServerFn({ method: "POST" })
       p_data: { id: data.id },
     }),
   );
+export const reviewContractAttachment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    contractInput.extend({
+      id: z.string().uuid(),
+      audience: z.enum(["internal", "client", "supplier", "technical_shared"]),
+    }),
+  )
+  .handler(async ({ data, context }) =>
+    workRpc<{ ok: boolean }>(context.supabase, "contract_attachment_manage", {
+      p_contract: data.contractId,
+      p_action: "review",
+      p_data: { id: data.id, audience: data.audience },
+    }),
+  );
 export const downloadContractAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(contractInput.extend({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     await assertWorkRecord(context.supabase, "techcontracts.contracts", data.contractId, "view");
+    await assertAttachmentDocumentAccess(context.supabase, data.contractId, data.id);
     // Use the caller's RLS client for both metadata and the short-lived URL.
     const { data: row, error } = await context.supabase
       .from("contract_attachments" as never)
@@ -224,9 +249,10 @@ export const getContractAttachmentPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(contractInput)
   .handler(async ({ data, context }) =>
-    workRpc<{ hiring_origin: boolean; can_preview: boolean }>(
-      context.supabase,
-      "hiring_attachment_policy",
-      { k: data.contractId },
-    ),
+    workRpc<{
+      hiring_origin: boolean;
+      is_purchase: boolean;
+      can_preview: boolean;
+      can_review: boolean;
+    }>(context.supabase, "hiring_attachment_policy", { k: data.contractId }),
   );

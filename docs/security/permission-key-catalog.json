@@ -666,6 +666,7 @@
     "system.workflows.view.own",
     "system.workflows.view.team",
     "system.workflows.view.workspace",
+    "techcontracts.approval_substitution.manage.workspace",
     "techcontracts.approvals.approve.workspace",
     "techcontracts.approvals.manage.workspace",
     "techcontracts.approvals.view.own",
@@ -743,6 +744,9 @@
     "techcontracts.legacy_contracts.view.workspace",
     "techcontracts.links.manage.workspace",
     "techcontracts.links.view.workspace",
+    "techcontracts.purchase_proposal_templates.manage.workspace",
+    "techcontracts.purchase_proposals.manage.workspace",
+    "techcontracts.purchase_proposals.view.workspace",
     "techcontracts.signature_evidence.manage.workspace",
     "techcontracts.signature_evidence.view.workspace",
     "techcontracts.supplier_requests.approval.approve.workspace",
@@ -2869,8 +2873,7 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace",
-    "techcontracts.approval_substitution.manage.workspace"
+    "techservice.tickets.view.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -3262,6 +3265,15 @@
     },
     "techcontracts.approval_substitution.manage.workspace": {
       "migration": "drizzle/migrations/0486_contract_approval_substitution.sql"
+    },
+    "techcontracts.purchase_proposals.view.workspace": {
+      "migration": "drizzle/migrations/0487_purchase_technical_proposals.sql"
+    },
+    "techcontracts.purchase_proposals.manage.workspace": {
+      "migration": "drizzle/migrations/0487_purchase_technical_proposals.sql"
+    },
+    "techcontracts.purchase_proposal_templates.manage.workspace": {
+      "migration": "drizzle/migrations/0487_purchase_technical_proposals.sql"
     }
   }
 }
