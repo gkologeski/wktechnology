@@ -8,7 +8,7 @@ route_pattern: /settings/enrichment
 min_permission: techsales.prospecting_enrichment.view.own
 audience: internal
 sort_order: 161
-version: 4
+version: 5
 is_published: true
 ---
 # Enriquecer contatos, leads e empresas
@@ -26,6 +26,22 @@ is_published: true
 6. Para empresa, abra a ficha e clique em "Enriquecer via CNPJ".
 7. No Lead, salve uma nova URL de LinkedIn. O sistema reenriquece sozinho.
 ![Tela: janela Enriquecer na lista de leads](/help-media/crm/enriquecer-cadastros.webp)
+
+## Preencher só celulares via Apollo
+Em Contatos, abra **Celulares via Apollo**. A prévia especial não chama a Apollo.
+Ela conta cadastros visíveis sem celular, com cargo de gestão de TI, vínculo a uma
+empresa cujo cadastro confirma pelo menos 100 funcionários e perfil LinkedIn ou
+e-mail corporativo identificável. Uma faixa que cruza 100 não comprova o porte.
+Registros sem porte confiável ficam fora.
+
+Só confirme a consulta paga após revisar o máximo indicado. A operação reserva
+até 9 créditos por tentativa no Apollo padrão; não usa terceiros nem consulta
+e-mail pessoal. O saldo reservado é um teto, não o gasto medido pelo Apollo.
+Use **Recuperar resultados (0 créditos)** para buscar as respostas prontas. A
+rotina só grava um celular inequivocamente identificado no cadastro existente e
+não troca nenhum número preenchido. Se uma consulta falhar sem confirmação, a
+reserva permanece e a chamada não é repetida. Operação única, de até 5.000
+créditos, liberada somente no workspace autorizado.
 
 ## Resultado esperado
 Os campos são preenchidos conforme o modo escolhido. Telefones pedidos ao Apollo podem chegar alguns minutos depois.
