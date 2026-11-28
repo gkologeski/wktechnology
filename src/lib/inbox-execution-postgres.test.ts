@@ -1392,15 +1392,29 @@ it("Gmail assigned Inbox own recipient receives and opens a real notice without 
     values(${account},${W},${A},'gmail','connected','disposable@example.invalid','100')`;
   await db`insert into email_threads(id,workspace_id,owner_id,assigned_to,account_id,provider_thread_id)
     values(${conversation},${W},${A},${U},${account},'disposable_provider_thread')`;
-  await withRole(
+  const updated = await withRole(
     "authenticated",
     C,
     (tx) => tx`update workflows set
     execution_user_id=${C},entity='inbox_channel_occurrences',
     trigger=${tx.json({ event: "updated", notification_event: { key: "shared.email.message_received", channel: "email", account_ids: [] } })},
     actions=${tx.json([{ type: "notify", title: "Atualização disponível", recipients: rules, delivery }])}
-    where id=${WF}`,
+    where id=${WF}
+    returning id,enabled,status,published_version,entity,trigger#>>'{notification_event,key}' as event_key`,
   );
+  expect(updated).toHaveLength(1);
+  expect(updated[0]).toMatchObject({
+    id: WF,
+    enabled: true,
+    status: "published",
+    published_version: 1,
+    entity: "inbox_channel_occurrences",
+    event_key: "shared.email.message_received",
+  });
+  const [activation] = await db`select workflow_version,activated_at::text activated_at
+    from inbox_workflow_activations where workflow_id=${WF} and workspace_id=${W}`;
+  expect(activation).toBeDefined();
+  expect(activation!.workflow_version).toBe(1);
   const [clock] = await db`select clock_timestamp()::text occurred`;
   const service = fixtureJwt("service_role");
   const queued = await request(
@@ -1433,10 +1447,15 @@ it("Gmail assigned Inbox own recipient receives and opens a real notice without 
     (row: { provider_message_id: string }) => row.provider_message_id === providerId,
   );
   expect(item).toBeDefined();
+  // Text binding avoids postgres.js's timestamp encoder truncating microseconds.
   await db`insert into email_messages(id,workspace_id,owner_id,account_id,thread_id,
     provider_message_id,direction,received_at,body_text)
     values(${message},${W},${A},${account},${conversation},${providerId},'inbound',
-      ${String(clock!["occurred"])},'Disposable private message body')`;
+      ${String(clock!["occurred"])}::text::timestamptz,'Disposable private message body')`;
+  const [persistedClock] =
+    await db`select received_at=${String(clock!["occurred"])}::text::timestamptz as exact_provider_time
+    from email_messages where id=${message}`;
+  expect(persistedClock?.exact_provider_time).toBe(true);
   // Models recovery after message persistence but before queue acknowledgement.
   const finish = await request(
     "/rpc/gmail_sync_finish",
@@ -1455,7 +1474,38 @@ it("Gmail assigned Inbox own recipient receives and opens a real notice without 
   const [source] = await db`select o.id,e.id event from inbox_channel_occurrences o
     join workflow_events e on e.entity_id=o.id
     where o.message_id=${message} and o.event_key='shared.email.message_received'`;
-  expect(source).toBeDefined();
+  // Failure-only, read-only evidence: never retry or manufacture the missing event.
+  const [diagnostic] = source
+    ? []
+    : await db`select jsonb_build_object(
+        'query_role',current_user,'auth_role',auth.role(),
+        'workflow',(select jsonb_build_object('enabled',enabled,'status',status,'version',published_version,
+          'entity',entity,'event_key',trigger#>>'{notification_event,key}',
+          'account_ids',trigger#>'{notification_event,account_ids}') from workflows where id=${WF}),
+        'activation',(select jsonb_build_object('version',workflow_version,'activated_at',activated_at::text)
+          from inbox_workflow_activations where workflow_id=${WF} and workspace_id=${W}),
+        'message',(select jsonb_build_object('provider_at',received_at::text,'created_at',created_at::text,
+          'direction',direction) from email_messages where id=${message}),
+        'queue',(select jsonb_build_object('discovered_at',discovered_at::text,'completed_at',completed_at::text,
+          'state',state,'provenance',provenance,'preexisting',preexisting,'outcome',outcome)
+          from gmail_sync_queue where id=${item.id}),
+        'occurrences',(select jsonb_agg(jsonb_build_object('id',o.id,'event_key',o.event_key,
+          'provider_at',o.occurred_at::text,'received_at',o.received_at::text,
+          'provider_after_activation',o.occurred_at>=a.activated_at,
+          'received_after_activation',o.received_at>=a.activated_at,
+          'evidence_current',techerp_api.inbox_message_evidence_current(o.id),
+          'receipt_exists',exists(select 1 from notification_business_occurrence_receipts r
+            where r.workspace_id=o.workspace_id and r.source_table='inbox_channel_occurrences' and r.source_id=o.id),
+          'proof_exists',exists(select 1 from notification_business_event_proofs p
+            where p.workspace_id=o.workspace_id and p.source_table='inbox_channel_occurrences' and p.source_id=o.id),
+          'event_exists',exists(select 1 from workflow_events e
+            where e.workspace_id=o.workspace_id and e.entity='inbox_channel_occurrences' and e.entity_id=o.id)))
+          from inbox_channel_occurrences o left join inbox_workflow_activations a
+            on a.workflow_id=${WF} and a.workspace_id=o.workspace_id where o.message_id=${message}),
+        'account_current',techerp_api.inbox_account_current(${W},'email',${account}),
+        'workspace_created_by',(select created_by from workspaces where id=${W})
+      ) snapshot`;
+  expect(source, JSON.stringify(diagnostic?.snapshot)).toBeDefined();
   await db`update notifications set read_at=clock_timestamp()
     where entity='inbox_conversation' and entity_id=${conversation}`;
   const run = randomUUID();
