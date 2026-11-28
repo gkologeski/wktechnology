@@ -45,6 +45,7 @@ import {
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { idQueryFor, useGridSelection } from "@/components/grid/use-grid-selection";
 import { startFocusQueue } from "@/lib/focus-queue";
+import { ApolloMobileCampaignDialog } from "@/components/enrichment/apollo-mobile-5000-dialog";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
@@ -692,6 +693,7 @@ function ContactsHubspotView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <ApolloMobileCampaignDialog />
           <Button
             variant="outline"
             size="sm"

@@ -2,6 +2,101 @@
   "schema_version": 1,
   "contracts": [
     {
+      "id": "apollo-mobile-5000",
+      "kind": "business",
+      "resources": [
+        "techsales.prospecting_enrichment",
+        "techsales.contacts"
+      ],
+      "actions": [
+        "manage",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.prospecting_enrichment.manage.own",
+        "techsales.prospecting_enrichment.manage.team",
+        "techsales.prospecting_enrichment.manage.workspace",
+        "techsales.contacts.update.own",
+        "techsales.contacts.update.team",
+        "techsales.contacts.update.workspace"
+      ],
+      "rationale": "CELULAR-5000. Preview reads contact/employer under the authenticated actor and active configured workspace. The manage gate applies in UI and server; every paid query and write rechecks the target update, field policy and trusted workspace. The caller-bound compare-and-set RPC explicitly rechecks CRM row authorization, actor, workspace, shared-field rules and matching pending attempt. It updates only a null mobile_phone and completes the ledger atomically. Attempt reservations are private service-only ledger operations, after the actor gate, globally capped and immutable against deletions. Recovery is tied to the original actor and provider request/person. The newly generated Help catalogue is an editorial part of the existing permission-filtered Help flow.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/integrations/apollo-mobile-5000.server.ts",
+          "symbol": "assertMobileCampaignAccess"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/prospecting/linkedin-url.ts",
+          "symbol": "linkedinUrlOrNull"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0489_apollo_mobile_5000.sql",
+          "symbol": "apollo_mobile_5000_attempts"
+        },
+        {
+          "file": "drizzle/migrations/0489_apollo_mobile_5000.sql",
+          "symbol": "reserve_apollo_mobile_5000"
+        },
+        {
+          "file": "drizzle/migrations/0489_apollo_mobile_5000.sql",
+          "symbol": "apply_apollo_mobile_5000"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_record_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/integrations/apollo-mobile-5000.test.ts",
+          "name": "permite membro ativo no workspace configurado"
+        },
+        "missing_permission": {
+          "file": "src/lib/integrations/apollo-mobile-5000.test.ts",
+          "name": "nega sem permissão de enriquecimento"
+        },
+        "explicit_deny": {
+          "file": "src/lib/integrations/apollo-mobile-5000.test.ts",
+          "name": "nega deny explícito antes de consultar dados"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/integrations/apollo-mobile-5000.test.ts",
+          "name": "nega outro workspace antes de acessar a operação"
+        },
+        "inactive_member": {
+          "file": "src/lib/integrations/apollo-mobile-5000.test.ts",
+          "name": "nega membro inativo sem workspace resolvido"
+        }
+      },
+      "files": {
+        "src/lib/integrations/apollo-mobile-5000.ts": "6b8cc560712c1f748544e7f16137ca78bfe10246c7456ce7b8ef47bb97574c04",
+        "src/lib/integrations/apollo-mobile-5000.server.ts": "d583060bb8c8e803994fc1fcc0866c27d0c824b58e1706d7d8094c2eef6a8cc8",
+        "src/lib/integrations/apollo-mobile-5000.functions.ts": "e3b78b1fffc3193d4d931ab9d042a9986a865342f0c61fbea3806eb511b17b90",
+        "src/components/enrichment/apollo-mobile-5000-dialog.tsx": "a8915a5c80dd9de2e4c6d5ec027fa6bcd578e5b6a069a515507d5d71248bcdd4",
+        "drizzle/migrations/0489_apollo_mobile_5000.sql": "9ae8777d69842e4cdca94e2378b3227ab4da9ff8758a84f6ad74d6f279ca1d07"
+      }
+    },
+    {
       "id": "gmail-durable-checkpoint-worker",
       "kind": "service",
       "rationale": "GMAIL-FILA: same canonical account-owner job authorization, current workspace/provider/status and readonly checks before atomic enqueue/cursor CAS, claim, completion and retry. Queue exposes no body, credential or authenticated/anon reads. First discovery provenance and preexisting evidence remain immutable; errors are retried without silently acknowledging writes. Local REST/service-JWT proof is scripts/isolated-db/gmail-queue-local.ts; CI unit cases verify the existing real account-job boundary delegation, not SQL RLS by themselves. Inbox package2: received provider time is required, no local clock fallback. Creation proof is attached only to a truly new conversation from a claimed incremental queue item; durable discovery/cursor CAS, current account job authorization, immutable provenance and exact tenant remain required. Current positive and negative PostgreSQL/HTTP cases are in inbox-execution-postgres.test.ts, including a recipient without Workflows or mailbox configuration access. Reviewed451 recovery integration: canonical status/cursor are read under the account job gate. Connected mailboxes reconcile private confirmed acceptance before provider discovery; error-account manual retries first verify provider access and let canonical enqueue restore connected status before recovery. Known accepted outbound ids are skipped, never hydrated into source proof. No send API is used for recovery.",
@@ -4716,7 +4811,7 @@
         "src/components/integrations/pages/contaazul-integration-page.tsx": "e8815ac5d78669f0cc29445296c53adfef5ca6eb79f1b0c541b9473b500a17a7",
         "drizzle/migrations/0256_contaazul_people_audience.sql": "5b0a152fd663227562994854d3f7c9957646265850b2591b24137d5d95c37e1a",
         "src/routes/_authenticated/companies.tsx": "bf43410ae2cdb347d72a31b27d7b0d164359194cb53f45941d30604bd72de638",
-        "src/routes/_authenticated/contacts.tsx": "663d1d5b1fa1043739b9f8030df4c342990e1d39212ba2426dd06750b97dc9ac",
+        "src/routes/_authenticated/contacts.tsx": "eb5920d250c6649b1de247b7e3a711794feff72635faae3818e854ba98233148",
         "src/lib/prospecting-audience.functions.ts": "addebddb6a429506e919e0bdf0c6dd8a83387767213e76b5cb8da105d1fb4bf7"
       }
     },
