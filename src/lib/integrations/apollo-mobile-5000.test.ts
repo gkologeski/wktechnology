@@ -322,3 +322,48 @@ it("não grava quando a identidade mudou após o envio", async () => {
   await expect(reconcileMobileCampaign(actor, "contact")).resolves.toBe("skipped");
   expect(fetch).not.toHaveBeenCalled();
 });
+
+it.each([
+  { code: "result_pending", retryAfter: 15, status: "pending", writes: false },
+  { code: "request_id_unknown", retryAfter: undefined, status: "uncertain", writes: true },
+])(
+  "faz um único GET para $code e não repete consulta paga",
+  async ({ code, retryAfter, status, writes }) => {
+    const { actor, db, fetch } = prepare();
+    const { createHash } = await import("node:crypto");
+    const hash = createHash("sha256")
+      .update(JSON.stringify({ email: "ti@example.org" }))
+      .digest("hex");
+    const q = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      update: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { status: "pending", request_id: "-9223372036854775808", person_id: "person" },
+        error: null,
+      }),
+      single: vi.fn().mockResolvedValue({ data: { identity_hash: hash }, error: null }),
+    };
+    q.select.mockReturnValue(q);
+    q.eq.mockReturnValue(q);
+    q.update.mockReturnValue(q);
+    mock.admin.from.mockReturnValue(q);
+    fetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error_code: code,
+          retry_after_seconds: retryAfter,
+        }),
+        { status: 404 },
+      ),
+    );
+    await expect(reconcileMobileCampaign(actor, "contact")).resolves.toBe(status);
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch.mock.calls[0][0]).toMatch(/\/webhook_result\/-9223372036854775808$/);
+    expect(fetch.mock.calls[0][1].method).toBe("GET");
+    expect(mock.admin.rpc).not.toHaveBeenCalled();
+    expect(db.from).toHaveBeenCalledTimes(2); // load contact and company only
+    if (writes) expect(q.update).toHaveBeenCalledWith({ status: "uncertain" });
+    else expect(q.update).not.toHaveBeenCalled();
+  },
+);
